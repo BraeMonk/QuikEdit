@@ -2,100 +2,171 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>16x16 Mobile Pixel Editor</title>
+<title>Pixel Sprite Editor</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <style>
   body {
     font-family: sans-serif;
     padding: 10px;
     text-align: center;
+    background: #1c1c1c;
+    color: #fff;
+  }
+  #controls {
+    margin-bottom: 10px;
   }
   #canvas {
     display: grid;
-    grid-template-columns: repeat(16, 40px);
-    grid-template-rows: repeat(16, 40px);
-    gap: 1px;
     touch-action: none;
     margin: 10px auto;
+    border: 1px solid #555;
   }
   .cell {
-    width: 40px;
-    height: 40px;
     border: 1px solid #333;
     box-sizing: border-box;
   }
-  button {
-    margin-top: 10px;
-    padding: 10px 20px;
-    font-size: 16px;
+  button, select {
+    margin: 5px;
+    padding: 8px 16px;
+    font-size: 14px;
+    cursor: pointer;
   }
   pre {
     text-align: left;
     max-width: 100%;
     overflow-x: auto;
+    background: #222;
+    padding: 10px;
+    color: #fff;
   }
 </style>
 </head>
 <body>
 
-<h2>16x16 Pixel Editor (Mobile-Friendly)</h2>
-<p>Tap or drag to paint. Export to copy your array.</p>
+<h2>Pixel Sprite Editor</h2>
+
+<div id="controls">
+  Canvas Size:
+  <select id="sizeSelector">
+    <option value="8">8x8</option>
+    <option value="16" selected>16x16</option>
+    <option value="24">24x24</option>
+    <option value="32">32x32</option>
+    <option value="48">48x48</option>
+    <option value="64">64x64</option>
+  </select>
+
+  Palette:
+  <select id="paletteSelector"></select>
+
+  <button id="export">Export Array</button>
+</div>
+
 <div id="canvas"></div>
-<button id="export">Export Array</button>
 <pre id="output"></pre>
 
 <script>
-const colors = [
-  'transparent', // 0
-  '#FFD700',     // 1 eye
-  '#A0522D',     // 2 shading
-  '#FF4500',     // 3 body
-  '#9400D3',     // 4 accent
-  '#228B22',     // 5 claw/wing detail
-  '#191970',     // 6 shadow
-  '#FFFFFF',     // 7 highlight
-  '#FF6347',     // 8 extra
-  '#8B0000'      // 9 dark
-];
-
-let array = Array.from({length:16},()=>Array(16).fill(0));
+let colors = [];
+let palettes = {};
+let array = [];
+let canvasSize = 16;
 const canvas = document.getElementById('canvas');
+const sizeSelector = document.getElementById('sizeSelector');
+const paletteSelector = document.getElementById('paletteSelector');
 
 let isPainting = false;
-let currentColor = 1; // start painting with color 1
 
-for(let y=0; y<16; y++){
-  for(let x=0; x<16; x++){
-    const cell = document.createElement('div');
-    cell.className = 'cell';
-    cell.dataset.x = x;
-    cell.dataset.y = y;
-    cell.dataset.value = 0;
-    cell.style.background = colors[0];
+// Load palettes.json dynamically
+fetch('palettes.json')
+  .then(res => res.json())
+  .then(data => {
+      palettes = data;
+      for(let key in palettes){
+        const opt = document.createElement('option');
+        opt.value = key;
+        opt.textContent = key;
+        paletteSelector.appendChild(opt);
+      }
+      paletteSelector.value = Object.keys(palettes)[0];
+      colors = palettes[paletteSelector.value];
+      initCanvas();
+  });
 
-    const paint = () => {
-      let val = parseInt(cell.dataset.value);
-      val = (val + 1) % colors.length; // cycles through 0-9
-      cell.dataset.value = val;
-      array[y][x] = val;
-      cell.style.background = colors[val];
-    };
+// Handle palette change
+paletteSelector.addEventListener('change', () => {
+  colors = palettes[paletteSelector.value];
+  updateCanvasColors();
+});
 
-    cell.addEventListener('click', paint);
-    cell.addEventListener('touchstart', (e) => { paint(); e.preventDefault(); });
-    cell.addEventListener('touchmove', (e) => {
-      const touch = e.touches[0];
-      const target = document.elementFromPoint(touch.clientX, touch.clientY);
-      if(target && target.classList.contains('cell')) paint.call(target);
-      e.preventDefault();
-    });
+// Handle canvas size change
+sizeSelector.addEventListener('change', () => {
+  canvasSize = parseInt(sizeSelector.value);
+  initCanvas();
+});
 
-    canvas.appendChild(cell);
-  }
+// Initialize blank canvas
+function initCanvas(){
+  array = Array.from({length: canvasSize}, () => Array(canvasSize).fill(0));
+  renderCanvas();
 }
 
-document.getElementById('export').onclick = () => {
+function renderCanvas(){
+  canvas.innerHTML = '';
+  const cellSize = Math.floor(Math.min(480, window.innerWidth - 20) / canvasSize);
+  canvas.style.gridTemplateColumns = `repeat(${canvasSize}, ${cellSize}px)`;
+  canvas.style.gridTemplateRows = `repeat(${canvasSize}, ${cellSize}px)`;
+
+  for(let y=0; y<canvasSize; y++){
+    for(let x=0; x<canvasSize; x++){
+      const cell = document.createElement('div');
+      cell.className = 'cell';
+      cell.dataset.x = x;
+      cell.dataset.y = y;
+      cell.dataset.value = array[y][x];
+      cell.style.width = `${cellSize}px`;
+      cell.style.height = `${cellSize}px`;
+      cell.style.background = colors[array[y][x]];
+
+      const paint = () => {
+        let val = parseInt(cell.dataset.value);
+        val = (val + 1) % Object.keys(colors).length;
+        cell.dataset.value = val;
+        array[y][x] = val;
+        cell.style.background = colors[val];
+      };
+
+      cell.addEventListener('mousedown', (e) => { isPainting=true; paint(); });
+      cell.addEventListener('mouseenter', () => { if(isPainting) paint(); });
+      cell.addEventListener('mouseup', () => { isPainting=false; });
+
+      cell.addEventListener('touchstart', (e) => { paint(); e.preventDefault(); });
+      cell.addEventListener('touchmove', (e) => {
+        const touch = e.touches[0];
+        const target = document.elementFromPoint(touch.clientX, touch.clientY);
+        if(target && target.classList.contains('cell')) paint.call(target);
+        e.preventDefault();
+      });
+
+      canvas.appendChild(cell);
+    }
+  }
+
+  document.body.addEventListener('mouseup', () => isPainting=false);
+}
+
+// Update colors when palette changes
+function updateCanvasColors(){
+  const cells = document.querySelectorAll('.cell');
+  cells.forEach(cell => {
+    const val = parseInt(cell.dataset.value);
+    cell.style.background = colors[val];
+  });
+}
+
+// Export array to JSON
+document.getElementById('export').addEventListener('click', () => {
   document.getElementById('output').textContent = JSON.stringify(array, null, 4);
-};
+});
 </script>
 
 </body>
