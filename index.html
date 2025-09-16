@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>16x16 Mobile Pixel Editor</title>
+<style>
+  body {
+    font-family: sans-serif;
+    padding: 10px;
+    text-align: center;
+  }
+  #canvas {
+    display: grid;
+    grid-template-columns: repeat(16, 40px);
+    grid-template-rows: repeat(16, 40px);
+    gap: 1px;
+    touch-action: none;
+    margin: 10px auto;
+  }
+  .cell {
+    width: 40px;
+    height: 40px;
+    border: 1px solid #333;
+    box-sizing: border-box;
+  }
+  button {
+    margin-top: 10px;
+    padding: 10px 20px;
+    font-size: 16px;
+  }
+  pre {
+    text-align: left;
+    max-width: 100%;
+    overflow-x: auto;
+  }
+</style>
+</head>
+<body>
+
+<h2>16x16 Pixel Editor (Mobile-Friendly)</h2>
+<p>Tap or drag to paint. Export to copy your array.</p>
+<div id="canvas"></div>
+<button id="export">Export Array</button>
+<pre id="output"></pre>
+
+<script>
+const colors = [
+  'transparent', // 0
+  '#FFD700',     // 1 eye
+  '#A0522D',     // 2 shading
+  '#FF4500',     // 3 body
+  '#9400D3',     // 4 accent
+  '#228B22',     // 5 claw/wing detail
+  '#191970',     // 6 shadow
+  '#FFFFFF',     // 7 highlight
+  '#FF6347',     // 8 extra
+  '#8B0000'      // 9 dark
+];
+
+let array = Array.from({length:16},()=>Array(16).fill(0));
+const canvas = document.getElementById('canvas');
+
+let isPainting = false;
+let currentColor = 1; // start painting with color 1
+
+for(let y=0; y<16; y++){
+  for(let x=0; x<16; x++){
+    const cell = document.createElement('div');
+    cell.className = 'cell';
+    cell.dataset.x = x;
+    cell.dataset.y = y;
+    cell.dataset.value = 0;
+    cell.style.background = colors[0];
+
+    const paint = () => {
+      let val = parseInt(cell.dataset.value);
+      val = (val + 1) % colors.length; // cycles through 0-9
+      cell.dataset.value = val;
+      array[y][x] = val;
+      cell.style.background = colors[val];
+    };
+
+    cell.addEventListener('click', paint);
+    cell.addEventListener('touchstart', (e) => { paint(); e.preventDefault(); });
+    cell.addEventListener('touchmove', (e) => {
+      const touch = e.touches[0];
+      const target = document.elementFromPoint(touch.clientX, touch.clientY);
+      if(target && target.classList.contains('cell')) paint.call(target);
+      e.preventDefault();
+    });
+
+    canvas.appendChild(cell);
+  }
+}
+
+document.getElementById('export').onclick = () => {
+  document.getElementById('output').textContent = JSON.stringify(array, null, 4);
+};
+</script>
+
+</body>
+</html>
