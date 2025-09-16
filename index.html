@@ -25,11 +25,25 @@
     border: 1px solid #333;
     box-sizing: border-box;
   }
-  button, select {
+  button, select, input {
     margin: 5px;
     padding: 8px 16px;
     font-size: 14px;
     cursor: pointer;
+  }
+  #swatches {
+    margin-top: 10px;
+  }
+  .swatch {
+    display: inline-block;
+    width: 30px;
+    height: 30px;
+    margin: 2px;
+    border: 1px solid #333;
+    cursor: pointer;
+  }
+  .swatch.selected {
+    border: 3px solid #fff;
   }
   pre {
     text-align: left;
@@ -59,9 +73,14 @@
   Palette:
   <select id="paletteSelector"></select>
 
+  <button id="undo">Undo</button>
+  <button id="redo">Redo</button>
+  <button id="clear">Clear</button>
   <button id="export">Export Array</button>
+  <input type="file" id="importFile" accept=".json">
 </div>
 
+<div id="swatches"></div>
 <div id="canvas"></div>
 <pre id="output"></pre>
 
@@ -70,10 +89,12 @@ let colors = [];
 let palettes = {};
 let array = [];
 let canvasSize = 16;
+let selectedColor = 0;
+let undoStack = [];
+let redoStack = [];
 const canvas = document.getElementById('canvas');
 const sizeSelector = document.getElementById('sizeSelector');
 const paletteSelector = document.getElementById('paletteSelector');
-
 let isPainting = false;
 
 // Load palettes.json dynamically
@@ -95,6 +116,8 @@ fetch('palettes.json')
 // Handle palette change
 paletteSelector.addEventListener('change', () => {
   colors = palettes[paletteSelector.value];
+  selectedColor = 0;
+  renderSwatches();
   updateCanvasColors();
 });
 
@@ -107,7 +130,32 @@ sizeSelector.addEventListener('change', () => {
 // Initialize blank canvas
 function initCanvas(){
   array = Array.from({length: canvasSize}, () => Array(canvasSize).fill(0));
+  undoStack = [];
+  redoStack = [];
   renderCanvas();
+}
+
+// Render swatches
+function renderSwatches() {
+  const swatchesDiv = document.getElementById('swatches');
+  swatchesDiv.innerHTML = '';
+  colors.forEach((color, index) => {
+      const swatch = document.createElement('div');
+      swatch.className = 'swatch';
+      if(index === selectedColor) swatch.classList.add('selected');
+      swatch.style.background = color;
+      swatch.addEventListener('click', () => {
+          selectedColor = index;
+          renderSwatches();
+      });
+      swatchesDiv.appendChild(swatch);
+  });
+}
+
+function saveState() {
+  undoStack.push(array.map(row => row.slice()));
+  if(undoStack.length > 50) undoStack.shift();
+  redoStack = [];
 }
 
 function renderCanvas(){
@@ -128,11 +176,10 @@ function renderCanvas(){
       cell.style.background = colors[array[y][x]];
 
       const paint = () => {
-        let val = parseInt(cell.dataset.value);
-        val = (val + 1) % Object.keys(colors).length;
-        cell.dataset.value = val;
-        array[y][x] = val;
-        cell.style.background = colors[val];
+        saveState();
+        array[y][x] = selectedColor;
+        cell.dataset.value = selectedColor;
+        cell.style.background = colors[selectedColor];
       };
 
       cell.addEventListener('mousedown', (e) => { isPainting=true; paint(); });
@@ -151,6 +198,7 @@ function renderCanvas(){
     }
   }
 
+  renderSwatches();
   document.body.addEventListener('mouseup', () => isPainting=false);
 }
 
@@ -163,9 +211,73 @@ function updateCanvasColors(){
   });
 }
 
-// Export array to JSON
+// Undo & Redo
+document.getElementById('undo').addEventListener('click', () => {
+  if(undoStack.length){
+    redoStack.push(array.map(row => row.slice()));
+    array = undoStack.pop().map(row => row.slice());
+    renderCanvas();
+  }
+});
+
+document.getElementById('redo').addEventListener('click', () => {
+  if(redoStack.length){
+    undoStack.push(array.map(row => row.slice()));
+    array = redoStack.pop().map(row => row.slice());
+    renderCanvas();
+  }
+});
+
+// Clear canvas
+document.getElementById('clear').addEventListener('click', () => {
+  saveState();
+  array = Array.from({length: canvasSize}, () => Array(canvasSize).fill(0));
+  renderCanvas();
+});
+
+// Export array in linear row-by-row fashion
 document.getElementById('export').addEventListener('click', () => {
-  document.getElementById('output').textContent = JSON.stringify(array, null, 4);
+  const linearArray = array.flat();
+  document.getElementById('output').textContent = JSON.stringify(linearArray, null, 4);
+});
+
+// Import array (auto-resizes canvas)
+document.getElementById('importFile').addEventListener('change', (e) => {
+  const file = e.target.files[0];
+  if(!file) return;
+
+  const reader = new FileReader();
+  reader.onload = (event) => {
+    try {
+      const imported = JSON.parse(event.target.result);
+      let newArray;
+      let newSize;
+
+      if(Array.isArray(imported[0])) {
+        // 2D array
+        newArray = imported;
+        newSize = newArray.length;
+      } else {
+        // linear array
+        newSize = Math.sqrt(imported.length);
+        if(!Number.isInteger(newSize)) throw new Error("Invalid linear array length");
+        newArray = [];
+        for(let i=0; i<imported.length; i+=newSize){
+          newArray.push(imported.slice(i,i+newSize));
+        }
+      }
+
+      saveState();
+      canvasSize = newSize;
+      sizeSelector.value = canvasSize;
+      array = newArray.map(row => row.slice());
+      renderCanvas();
+    } catch(err) {
+      alert('Invalid JSON file.');
+      console.error(err);
+    }
+  };
+  reader.readAsText(file);
 });
 </script>
 
