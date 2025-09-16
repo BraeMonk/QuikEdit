@@ -21,16 +21,6 @@
 <h2>Pixel Sprite Editor</h2>
 
 <div id="controls">
-  Canvas Size:
-  <select id="sizeSelector">
-    <option value="8">8x8</option>
-    <option value="16" selected>16x16</option>
-    <option value="24">24x24</option>
-    <option value="32">32x32</option>
-    <option value="48">48x48</option>
-    <option value="64">64x64</option>
-  </select>
-
   Theme:
   <select id="paletteSelector"></select>
 
@@ -60,56 +50,56 @@ const isLightMode = true; // change to false for dark variants
 // ----------------------------
 const palettes = {
   default: isLightMode
-      ? ['transparent','#8B5E3C','#FFD8A6','#5C3A25','#FFCB88','#8B5E3C','#FFD8A6','#A9745B','#FFE0B3','#6B4226']
-      : ['transparent','#4a90e2','#ffffff','#1f5fbf','#9cc7f0','#4a90e2','#ffffff','#2b6fb2','#cce6ff','#173f80'],
+    ? { 0: 'transparent', 1: '#8B5E3C', 2: '#FFD8A6', 3: '#5C3A25', 4: '#FFCB88', 5: '#8B5E3C', 6: '#FFD8A6', 7: '#A9745B', 8: '#FFE0B3', 9: '#6B4226' }
+    : { 0: 'transparent', 1: '#4a90e2', 2: '#ffffff', 3: '#1f5fbf', 4: '#9cc7f0', 5: '#4a90e2', 6: '#ffffff', 7: '#2b6fb2', 8: '#cce6ff', 9: '#173f80' },
   chaotic: isLightMode
-      ? ['transparent','#8B0000','#FF4500','#4B0000','#FF6347','#8B0000','#FF4500','#B22222','#FF7F50','#6B0000']
-      : ['transparent','#FF4500','#8B0000','#FF6347','#4B0000','#FF4500','#8B0000','#FF7F50','#B22222','#660000'],
+    ? { 0: 'transparent', 1: '#8B0000', 2: '#FF4500', 3: '#4B0000', 4: '#FF6347', 5: '#8B0000', 6: '#FF4500', 7: '#B22222', 8: '#FF7F50', 9: '#6B0000' }
+    : { 0: 'transparent', 1: '#FF4500', 2: '#8B0000', 3: '#FF6347', 4: '#4B0000', 5: '#FF4500', 6: '#8B0000', 7: '#FF7F50', 8: '#B22222', 9: '#660000' },
   neutral: isLightMode
-      ? ['transparent','#6A0DAD','#E0CFFF','#4B0082','#D8BFFF','#6A0DAD','#E0CFFF','#7D3C98','#F0D6FF','#3A0066']
-      : ['transparent','#E0CFFF','#6A0DAD','#D8BFFF','#4B0082','#E0CFFF','#6A0DAD','#F0D6FF','#7D3C98','#330055'],
+    ? { 0: 'transparent', 1: '#6A0DAD', 2: '#E0CFFF', 3: '#4B0082', 4: '#D8BFFF', 5: '#6A0DAD', 6: '#E0CFFF', 7: '#7D3C98', 8: '#F0D6FF', 9: '#3A0066' }
+    : { 0: 'transparent', 1: '#E0CFFF', 2: '#6A0DAD', 3: '#D8BFFF', 4: '#4B0082', 5: '#E0CFFF', 6: '#6A0DAD', 7: '#F0D6FF', 8: '#7D3C98', 9: '#330055' },
   noir: isLightMode
-      ? ['transparent','#333333','#DDDDDD','#000000','#FFFFFF','#333333','#DDDDDD','#555555','#BBBBBB','#111111']
-      : ['transparent','#DDDDDD','#333333','#FFFFFF','#000000','#DDDDDD','#333333','#BBBBBB','#555555','#111111'],
+    ? { 0: 'transparent', 1: '#333333', 2: '#DDDDDD', 3: '#000000', 4: '#FFFFFF', 5: '#333333', 6: '#DDDDDD', 7: '#555555', 8: '#BBBBBB', 9: '#111111' }
+    : { 0: 'transparent', 1: '#DDDDDD', 2: '#333333', 3: '#FFFFFF', 4: '#000000', 5: '#DDDDDD', 6: '#333333', 7: '#BBBBBB', 8: '#555555', 9: '#111111' },
   forest: isLightMode
-      ? ['transparent','#2E8B57','#A9DFBF','#1B5E20','#82E0AA','#2E8B57','#A9DFBF','#1A4720','#74D6A2','#145C17']
-      : ['transparent','#A9DFBF','#2E8B57','#82E0AA','#1B5E20','#A9DFBF','#2E8B57','#74D6A2','#145C17','#1A4720'],
+    ? { 0: 'transparent', 1: '#2E8B57', 2: '#A9DFBF', 3: '#1B5E20', 4: '#82E0AA', 5: '#2E8B57', 6: '#A9DFBF', 7: '#1A4720', 8: '#74D6A2', 9: '#145C17' }
+    : { 0: 'transparent', 1: '#A9DFBF', 2: '#2E8B57', 3: '#82E0AA', 4: '#1B5E20', 5: '#A9DFBF', 6: '#2E8B57', 7: '#74D6A2', 8: '#145C17', 9: '#1A4720' },
   neon: isLightMode
-      ? ['transparent','#FF00FF','#00FFFF','#990099','#66FFFF','#FF00FF','#00FFFF','#CC00CC','#33FFFF','#660066']
-      : ['transparent','#00FFFF','#FF00FF','#66FFFF','#990099','#00FFFF','#FF00FF','#33FFFF','#CC00CC','#660066'],
+    ? { 0: 'transparent', 1: '#FF00FF', 2: '#00FFFF', 3: '#990099', 4: '#66FFFF', 5: '#FF00FF', 6: '#00FFFF', 7: '#CC00CC', 8: '#33FFFF', 9: '#660066' }
+    : { 0: 'transparent', 1: '#00FFFF', 2: '#FF00FF', 3: '#66FFFF', 4: '#990099', 5: '#00FFFF', 6: '#FF00FF', 7: '#33FFFF', 8: '#CC00CC', 9: '#660066' },
   solar: isLightMode
-      ? ['transparent','#FF8C00','#FFF5CC','#CC7000','#FFD580','#FF8C00','#FFF5CC','#E67E22','#FFE6A3','#B35900']
-      : ['transparent','#FFD580','#FF8C00','#FFF5CC','#CC7000','#FFD580','#FF8C00','#FFE6A3','#E67E22','#B35900'],
+    ? { 0: 'transparent', 1: '#FF8C00', 2: '#FFF5CC', 3: '#CC7000', 4: '#FFD580', 5: '#FF8C00', 6: '#FFF5CC', 7: '#E67E22', 8: '#FFE6A3', 9: '#B35900' }
+    : { 0: 'transparent', 1: '#FFD580', 2: '#FF8C00', 3: '#FFF5CC', 4: '#CC7000', 5: '#FFD580', 6: '#FF8C00', 7: '#FFE6A3', 8: '#E67E22', 9: '#B35900' },
   glacial: isLightMode
-      ? ['transparent','#F0FAFF','#D6EAF8','#A9DDF2','#85C1E9','#B3E5FC','#AED6F1','#5DADE2','#2E86C1','#154360']
-      : ['transparent','#EBF5FB','#AED6F1','#5DADE2','#D6EAF8','#A9DDF2','#EBF5FB','#AED6F1','#5DADE2','#154360'],
+    ? { 0: 'transparent', 1: '#F0FAFF', 2: '#D6EAF8', 3: '#A9DDF2', 4: '#85C1E9', 5: '#B3E5FC', 6: '#AED6F1', 7: '#5DADE2', 8: '#2E86C1', 9: '#154360' }
+    : { 0: 'transparent', 1: '#EBF5FB', 2: '#AED6F1', 3: '#5DADE2', 4: '#D6EAF8', 5: '#A9DDF2', 6: '#EBF5FB', 7: '#AED6F1', 8: '#5DADE2', 9: '#154360' },
   cosmic: isLightMode
-      ? ['transparent','#2C003E','#E0B0FF','#12001A','#8A2BE2','#2C003E','#E0B0FF','#5C1F80','#D8A0FF','#1A0010']
-      : ['transparent','#8A2BE2','#E0B0FF','#2C003E','#12001A','#8A2BE2','#E0B0FF','#5C1F80','#D8A0FF','#1A0010'],
+    ? { 0: 'transparent', 1: '#2C003E', 2: '#E0B0FF', 3: '#12001A', 4: '#8A2BE2', 5: '#2C003E', 6: '#E0B0FF', 7: '#5C1F80', 8: '#D8A0FF', 9: '#1A0010' }
+    : { 0: 'transparent', 1: '#8A2BE2', 2: '#E0B0FF', 3: '#2C003E', 4: '#12001A', 5: '#8A2BE2', 6: '#E0B0FF', 7: '#5C1F80', 8: '#D8A0FF', 9: '#1A0010' },
   blossom: isLightMode
-      ? ['transparent','#E6E6FA','#FFE5B4','#98FB98','#FFFFFF','#E6E6FA','#FFE5B4','#D8BFD8','#FFF0D6','#90EE90']
-      : ['transparent','#D8BFD8','#FFB07C','#66CDAA','#E6E6FA','#D8BFD8','#FFB07C','#B0A0C0','#FFCC99','#55AA88'],
+    ? { 0: 'transparent', 1: '#E6E6FA', 2: '#FFE5B4', 3: '#98FB98', 4: '#FFFFFF', 5: '#E6E6FA', 6: '#FFE5B4', 7: '#D8BFD8', 8: '#FFF0D6', 9: '#90EE90' }
+    : { 0: 'transparent', 1: '#D8BFD8', 2: '#FFB07C', 3: '#66CDAA', 4: '#E6E6FA', 5: '#D8BFD8', 6: '#FFB07C', 7: '#B0A0C0', 8: '#FFCC99', 9: '#55AA88' },
   volt: isLightMode
-      ? ['transparent','#FFD700','#FFFFFF','#FF8C00','#FFFF66','#FFD700','#FFFFFF','#FFC300','#FFFACD','#FF7F00']
-      : ['transparent','#FFFF66','#FFD700','#FFFFFF','#FF8C00','#FFFF66','#FFD700','#FFFACD','#FFC300','#FF7F00'],
+    ? { 0: 'transparent', 1: '#FFD700', 2: '#FFFFFF', 3: '#FF8C00', 4: '#FFFF66', 5: '#FFD700', 6: '#FFFFFF', 7: '#FFC300', 8: '#FFFACD', 9: '#FF7F00' }
+    : { 0: 'transparent', 1: '#FFFF66', 2: '#FFD700', 3: '#FFFFFF', 4: '#FF8C00', 5: '#FFFF66', 6: '#FFD700', 7: '#FFFACD', 8: '#FFC300', 9: '#FF7F00' },
   retro: isLightMode
-      ? ['transparent','#FF69B4','#00CED1','#8B008B','#FFD700','#FF69B4','#00CED1','#FF1493','#20B2AA','#800080']
-      : ['transparent','#00CED1','#FF69B4','#FFD700','#8B008B','#00CED1','#FF69B4','#20B2AA','#FF1493','#800080'],
+    ? { 0: 'transparent', 1: '#FF69B4', 2: '#00CED1', 3: '#8B008B', 4: '#FFD700', 5: '#FF69B4', 6: '#00CED1', 7: '#FF1493', 8: '#20B2AA', 9: '#800080' }
+    : { 0: 'transparent', 1: '#00CED1', 2: '#FF69B4', 3: '#FFD700', 4: '#8B008B', 5: '#00CED1', 6: '#FF69B4', 7: '#20B2AA', 8: '#FF1493', 9: '#800080' },
   lunar: isLightMode
-      ? ['transparent','#F8F8FF','#C0C0C0','#B0C4DE','#E6E6FA','#F8F8FF','#C0C0C0','#D3D3F0','#E0E0E8','#B0B0C0']
-      : ['transparent','#2F4F4F','#708090','#B0C4DE','#C0C0C0','#2F4F4F','#708090','#556B6B','#90A0A0','#404040'],
+    ? { 0: 'transparent', 1: '#F8F8FF', 2: '#C0C0C0', 3: '#B0C4DE', 4: '#E6E6FA', 5: '#F8F8FF', 6: '#C0C0C0', 7: '#D3D3F0', 8: '#E0E0E8', 9: '#B0B0C0' }
+    : { 0: 'transparent', 1: '#2F4F4F', 2: '#708090', 3: '#B0C4DE', 4: '#C0C0C0', 5: '#2F4F4F', 6: '#708090', 7: '#556B6B', 8: '#90A0A0', 9: '#404040' },
   binary: isLightMode
-      ? ['transparent','#708090','#B22222','#32CD32','#D3D3D3','#708090','#B22222','#5A6B7D','#FF4040','#228B22']
-      : ['transparent','#000000','#00FF00','#008000','#AAFFAA','#000000','#00FF00','#005500','#33FF33','#003300'],
+    ? { 0: 'transparent', 1: '#708090', 2: '#B22222', 3: '#32CD32', 4: '#D3D3D3', 5: '#708090', 6: '#B22222', 7: '#5A6B7D', 8: '#FF4040', 9: '#228B22' }
+    : { 0: 'transparent', 1: '#000000', 2: '#00FF00', 3: '#008000', 4: '#AAFFAA', 5: '#000000', 6: '#00FF00', 7: '#005500', 8: '#33FF33', 9: '#003300' },
   earthy: isLightMode 
-      ? ['transparent','#8B5A2B','#A0522D','#556B2F','#6B8E23','#CD853F','#9ACD32','#7F5217','#B87333','#4F6228'] 
-      : ['transparent','#654321','#8B4513','#228B22','#32CD32','#A0522D','#ADFF2F','#4B2E1F','#7C3600','#1F4D1F'],
+    ? { 0: 'transparent', 1: '#8B5A2B', 2: '#A0522D', 3: '#556B2F', 4: '#6B8E23', 5: '#CD853F', 6: '#9ACD32', 7: '#7F5217', 8: '#B87333', 9: '#4F6228' } 
+    : { 0: 'transparent', 1: '#654321', 2: '#8B4513', 3: '#228B22', 4: '#32CD32', 5: '#A0522D', 6: '#ADFF2F', 7: '#4B2E1F', 8: '#7C3600', 9: '#1F4D1F' },
   halloweenAutumn: isLightMode 
-      ? ['transparent','#FF7518','#FFB347','#8B0000','#6B4226','#FFD700','#A0522D','#2F4F4F','#800080','#2C2C2C'] 
-      : ['transparent','#FF4500','#CC7722','#B22222','#3E2723','#FF8C00','#8B4513','#191970','#4B0082','#000000'],
+    ? { 0:'transparent',1:'#FF7518',2:'#FFB347',3:'#8B0000',4:'#6B4226',5:'#FFD700',6:'#A0522D',7:'#2F4F4F',8:'#800080',9:'#2C2C2C' } 
+    : { 0:'transparent',1:'#FF4500',2:'#CC7722',3:'#B22222',4:'#3E2723',5:'#FF8C00',6:'#8B4513',7:'#191970',8:'#4B0082',9:'#000000' },
   harvestAutumn: isLightMode 
-      ? ['transparent','#FFA500','#FFB733','#FF6347','#CD853F','#FFD700','#F4A460','#8B4513','#DAA520','#A0522D'] 
-      : ['transparent','#FF8C00','#E97451','#B22222','#8B4513','#FFCC00','#D2691E','#654321','#B8860B','#5C3317']
+    ? { 0:'transparent',1:'#FFA500',2:'#FFB733',3:'#FF6347',4:'#CD853F',5:'#FFD700',6:'#F4A460',7:'#8B4513',8:'#DAA520',9:'#A0522D' } 
+    : { 0:'transparent',1:'#FF8C00',2:'#E97451',3:'#B22222',4:'#8B4513',5:'#FFCC00',6:'#D2691E',7:'#654321',8:'#B8860B',9:'#5C3317' }
 };
 
 // ----------------------------
@@ -117,7 +107,8 @@ const palettes = {
 // ----------------------------
 let colors = palettes.default;
 let array = [];
-let canvasSize = 16;
+let canvasWidth = 16;
+let canvasHeight = 16;
 let selectedColor = 0;
 let undoStack = [];
 let redoStack = [];
@@ -125,7 +116,6 @@ let allSprites = [];
 let currentSpriteIndex = 0;
 
 const canvas = document.getElementById('canvas');
-const sizeSelector = document.getElementById('sizeSelector');
 const paletteSelector = document.getElementById('paletteSelector');
 const spriteSelector = document.getElementById('spriteSelector');
 let isPainting = false;
@@ -174,12 +164,12 @@ function paintCell(cell){
 
 function renderCanvas(){
   canvas.innerHTML='';
-  const cellSize=Math.floor(Math.min(480, window.innerWidth-20)/canvasSize);
-  canvas.style.gridTemplateColumns=`repeat(${canvasSize},${cellSize}px)`;
-  canvas.style.gridTemplateRows=`repeat(${canvasSize},${cellSize}px)`;
+  const cellSize=Math.floor(Math.min(480, window.innerWidth-20)/Math.max(canvasWidth,canvasHeight));
+  canvas.style.gridTemplateColumns=`repeat(${canvasWidth},${cellSize}px)`;
+  canvas.style.gridTemplateRows=`repeat(${canvasHeight},${cellSize}px)`;
 
-  for(let y=0;y<canvasSize;y++){
-    for(let x=0;x<canvasSize;x++){
+  for(let y=0;y<canvasHeight;y++){
+    for(let x=0;x<canvasWidth;x++){
       const cell=document.createElement('div');
       cell.className='cell';
       cell.dataset.x=x;
@@ -220,8 +210,8 @@ function updateCanvasColors(){
 function loadSprite(index){
   if(!allSprites[index]) return;
   array = allSprites[index].map(r=>r.slice());
-  canvasSize = array.length; // adjust canvas size to sprite height
-  sizeSelector.value = canvasSize;
+  canvasHeight = array.length;
+  canvasWidth = array[0].length;
   undoStack=[];
   redoStack=[];
   renderCanvas();
@@ -229,7 +219,7 @@ function loadSprite(index){
 }
 
 function addNewSprite(){
-  const newSprite = Array.from({length:canvasSize},()=>Array(canvasSize).fill(0));
+  const newSprite = Array.from({length:canvasHeight},()=>Array(canvasWidth).fill(0));
   allSprites.push(newSprite);
   const opt = document.createElement('option');
   opt.value = allSprites.length-1;
@@ -242,8 +232,10 @@ function addNewSprite(){
 // ----------------------------
 // Init
 // ----------------------------
-function initCanvas(){
-  array = Array.from({length:canvasSize},()=>Array(canvasSize).fill(0));
+function initCanvas(width=16,height=16){
+  canvasWidth=width;
+  canvasHeight=height;
+  array = Array.from({length:canvasHeight},()=>Array(canvasWidth).fill(0));
   allSprites = [array.map(r=>r.slice())];
   spriteSelector.innerHTML='<option value="0">Sprite 1</option>';
   currentSpriteIndex = 0;
@@ -259,11 +251,6 @@ paletteSelector.addEventListener('change',()=>{
   selectedColor = 0;
   renderSwatches();
   updateCanvasColors();
-});
-
-sizeSelector.addEventListener('change',()=>{
-  canvasSize=parseInt(sizeSelector.value);
-  initCanvas();
 });
 
 spriteSelector.addEventListener('change',()=>{
@@ -288,15 +275,14 @@ document.getElementById('redo').addEventListener('click',()=>{
 });
 document.getElementById('clear').addEventListener('click',()=>{
   saveState();
-  array=Array.from({length:canvasSize},()=>Array(canvasSize).fill(0));
+  array=Array.from({length:canvasHeight},()=>Array(canvasWidth).fill(0));
   renderCanvas();
 });
 
 // Export
 document.getElementById('export').addEventListener('click',()=>{
   allSprites[currentSpriteIndex] = array.map(r=>r.slice());
-  const exportData = allSprites.map(spr=>spr.flat());
-  document.getElementById('output').textContent=JSON.stringify(exportData,null,4);
+  document.getElementById('output').textContent=JSON.stringify(allSprites,null,4);
 });
 
 // Import
@@ -308,37 +294,28 @@ document.getElementById('importFile').addEventListener('change',e=>{
     try{
       const imported = JSON.parse(evt.target.result);
 
-      // Detect 2D sprites or flattened
+      // Convert flattened arrays into 2D arrays
       allSprites = imported.map(spr=>{
-        if(Array.isArray(spr[0])) return spr.map(r=>r.slice()); // already 2D
-        // flattened array: attempt square first
-        let size = Math.sqrt(spr.length);
-        if(Number.isInteger(size)){
-          let grid = [];
-          for(let y=0;y<size;y++){
-            grid.push(spr.slice(y*size,(y+1)*size));
+        if(Array.isArray(spr[0])) return spr.map(r=>r.slice());
+        // If flattened, attempt to detect rectangle width/height
+        let total = spr.length;
+        const possibleSizes = [];
+        for(let h=1;h<=total;h++){
+          if(total % h === 0) possibleSizes.push([total/h,h]);
+        }
+        if(possibleSizes.length>0){
+          const [w,h] = possibleSizes[0];
+          const grid = [];
+          for(let y=0;y<h;y++){
+            grid.push(spr.slice(y*w,(y+1)*w));
           }
           return grid;
-        } else {
-          // try common rectangular sizes (16x16, 18x20, 20x18, etc)
-          const possibleSizes = [[16,16],[18,20],[20,18],[24,24],[32,32]];
-          for(let [w,h] of possibleSizes){
-            if(spr.length === w*h){
-              let grid=[];
-              for(let y=0;y<h;y++){
-                grid.push(spr.slice(y*w,(y+1)*w));
-              }
-              return grid;
-            }
-          }
-          throw 'Cannot auto-detect sprite dimensions';
         }
+        throw 'Cannot auto-detect sprite dimensions';
       });
 
-      // Set first sprite as current
       loadSprite(0);
 
-      // Populate selector
       spriteSelector.innerHTML='';
       allSprites.forEach((_,i)=>{
         const opt = document.createElement('option');
