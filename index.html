@@ -220,6 +220,8 @@ function updateCanvasColors(){
 function loadSprite(index){
   if(!allSprites[index]) return;
   array = allSprites[index].map(r=>r.slice());
+  canvasSize = array.length; // adjust canvas size to sprite height
+  sizeSelector.value = canvasSize;
   undoStack=[];
   redoStack=[];
   renderCanvas();
@@ -306,25 +308,35 @@ document.getElementById('importFile').addEventListener('change',e=>{
     try{
       const imported = JSON.parse(evt.target.result);
 
-      // Multiple sprites
-      if(Array.isArray(imported[0]) && Array.isArray(imported[0][0])){
-        allSprites = imported.map(spr=>{
-          if(spr.length !== canvasSize*canvasSize) throw 'Sprite size mismatch';
+      // Detect 2D sprites or flattened
+      allSprites = imported.map(spr=>{
+        if(Array.isArray(spr[0])) return spr.map(r=>r.slice()); // already 2D
+        // flattened array: attempt square first
+        let size = Math.sqrt(spr.length);
+        if(Number.isInteger(size)){
           let grid = [];
-          for(let y=0;y<canvasSize;y++){
-            grid.push(spr.slice(y*canvasSize,(y+1)*canvasSize));
+          for(let y=0;y<size;y++){
+            grid.push(spr.slice(y*size,(y+1)*size));
           }
           return grid;
-        });
-      } else {
-        // Single sprite
-        if(imported.length !== canvasSize*canvasSize) throw 'Invalid array length';
-        let grid = [];
-        for(let y=0;y<canvasSize;y++){
-          grid.push(imported.slice(y*canvasSize,(y+1)*canvasSize));
+        } else {
+          // try common rectangular sizes (16x16, 18x20, 20x18, etc)
+          const possibleSizes = [[16,16],[18,20],[20,18],[24,24],[32,32]];
+          for(let [w,h] of possibleSizes){
+            if(spr.length === w*h){
+              let grid=[];
+              for(let y=0;y<h;y++){
+                grid.push(spr.slice(y*w,(y+1)*w));
+              }
+              return grid;
+            }
+          }
+          throw 'Cannot auto-detect sprite dimensions';
         }
-        allSprites = [grid];
-      }
+      });
+
+      // Set first sprite as current
+      loadSprite(0);
 
       // Populate selector
       spriteSelector.innerHTML='';
@@ -334,9 +346,7 @@ document.getElementById('importFile').addEventListener('change',e=>{
         opt.textContent=`Sprite ${i+1}`;
         spriteSelector.appendChild(opt);
       });
-      currentSpriteIndex=0;
       spriteSelector.value=0;
-      loadSprite(0);
 
     }catch(err){
       alert('Invalid JSON file: '+err);
