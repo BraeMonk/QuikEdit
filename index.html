@@ -286,50 +286,60 @@ document.getElementById('export').addEventListener('click',()=>{
 });
 
 // Import
-document.getElementById('importFile').addEventListener('change',e=>{
-  const file = e.target.files[0];
-  if(!file) return;
-  const reader = new FileReader();
-  reader.onload=function(evt){
-    try{
-      const imported = JSON.parse(evt.target.result);
+document.getElementById('importFile').addEventListener('change', e => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function(evt) {
+        try {
+            let importedData = JSON.parse(evt.target.result);
 
-      // Convert flattened arrays into 2D arrays
-      allSprites = imported.map(spr=>{
-        if(Array.isArray(spr[0])) return spr.map(r=>r.slice());
-        let total = spr.length;
-        const possibleSizes = [];
-        for(let h=1;h<=total;h++){
-          if(total % h === 0) possibleSizes.push([total/h,h]);
+            // Convert object-of-sprites to array-of-sprites
+            if (!Array.isArray(importedData) && typeof importedData === 'object') {
+                importedData = Object.values(importedData);
+            }
+
+            allSprites = importedData.map(spr => {
+                if (Array.isArray(spr[0])) {
+                    // Already 2D array
+                    return spr.map(r => r.slice());
+                }
+                // Flattened array: attempt to detect rectangle dimensions
+                let total = spr.length;
+                const possibleSizes = [];
+                for (let h = 1; h <= total; h++) {
+                    if (total % h === 0) possibleSizes.push([total / h, h]);
+                }
+                if (possibleSizes.length > 0) {
+                    const [w, h] = possibleSizes[0];
+                    const grid = [];
+                    for (let y = 0; y < h; y++) {
+                        grid.push(spr.slice(y * w, (y + 1) * w));
+                    }
+                    return grid;
+                }
+                throw 'Cannot auto-detect sprite dimensions';
+            });
+
+            loadSprite(0);
+
+            // Populate sprite dropdown
+            spriteSelector.innerHTML = '';
+            allSprites.forEach((_, i) => {
+                const opt = document.createElement('option');
+                opt.value = i;
+                opt.textContent = `Sprite ${i + 1}`;
+                spriteSelector.appendChild(opt);
+            });
+            spriteSelector.value = 0;
+
+        } catch (err) {
+            alert('Invalid JSON file: ' + err);
         }
-        if(possibleSizes.length>0){
-          const [w,h] = possibleSizes[0];
-          const grid = [];
-          for(let y=0;y<h;y++){
-            grid.push(spr.slice(y*w,(y+1)*w));
-          }
-          return grid;
-        }
-        throw 'Cannot auto-detect sprite dimensions';
-      });
-
-      loadSprite(0);
-
-      spriteSelector.innerHTML='';
-      allSprites.forEach((_,i)=>{
-        const opt = document.createElement('option');
-        opt.value=i;
-        opt.textContent=`Sprite ${i+1}`;
-        spriteSelector.appendChild(opt);
-      });
-      spriteSelector.value=0;
-
-    }catch(err){
-      alert('Invalid JSON file: '+err);
-    }
-  };
-  reader.readAsText(file);
+    };
+    reader.readAsText(file);
 });
+
 </script>
 
 </body>
