@@ -52,82 +52,36 @@ const palettes = {
   default: isLightMode
     ? ['transparent', '#FFF2E0', '#FFE0B3', '#FFD8A6', '#FFCB88', '#E6B273', '#C4945E', '#A9745B', '#8B5E3C', '#6B4226', '#4A2B17']
     : ['transparent', '#E0ECFA', '#C2DAF7', '#9CC7F0', '#6FA6E0', '#4A90E2', '#2B6FB2', '#1F5FBF', '#173F80', '#0D264D', '#08162B'],
-
-  chaotic: isLightMode
-    ? ['transparent', '#FFE5E0', '#FFB3A1', '#FF7F66', '#FF6347', '#FF4500', '#E63E00', '#B22222', '#8B0000', '#660000', '#330000']
-    : ['transparent', '#FFB3A1', '#FF7F66', '#FF6347', '#FF4500', '#E63E00', '#B22222', '#8B0000', '#660000', '#330000', '#1A0000'],
-
-  neutral: isLightMode
-    ? ['transparent', '#F8F0FF', '#E0CFFF', '#D8BFFF', '#B58ED9', '#9C6AC7', '#7D3C98', '#6A0DAD', '#4B0082', '#3A0066', '#250044']
-    : ['transparent', '#E0CFFF', '#D8BFFF', '#B58ED9', '#9C6AC7', '#7D3C98', '#6A0DAD', '#4B0082', '#330055', '#1E0033', '#0F001A'],
-
-  noir: isLightMode
-    ? ['transparent', '#FFFFFF', '#DDDDDD', '#BBBBBB', '#999999', '#777777', '#555555', '#333333', '#111111', '#000000']
-    : ['transparent', '#FFFFFF', '#DDDDDD', '#BBBBBB', '#999999', '#777777', '#555555', '#333333', '#111111', '#000000'],
-
-  forest: isLightMode
-    ? ['transparent', '#E5F7EC', '#C3EED3', '#A9DFBF', '#82E0AA', '#58C48F', '#2E8B57', '#1B5E20', '#145C17', '#0C3B0F', '#061F08']
-    : ['transparent', '#C3EED3', '#A9DFBF', '#82E0AA', '#58C48F', '#2E8B57', '#1B5E20', '#145C17', '#0C3B0F', '#061F08', '#020C04'],
-
+  candy: isLightMode
+    ? ['transparent', '#FF6B6B', '#FFA94D', '#FFD93D', '#6BCB77', '#4D96FF', '#9D4EDD', '#FF8FAB', '#FFB5E8', '#FFDEE9', '#FFFFFF']
+    : ['transparent', '#FF8787', '#FFB86B', '#FFE066', '#8CE99A', '#74C0FC', '#B197FC', '#FF99C8', '#FFB3DE', '#FFC2E5', '#F8F9FA'],
+  desert: isLightMode
+    ? ['transparent', '#F4E1D2', '#E2B07E', '#D89C5C', '#C97B3D', '#A0522D', '#8B5E3C', '#6B4226', '#4B2E1F', '#2E1A12', '#000000']
+    : ['transparent', '#E6CBB3', '#D4A373', '#BF8040', '#A0522D', '#7B4B24', '#5C3720', '#3E2414', '#24140D', '#120A06', '#000000'],
+  ocean: isLightMode
+    ? ['transparent', '#A2D2FF', '#80C0FF', '#5AA9FA', '#4682B4', '#2E5984', '#1B3B5F', '#0F2A44', '#082136', '#041626', '#000814']
+    : ['transparent', '#90C8F8', '#66AEEF', '#3D91E0', '#2E6FA3', '#1D4E72', '#103552', '#0A2438', '#061C2B', '#03111B', '#000814'],
+  ember: isLightMode
+    ? ['transparent', '#FFF3B0', '#FFD93D', '#FFA200', '#FF6B35', '#E63946', '#B51709', '#800F00', '#4D0600', '#260300', '#0D0000']
+    : ['transparent', '#FFE066', '#FFC300', '#FF8C00', '#FF5733', '#C70039', '#900C3F', '#581845', '#2C0B27', '#160513', '#0B0208'],
+  meadow: isLightMode
+    ? ['transparent', '#E0F7E9', '#B2F2BB', '#8CE99A', '#69DB7C', '#38D9A9', '#20C997', '#12B886', '#0CA678', '#087F5B', '#045040']
+    : ['transparent', '#C3F5D5', '#96E6A8', '#70D78B', '#4CB372', '#31A67F', '#24916B', '#1A7257', '#115745', '#0A3A2D', '#041E16'],
   neon: isLightMode
-    ? ['transparent', '#FFB3FF', '#FF66FF', '#FF00FF', '#CC00CC', '#990099', '#660066', '#33FFFF', '#00FFFF', '#00CCCC', '#009999']
-    : ['transparent', '#B3FFFF', '#66FFFF', '#00FFFF', '#33CCCC', '#00CCCC', '#009999', '#FF66FF', '#FF00FF', '#CC00CC', '#990099'],
-
-  solar: isLightMode
-    ? ['transparent', '#FFF5CC', '#FFE6A3', '#FFD580', '#FFCB66', '#FF8C00', '#E67E22', '#CC7000', '#B35900', '#803D00', '#4D2400']
-    : ['transparent', '#FFE6A3', '#FFD580', '#FFCB66', '#FF8C00', '#E67E22', '#CC7000', '#B35900', '#803D00', '#4D2400', '#261200'],
-
-  glacial: isLightMode
-    ? ['transparent', '#F0FAFF', '#D6EAF8', '#B3E5FC', '#A9DDF2', '#85C1E9', '#5DADE2', '#2E86C1', '#154360', '#0E2B3F', '#061522']
-    : ['transparent', '#EBF5FB', '#D6EAF8', '#B3E5FC', '#AED6F1', '#85C1E9', '#5DADE2', '#2E86C1', '#154360', '#0E2B3F', '#061522'],
-
-  cosmic: isLightMode
-    ? ['transparent', '#F0E6FF', '#E0B0FF', '#D8A0FF', '#B47CD9', '#8A2BE2', '#5C1F80', '#2C003E', '#1A0010', '#12001A', '#0A000C']
-    : ['transparent', '#E0B0FF', '#D8A0FF', '#B47CD9', '#8A2BE2', '#5C1F80', '#2C003E', '#1A0010', '#12001A', '#0A000C'],
-
-  blossom: isLightMode
-    ? ['transparent', '#FFF7FF', '#FFE5B4', '#FFF0D6', '#E6E6FA', '#D8BFD8', '#CDAACD', '#98FB98', '#90EE90', '#70CC70', '#4D994D']
-    : ['transparent', '#FFCC99', '#FFB07C', '#E6E6FA', '#D8BFD8', '#B0A0C0', '#8B7BA0', '#66CDAA', '#55AA88', '#3B7A5C', '#20402E'],
-
-  volt: isLightMode
-    ? ['transparent', '#FFFFCC', '#FFFF66', '#FFFACD', '#FFD700', '#FFC300', '#FF8C00', '#FF7F00', '#CC6600', '#993D00', '#662600']
-    : ['transparent', '#FFFFCC', '#FFFF66', '#FFFACD', '#FFD700', '#FFC300', '#FF8C00', '#FF7F00', '#CC6600', '#993D00', '#662600'],
-
-  retro: isLightMode
-    ? ['transparent', '#FFD1E8', '#FF69B4', '#FF1493', '#8B008B', '#800080', '#660066', '#00CED1', '#20B2AA', '#008B8B', '#005555']
-    : ['transparent', '#FFD1E8', '#FF69B4', '#FF1493', '#8B008B', '#800080', '#660066', '#00CED1', '#20B2AA', '#008B8B', '#005555'],
-
-  lunar: isLightMode
-    ? ['transparent', '#FFFFFF', '#F8F8FF', '#E6E6FA', '#D3D3F0', '#C0C0C0', '#B0C4DE', '#B0B0C0', '#9090A0', '#707080']
-    : ['transparent', '#C0C0C0', '#B0C4DE', '#90A0A0', '#708090', '#556B6B', '#404040', '#2F4F4F', '#1E2E2E', '#0F1717'],
-
-  binary: isLightMode
-    ? ['transparent', '#FFFFFF', '#D3D3D3', '#AAAAAA', '#708090', '#5A6B7D', '#444444', '#32CD32', '#228B22', '#116611', '#003300']
-    : ['transparent', '#AAFFAA', '#66FF66', '#33FF33', '#00FF00', '#00CC00', '#008000', '#005500', '#003300', '#001A00', '#000000'],
-
-  earthy: isLightMode
-    ? ['transparent', '#F5E0C0', '#DEB887', '#CD853F', '#B87333', '#A0522D', '#8B5A2B', '#7F5217', '#6B8E23', '#556B2F', '#4F6228']
-    : ['transparent', '#D2B48C', '#A67B5B', '#8B4513', '#7C3600', '#654321', '#4B2E1F', '#32CD32', '#228B22', '#1F4D1F', '#0D260D'],
-
-  halloweenAutumn: isLightMode
-    ? ['transparent', '#FFD699', '#FFB347', '#FF7518', '#FF8C00', '#FFD700', '#A0522D', '#6B4226', '#8B0000', '#800080', '#2C2C2C']
-    : ['transparent', '#FFB347', '#FF8C00', '#FF7518', '#CC7722', '#B22222', '#8B4513', '#3E2723', '#191970', '#4B0082', '#000000'],
-
-  harvestAutumn: isLightMode
-    ? ['transparent', '#FFE6B3', '#FFB733', '#FFA500', '#FFD700', '#DAA520', '#CD853F', '#A0522D', '#8B4513', '#6B4226', '#5C3317']
-    : ['transparent', '#FFCC00', '#FF8C00', '#E97451', '#D2691E', '#B22222', '#8B4513', '#7C3600', '#654321', '#5C3317', '#2E1A0F'],
-
-  neoTokyo: isLightMode
-    ? ['transparent', '#FFCCE0', '#FF69B4', '#FF0055', '#BA55D3', '#9370DB', '#5D00FF', '#40E0D0', '#00BCD4', '#FFD700', '#EEEEEE']
-    : ['transparent', '#FFCCE0', '#FF1493', '#FF0055', '#BA55D3', '#8A2BE2', '#5D00FF', '#20B2AA', '#00FFE0', '#FFCC00', '#222222'],
-
-  dreamcore: isLightMode
-    ? ['transparent', '#FEF6E4', '#FFEBd6', '#FCD5CE', '#FFC8DD', '#CDB4DB', '#A2D2FF', '#BDE0FE', '#E2ECE9', '#D8E2DC', '#A8B0B0']
-    : ['transparent', '#A88C70', '#B08080', '#A07090', '#8A6FA3', '#6FAAC2', '#5A8BB0', '#7A8F88', '#909090', '#2C2C2C', '#141414'],
-
-  medievalFantasy: isLightMode
-  ? ['transparent', '#2B0A0A', '#5C0D1A', '#8B1C3C', '#6B1B5F', '#8A2BE2', '#BFA77F', '#D4AF37', '#A9A9A9', '#EDEDED', '#FFFFFF']
-  : ['transparent', '#2B0A0A', '#5C0D1A', '#8B1C3C', '#6B1B5F', '#8A2BE2', '#BFA77F', '#D4AF37', '#A9A9A9', '#EDEDED', '#FFFFFF'],
+    ? ['transparent', '#FF00FF', '#FF1493', '#FF4500', '#FFD700', '#ADFF2F', '#00FF7F', '#00FFFF', '#1E90FF', '#8A2BE2', '#FFFFFF']
+    : ['transparent', '#FF4DFF', '#FF69B4', '#FF6347', '#FFE066', '#C0FF66', '#66FFB2', '#66FFFF', '#66A3FF', '#B266FF', '#F8F9FA'],
+  pastel: isLightMode
+    ? ['transparent', '#FFB5E8', '#FFDEB4', '#FFF5BA', '#B5EAD7', '#C7CEEA', '#E0BBE4', '#FEC8D8', '#D8E2DC', '#F1F0C0', '#FFFFFF']
+    : ['transparent', '#FF99CC', '#FFCC99', '#FFF2A8', '#99E2C3', '#A8B9E6', '#C7A9D6', '#F5A3C7', '#CFCFCF', '#EAE6B8', '#F8F9FA'],
+  gothic: isLightMode
+    ? ['transparent', '#1A1A1A', '#2E2E2E', '#444444', '#5E2750', '#87255B', '#D90368', '#FF6F61', '#C9ADA7', '#EAEAEA', '#FFFFFF']
+    : ['transparent', '#000000', '#1A1A1A', '#333333', '#5E2750', '#7A1E48', '#B30C5C', '#FF4F5E', '#A99A93', '#D6D6D6', '#F5F5F5'],
+  aurora: isLightMode
+    ? ['transparent', '#A5FFD6', '#82FFC7', '#5DFDCB', '#3EDBF0', '#3B9AE1', '#6F69AC', '#9D4EDD', '#FF5D8F', '#FF87AB', '#FFFFFF']
+    : ['transparent', '#7DFFBF', '#5AF7B0', '#32E1B5', '#1EB7D8', '#2070B0', '#514080', '#7A29C6', '#FF4D7A', '#FF6F9F', '#F8F9FA'],
+  clay: isLightMode
+    ? ['transparent', '#F5E0C0', '#E0C097', '#CC9B6D', '#B0724A', '#8C4A2F', '#6E3923', '#4E2817', '#321B10', '#1A0D08', '#000000']
+    : ['transparent', '#EAD2B0', '#D1A374', '#B97849', '#8E5432', '#6B3C24', '#502C1A', '#361E12', '#22120B', '#120805', '#000000'],
 };
 
 // ----------------------------
