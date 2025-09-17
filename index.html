@@ -99,7 +99,37 @@ const palettes = {
     : ['transparent','#FF4500','#CC7722','#B22222','#3E2723','#FF8C00','#8B4513','#191970','#4B0082','#000000'],
   harvestAutumn: isLightMode
     ? ['transparent','#FFA500','#FFB733','#FF6347','#CD853F','#FFD700','#F4A460','#8B4513','#DAA520','#A0522D']
-    : ['transparent','#FF8C00','#E97451','#B22222','#8B4513','#FFCC00','#D2691E','#654321','#B8860B','#5C3317']
+    : ['transparent','#FF8C00','#E97451','#B22222','#8B4513','#FFCC00','#D2691E','#654321','#B8860B','#5C3317'],
+  abyssal: isLightMode
+    ? { 0: 'transparent', 1: '#001f3f', 2: '#0074D9', 3: '#003366', 4: '#00BFFF', 5: '#001f3f', 6: '#0074D9', 7: '#005f99', 8: '#66CCFF', 9: '#000f1a' }
+    : { 0: 'transparent', 1: '#00BFFF', 2: '#001f3f', 3: '#66CCFF', 4: '#003366', 5: '#00BFFF', 6: '#001f3f', 7: '#66CCFF', 8: '#005f99', 9: '#000f1a' },
+  toxic: isLightMode
+    ? { 0: 'transparent', 1: '#39FF14', 2: '#ADFF2F', 3: '#8A2BE2', 4: '#7FFF00', 5: '#39FF14', 6: '#ADFF2F', 7: '#9400D3', 8: '#B0FF1A', 9: '#4B0082' }
+    : { 0: 'transparent', 1: '#ADFF2F', 2: '#39FF14', 3: '#9400D3', 4: '#7FFF00', 5: '#ADFF2F', 6: '#39FF14', 7: '#B0FF1A', 8: '#8A2BE2', 9: '#4B0082' },
+  desert: isLightMode
+    ? { 0: 'transparent', 1: '#C19A6B', 2: '#F4E2D8', 3: '#A0522D', 4: '#FFDAB9', 5: '#C19A6B', 6: '#F4E2D8', 7: '#DEB887', 8: '#FFE4B5', 9: '#8B4513' }
+    : { 0: 'transparent', 1: '#FFDAB9', 2: '#C19A6B', 3: '#F4E2D8', 4: '#A0522D', 5: '#FFDAB9', 6: '#C19A6B', 7: '#FFE4B5', 8: '#DEB887', 9: '#8B4513' },
+  crystal: isLightMode
+    ? { 0: 'transparent', 1: '#E0FFFF', 2: '#AFEEEE', 3: '#B0E0E6', 4: '#ADD8E6', 5: '#E0FFFF', 6: '#AFEEEE', 7: '#D1EEEE', 8: '#BFEFFF', 9: '#AEEEEE' }
+    : { 0: 'transparent', 1: '#AFEEEE', 2: '#E0FFFF', 3: '#ADD8E6', 4: '#B0E0E6', 5: '#AFEEEE', 6: '#E0FFFF', 7: '#BFEFFF', 8: '#D1EEEE', 9: '#AEEEEE' },
+  vintage: isLightMode
+    ? { 0: 'transparent', 1: '#A67B5B', 2: '#D2B48C', 3: '#C0A080', 4: '#F5DEB3', 5: '#A67B5B', 6: '#D2B48C', 7: '#B8860B', 8: '#FFE4C4', 9: '#8B5A2B' }
+    : { 0: 'transparent', 1: '#D2B48C', 2: '#A67B5B', 3: '#F5DEB3', 4: '#C0A080', 5: '#D2B48C', 6: '#A67B5B', 7: '#FFE4C4', 8: '#B8860B', 9: '#8B5A2B' },
+  cyberpunk: isLightMode
+    ? { 0: 'transparent', 1: '#FF00FF', 2: '#00FFFF', 3: '#FF1493', 4: '#00CED1', 5: '#FF00FF', 6: '#00FFFF', 7: '#FF69B4', 8: '#20B2AA', 9: '#8A2BE2' }
+    : { 0: 'transparent', 1: '#00FFFF', 2: '#FF00FF', 3: '#00CED1', 4: '#FF1493', 5: '#00FFFF', 6: '#FF00FF', 7: '#20B2AA', 8: '#FF69B4', 9: '#8A2BE2' },
+  candy: isLightMode
+    ? { 0: 'transparent', 1: '#FFB6C1', 2: '#FFD700', 3: '#FF69B4', 4: '#ADFF2F', 5: '#FFB6C1', 6: '#FFD700', 7: '#FF1493', 8: '#FFFFE0', 9: '#FFA07A' }
+    : { 0: 'transparent', 1: '#FFD700', 2: '#FFB6C1', 3: '#ADFF2F', 4: '#FF69B4', 5: '#FFD700', 6: '#FFB6C1', 7: '#FFFFE0', 8: '#FF1493', 9: '#FFA07A' },
+  tundra: isLightMode
+    ? { 0: 'transparent', 1: '#DCDCDC', 2: '#F5F5F5', 3: '#A9A9A9', 4: '#E0FFFF', 5: '#DCDCDC', 6: '#F5F5F5', 7: '#B0C4DE', 8: '#F8F8FF', 9: '#778899' }
+    : { 0: 'transparent', 1: '#A9A9A9', 2: '#DCDCDC', 3: '#778899', 4: '#F5F5F5', 5: '#A9A9A9', 6: '#DCDCDC', 7: '#F8F8FF', 8: '#B0C4DE', 9: '#708090' },
+  ember: isLightMode
+    ? { 0: 'transparent', 1: '#FF4500', 2: '#FF6347', 3: '#B22222', 4: '#FFD700', 5: '#FF4500', 6: '#FF6347', 7: '#DC143C', 8: '#FFA07A', 9: '#8B0000' }
+    : { 0: 'transparent', 1: '#FFD700', 2: '#FF4500', 3: '#DC143C', 4: '#B22222', 5: '#FFD700', 6: '#FF4500', 7: '#FFA07A', 8: '#FF6347', 9: '#8B0000' },
+  moss: isLightMode
+    ? { 0: 'transparent', 1: '#556B2F', 2: '#9ACD32', 3: '#6B8E23', 4: '#ADFF2F', 5: '#556B2F', 6: '#9ACD32', 7: '#7CFC00', 8: '#C0FF3E', 9: '#4F6228' }
+    : { 0: 'transparent', 1: '#9ACD32', 2: '#556B2F', 3: '#ADFF2F', 4: '#6B8E23', 5: '#9ACD32', 6: '#556B2F', 7: '#C0FF3E', 8: '#7CFC00', 9: '#4F6228' }
 };
 
 // ----------------------------
