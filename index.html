@@ -49,67 +49,85 @@ const isLightMode = true; // change to false for dark variants
 // Inline themes (arrays now)
 // ----------------------------
 const palettes = {
-  default: isLightMode
-    ? ['transparent','#8B5E3C','#FFD8A6','#5C3A25','#FFCB88','#8B5E3C','#FFD8A6','#A9745B','#FFE0B3','#6B4226']
-    : ['transparent','#4a90e2','#ffffff','#1f5fbf','#9cc7f0','#4a90e2','#ffffff','#2b6fb2','#cce6ff','#173f80'],
-  chaotic: isLightMode
-    ? ['transparent','#8B0000','#FF4500','#4B0000','#FF6347','#8B0000','#FF4500','#B22222','#FF7F50','#6B0000']
-    : ['transparent','#FF4500','#8B0000','#FF6347','#4B0000','#FF4500','#8B0000','#FF7F50','#B22222','#660000'],
-  neutral: isLightMode
-    ? ['transparent','#6A0DAD','#E0CFFF','#4B0082','#D8BFFF','#6A0DAD','#E0CFFF','#7D3C98','#F0D6FF','#3A0066']
-    : ['transparent','#E0CFFF','#6A0DAD','#D8BFFF','#4B0082','#E0CFFF','#6A0DAD','#F0D6FF','#7D3C98','#330055'],
-  noir: isLightMode
-    ? ['transparent','#333333','#DDDDDD','#000000','#FFFFFF','#333333','#DDDDDD','#555555','#BBBBBB','#111111']
-    : ['transparent','#DDDDDD','#333333','#FFFFFF','#000000','#DDDDDD','#333333','#BBBBBB','#555555','#111111'],
-  forest: isLightMode
-    ? ['transparent','#2E8B57','#A9DFBF','#1B5E20','#82E0AA','#2E8B57','#A9DFBF','#1A4720','#74D6A2','#145C17']
-    : ['transparent','#A9DFBF','#2E8B57','#82E0AA','#1B5E20','#A9DFBF','#2E8B57','#74D6A2','#145C17','#1A4720'],
-  neon: isLightMode
-    ? ['transparent','#FF00FF','#00FFFF','#990099','#66FFFF','#FF00FF','#00FFFF','#CC00CC','#33FFFF','#660066']
-    : ['transparent','#00FFFF','#FF00FF','#66FFFF','#990099','#00FFFF','#FF00FF','#33FFFF','#CC00CC','#660066'],
-  solar: isLightMode
-    ? ['transparent','#FF8C00','#FFF5CC','#CC7000','#FFD580','#FF8C00','#FFF5CC','#E67E22','#FFE6A3','#B35900']
-    : ['transparent','#FFD580','#FF8C00','#FFF5CC','#CC7000','#FFD580','#FF8C00','#FFE6A3','#E67E22','#B35900'],
-  glacial: isLightMode
-    ? ['transparent','#F0FAFF','#D6EAF8','#A9DDF2','#85C1E9','#B3E5FC','#AED6F1','#5DADE2','#2E86C1','#154360']
-    : ['transparent','#EBF5FB','#AED6F1','#5DADE2','#D6EAF8','#A9DDF2','#EBF5FB','#AED6F1','#5DADE2','#154360'],
-  cosmic: isLightMode
-    ? ['transparent','#2C003E','#E0B0FF','#12001A','#8A2BE2','#2C003E','#E0B0FF','#5C1F80','#D8A0FF','#1A0010']
-    : ['transparent','#8A2BE2','#E0B0FF','#2C003E','#12001A','#8A2BE2','#E0B0FF','#5C1F80','#D8A0FF','#1A0010'],
-  blossom: isLightMode
-    ? ['transparent','#E6E6FA','#FFE5B4','#98FB98','#FFFFFF','#E6E6FA','#FFE5B4','#D8BFD8','#FFF0D6','#90EE90']
-    : ['transparent','#D8BFD8','#FFB07C','#66CDAA','#E6E6FA','#D8BFD8','#FFB07C','#B0A0C0','#FFCC99','#55AA88'],
-  volt: isLightMode
-    ? ['transparent','#FFD700','#FFFFFF','#FF8C00','#FFFF66','#FFD700','#FFFFFF','#FFC300','#FFFACD','#FF7F00']
-    : ['transparent','#FFFF66','#FFD700','#FFFFFF','#FF8C00','#FFFF66','#FFD700','#FFFACD','#FFC300','#FF7F00'],
-  retro: isLightMode
-    ? ['transparent','#FF69B4','#00CED1','#8B008B','#FFD700','#FF69B4','#00CED1','#FF1493','#20B2AA','#800080']
-    : ['transparent','#00CED1','#FF69B4','#FFD700','#8B008B','#00CED1','#FF69B4','#20B2AA','#FF1493','#800080'],
-  lunar: isLightMode
-    ? ['transparent','#F8F8FF','#C0C0C0','#B0C4DE','#E6E6FA','#F8F8FF','#C0C0C0','#D3D3F0','#E0E0E8','#B0B0C0']
-    : ['transparent','#2F4F4F','#708090','#B0C4DE','#C0C0C0','#2F4F4F','#708090','#556B6B','#90A0A0','#404040'],
-  binary: isLightMode
-    ? ['transparent','#708090','#B22222','#32CD32','#D3D3D3','#708090','#B22222','#5A6B7D','#FF4040','#228B22']
-    : ['transparent','#000000','#00FF00','#008000','#AAFFAA','#000000','#00FF00','#005500','#33FF33','#003300'],
-  earthy: isLightMode
-    ? ['transparent','#8B5A2B','#A0522D','#556B2F','#6B8E23','#CD853F','#9ACD32','#7F5217','#B87333','#4F6228']
-    : ['transparent','#654321','#8B4513','#228B22','#32CD32','#A0522D','#ADFF2F','#4B2E1F','#7C3600','#1F4D1F'],
-  halloweenAutumn: isLightMode
-    ? ['transparent','#FF7518','#FFB347','#8B0000','#6B4226','#FFD700','#A0522D','#2F4F4F','#800080','#2C2C2C']
-    : ['transparent','#FF4500','#CC7722','#B22222','#3E2723','#FF8C00','#8B4513','#191970','#4B0082','#000000'],
-  harvestAutumn: isLightMode
-    ? ['transparent','#FFA500','#FFB733','#FF6347','#CD853F','#FFD700','#F4A460','#8B4513','#DAA520','#A0522D']
-    : ['transparent','#FF8C00','#E97451','#B22222','#8B4513','#FFCC00','#D2691E','#654321','#B8860B','#5C3317'],
-  neoTokyo: isLightMode
-    ? ['transparent', '#ff0055', '#00bcd4', '#eeeeee', '#ffd700', '#ba55d3', '#ff69b4', '#40e0d0', '#9370db', '#ffffff']
-    : ['transparent', '#ff0055', '#00ffe0', '#222222', '#ffcc00', '#8a2be2', '#ff1493', '#20b2aa', '#5d00ff', '#0f0f0f'],
-  dreamcore: isLightMode
-    ? ['transparent', '#fcd5ce', '#cdb4db', '#a2d2ff', '#bde0fe', '#ffc8dd', '#d8e2dc', '#e2ece9', '#ffebd6', '#fef6e4']
-    : ['transparent', '#b08080', '#8a6fa3', '#5a8bb0', '#6faac2', '#a07090', '#909090', '#7a8f88', '#a88c70', '#2c2c2c'],
-  medievalFantasy: isLightMode
-    ? ['transparent', '#8b5a2b', '#c0a080', '#556b2f', '#d2b48c', '#6b4226', '#bfa77f', '#a0522d', '#deb887', '#f5f0e1']
-    : ['transparent', '#5c3317', '#8b5a2b', '#3b5323', '#a67b5b', '#4b3621', '#7f684e', '#6b4226', '#8b7765', '#2e1f0f'],
+  default: isLightMode 
+    ? [0, 'transparent', 1, '#FFF2E0', 2, '#FFE0B3', 3, '#FFD8A6', 4, '#FFCB88', 5, '#E6B273', 6, '#C4945E', 7, '#A9745B', 8, '#8B5E3C', 9, '#6B4226', 10, '#4A2B17']
+    : [0, 'transparent', 1, '#E0ECFA', 2, '#C2DAF7', 3, '#9CC7F0', 4, '#6FA6E0', 5, '#4A90E2', 6, '#2B6FB2', 7, '#1F5FBF', 8, '#173F80', 9, '#0D264D', 10, '#08162B'],
 
+  chaotic: isLightMode
+    ? [0, 'transparent', 1, '#FFE5E0', 2, '#FFB3A1', 3, '#FF7F66', 4, '#FF6347', 5, '#FF4500', 6, '#E63E00', 7, '#B22222', 8, '#8B0000', 9, '#660000', 10, '#330000']
+    : [0, 'transparent', 1, '#FFB3A1', 2, '#FF7F66', 3, '#FF6347', 4, '#FF4500', 5, '#E63E00', 6, '#B22222', 7, '#8B0000', 8, '#660000', 9, '#330000', 10, '#1A0000'],
+
+  neutral: isLightMode
+    ? [0, 'transparent', 1, '#F8F0FF', 2, '#E0CFFF', 3, '#D8BFFF', 4, '#B58ED9', 5, '#9C6AC7', 6, '#7D3C98', 7, '#6A0DAD', 8, '#4B0082', 9, '#3A0066', 10, '#250044']
+    : [0, 'transparent', 1, '#E0CFFF', 2, '#D8BFFF', 3, '#B58ED9', 4, '#9C6AC7', 5, '#7D3C98', 6, '#6A0DAD', 7, '#4B0082', 8, '#330055', 9, '#1E0033', 10, '#0F001A'],
+
+  noir: isLightMode
+    ? [0, 'transparent', 1, '#FFFFFF', 2, '#DDDDDD', 3, '#BBBBBB', 4, '#999999', 5, '#777777', 6, '#555555', 7, '#333333', 8, '#111111', 9, '#000000']
+    : [0, 'transparent', 1, '#FFFFFF', 2, '#DDDDDD', 3, '#BBBBBB', 4, '#999999', 5, '#777777', 6, '#555555', 7, '#333333', 8, '#111111', 9, '#000000'],
+
+  forest: isLightMode
+    ? [0, 'transparent', 1, '#E5F7EC', 2, '#C3EED3', 3, '#A9DFBF', 4, '#82E0AA', 5, '#58C48F', 6, '#2E8B57', 7, '#1B5E20', 8, '#145C17', 9, '#0C3B0F', 10, '#061F08']
+    : [0, 'transparent', 1, '#C3EED3', 2, '#A9DFBF', 3, '#82E0AA', 4, '#58C48F', 5, '#2E8B57', 6, '#1B5E20', 7, '#145C17', 8, '#0C3B0F', 9, '#061F08', 10, '#020C04'],
+
+  neon: isLightMode
+    ? [0, 'transparent', 1, '#FFB3FF', 2, '#FF66FF', 3, '#FF00FF', 4, '#CC00CC', 5, '#990099', 6, '#660066', 7, '#33FFFF', 8, '#00FFFF', 9, '#00CCCC', 10, '#009999']
+    : [0, 'transparent', 1, '#B3FFFF', 2, '#66FFFF', 3, '#00FFFF', 4, '#33CCCC', 5, '#00CCCC', 6, '#009999', 7, '#FF66FF', 8, '#FF00FF', 9, '#CC00CC', 10, '#990099'],
+
+  solar: isLightMode
+    ? [0, 'transparent', 1, '#FFF5CC', 2, '#FFE6A3', 3, '#FFD580', 4, '#FFCB66', 5, '#FF8C00', 6, '#E67E22', 7, '#CC7000', 8, '#B35900', 9, '#803D00', 10, '#4D2400']
+    : [0, 'transparent', 1, '#FFE6A3', 2, '#FFD580', 3, '#FFCB66', 4, '#FF8C00', 5, '#E67E22', 6, '#CC7000', 7, '#B35900', 8, '#803D00', 9, '#4D2400', 10, '#261200'],
+
+  glacial: isLightMode
+    ? [0, 'transparent', 1, '#F0FAFF', 2, '#D6EAF8', 3, '#B3E5FC', 4, '#A9DDF2', 5, '#85C1E9', 6, '#5DADE2', 7, '#2E86C1', 8, '#154360', 9, '#0E2B3F', 10, '#061522']
+    : [0, 'transparent', 1, '#EBF5FB', 2, '#D6EAF8', 3, '#B3E5FC', 4, '#AED6F1', 5, '#85C1E9', 6, '#5DADE2', 7, '#2E86C1', 8, '#154360', 9, '#0E2B3F', 10, '#061522'],
+
+  cosmic: isLightMode
+    ? [0, 'transparent', 1, '#F0E6FF', 2, '#E0B0FF', 3, '#D8A0FF', 4, '#B47CD9', 5, '#8A2BE2', 6, '#5C1F80', 7, '#2C003E', 8, '#1A0010', 9, '#12001A', 10, '#0A000C']
+    : [0, 'transparent', 1, '#E0B0FF', 2, '#D8A0FF', 3, '#B47CD9', 4, '#8A2BE2', 5, '#5C1F80', 6, '#2C003E', 7, '#1A0010', 8, '#12001A', 9, '#0A000C'],
+
+  blossom: isLightMode
+    ? [0, 'transparent', 1, '#FFF7FF', 2, '#FFE5B4', 3, '#FFF0D6', 4, '#E6E6FA', 5, '#D8BFD8', 6, '#CDAACD', 7, '#98FB98', 8, '#90EE90', 9, '#70CC70', 10, '#4D994D']
+    : [0, 'transparent', 1, '#FFCC99', 2, '#FFB07C', 3, '#E6E6FA', 4, '#D8BFD8', 5, '#B0A0C0', 6, '#8B7BA0', 7, '#66CDAA', 8, '#55AA88', 9, '#3B7A5C', 10, '#20402E'],
+
+  volt: isLightMode
+    ? [0, 'transparent', 1, '#FFFFCC', 2, '#FFFF66', 3, '#FFFACD', 4, '#FFD700', 5, '#FFC300', 6, '#FF8C00', 7, '#FF7F00', 8, '#CC6600', 9, '#993D00', 10, '#662600']
+    : [0, 'transparent', 1, '#FFFFCC', 2, '#FFFF66', 3, '#FFFACD', 4, '#FFD700', 5, '#FFC300', 6, '#FF8C00', 7, '#FF7F00', 8, '#CC6600', 9, '#993D00', 10, '#662600'],
+
+  retro: isLightMode
+    ? [0, 'transparent', 1, '#FFD1E8', 2, '#FF69B4', 3, '#FF1493', 4, '#8B008B', 5, '#800080', 6, '#660066', 7, '#00CED1', 8, '#20B2AA', 9, '#008B8B', 10, '#005555']
+    : [0, 'transparent', 1, '#FFD1E8', 2, '#FF69B4', 3, '#FF1493', 4, '#8B008B', 5, '#800080', 6, '#660066', 7, '#00CED1', 8, '#20B2AA', 9, '#008B8B', 10, '#005555'],
+
+  lunar: isLightMode
+    ? [0, 'transparent', 1, '#FFFFFF', 2, '#F8F8FF', 3, '#E6E6FA', 4, '#D3D3F0', 5, '#C0C0C0', 6, '#B0C4DE', 7, '#B0B0C0', 8, '#9090A0', 9, '#707080']
+    : [0, 'transparent', 1, '#C0C0C0', 2, '#B0C4DE', 3, '#90A0A0', 4, '#708090', 5, '#556B6B', 6, '#404040', 7, '#2F4F4F', 8, '#1E2E2E', 9, '#0F1717'],
+
+  binary: isLightMode
+    ? [0, 'transparent', 1, '#FFFFFF', 2, '#D3D3D3', 3, '#AAAAAA', 4, '#708090', 5, '#5A6B7D', 6, '#444444', 7, '#32CD32', 8, '#228B22', 9, '#116611', 10, '#003300']
+    : [0, 'transparent', 1, '#AAFFAA', 2, '#66FF66', 3, '#33FF33', 4, '#00FF00', 5, '#00CC00', 6, '#008000', 7, '#005500', 8, '#003300', 9, '#001A00', 10, '#000000'],
+
+  earthy: isLightMode
+    ? [0, 'transparent', 1, '#F5E0C0', 2, '#DEB887', 3, '#CD853F', 4, '#B87333', 5, '#A0522D', 6, '#8B5A2B', 7, '#7F5217', 8, '#6B8E23', 9, '#556B2F', 10, '#4F6228']
+    : [0, 'transparent', 1, '#D2B48C', 2, '#A67B5B', 3, '#8B4513', 4, '#7C3600', 5, '#654321', 6, '#4B2E1F', 7, '#32CD32', 8, '#228B22', 9, '#1F4D1F', 10, '#0D260D'],
+
+  halloweenAutumn: isLightMode
+    ? [0, 'transparent', 1, '#FFD699', 2, '#FFB347', 3, '#FF7518', 4, '#FF8C00', 5, '#FFD700', 6, '#A0522D', 7, '#6B4226', 8, '#8B0000', 9, '#800080', 10, '#2C2C2C']
+    : [0, 'transparent', 1, '#FFB347', 2, '#FF8C00', 3, '#FF7518', 4, '#CC7722', 5, '#B22222', 6, '#8B4513', 7, '#3E2723', 8, '#191970', 9, '#4B0082', 10, '#000000'],
+
+  harvestAutumn: isLightMode
+    ? [0, 'transparent', 1, '#FFE6B3', 2, '#FFB733', 3, '#FFA500', 4, '#FFD700', 5, '#DAA520', 6, '#CD853F', 7, '#A0522D', 8, '#8B4513', 9, '#6B4226', 10, '#5C3317']
+    : [0, 'transparent', 1, '#FFCC00', 2, '#FF8C00', 3, '#E97451', 4, '#D2691E', 5, '#B22222', 6, '#8B4513', 7, '#7C3600', 8, '#654321', 9, '#5C3317', 10, '#2E1A0F'],
+
+  neoTokyo: isLightMode
+    ? [0, 'transparent', 1, '#FFCCE0', 2, '#FF69B4', 3, '#FF0055', 4, '#BA55D3', 5, '#9370DB', 6, '#5D00FF', 7, '#40E0D0', 8, '#00BCD4', 9, '#FFD700', 10, '#EEEEEE']
+    : [0, 'transparent', 1, '#FFCCE0', 2, '#FF1493', 3, '#FF0055', 4, '#BA55D3', 5, '#8A2BE2', 6, '#5D00FF', 7, '#20B2AA', 8, '#00FFE0', 9, '#FFCC00', 10, '#222222'],
+
+  dreamcore: isLightMode
+    ? [0, 'transparent', 1, '#FEF6E4', 2, '#FFEBd6', 3, '#FCD5CE', 4, '#FFC8DD', 5, '#CDB4DB', 6, '#A2D2FF', 7, '#BDE0FE', 8, '#E2ECE9', 9, '#D8E2DC', 10, '#A8B0B0']
+    : [0, 'transparent', 1, '#A88C70', 2, '#B08080', 3, '#A07090', 4, '#8A6FA3', 5, '#6FAAC2', 6, '#5A8BB0', 7, '#7A8F88', 8, '#909090', 9, '#2C2C2C', 10, '#141414'],
+
+  medievalFantasy: isLightMode
+    ? [0, 'transparent', 1, '#F5F0E1', 2, '#DEB887', 3, '#D2B48C', 4, '#C0A080', 5, '#BFA77F', 6, '#A0522D', 7, '#8B5A2B', 8, '#7F684E', 9, '#6B4226', 10, '#3B2617']
+    : [0, 'transparent', 1, '#C0A080', 2, '#A0522D', 3, '#8B5A2B', 4, '#7F684E', 5, '#6B4226', 6, '#5C3317', 7, '#4B2E1F', 8, '#362312', 9, '#2A1A0F', 10, '#1A0D07'];
 };
 
 // ----------------------------
