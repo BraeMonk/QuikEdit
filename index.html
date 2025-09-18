@@ -42,16 +42,20 @@
       <div id="colorPickers"></div>
       <button id="saveCustomPalette">Save Custom Palette</button>
     </div>
+  </section>
 
-    <section id="canvas-container">
-      <div id="canvas"></div>
-    </section>
+  <!-- Canvas & Export -->
+  <section id="canvas-container">
+    <div id="canvas"></div>
 
-    <div class="row">
-      <textarea id="output" rows="8" cols="50" placeholder="Exported JSON will appear here"></textarea>
+    <div class="zoom-controls">
+      <button id="zoomIn">+</button>
+      <button id="zoomOut">-</button>
     </div>
 
-    <div class="row">
+    <div id="jsonExportContainer">
+      <textarea id="output" rows="8" placeholder="Exported JSON will appear here"></textarea>
+      <button id="exportJSON">Export JSON</button>
       <input type="file" id="importFile">
     </div>
   </section>
