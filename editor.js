@@ -447,3 +447,68 @@ document.getElementById('exportPNG').addEventListener('click', exportPNG);
 
 // Initialize
 loadFromLocalStorage();
+
+// ----------------------------
+// Clear Canvas
+// ----------------------------
+document.getElementById('clear').addEventListener('click', ()=>{
+  saveState();
+  array = Array.from({length: canvasHeight}, ()=>Array(canvasWidth).fill(0));
+  allSprites[currentSpriteIndex] = array.map(r=>r.slice());
+  renderCanvas();
+  saveToLocalStorage();
+});
+
+// ----------------------------
+// Export/Import JSON
+// ----------------------------
+document.getElementById('export').addEventListener('click', ()=>{
+  allSprites[currentSpriteIndex] = array.map(r=>r.slice());
+  document.getElementById('output').textContent = JSON.stringify(allSprites, null, 4);
+});
+
+document.getElementById('importFile').addEventListener('change', e => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(evt){
+    try {
+      let importedData = JSON.parse(evt.target.result);
+      if(!Array.isArray(importedData) && typeof importedData === 'object'){
+        importedData = Object.values(importedData);
+      }
+      allSprites = importedData.map(spr => spr.map(r=>r.slice()));
+      loadSprite(0);
+      spriteSelector.innerHTML = '';
+      allSprites.forEach((_, i)=>{
+        const opt = document.createElement('option');
+        opt.value = i;
+        opt.textContent = `Sprite ${i+1}`;
+        spriteSelector.appendChild(opt);
+      });
+      spriteSelector.value = 0;
+      saveToLocalStorage();
+    } catch(err){
+      alert('Invalid JSON file: '+err);
+    }
+  };
+  reader.readAsText(file);
+});
+
+// ----------------------------
+// Keyboard Shortcuts
+// ----------------------------
+document.addEventListener('keydown', e => {
+  if(e.ctrlKey && e.key === 'z'){
+    undo();
+  } else if(e.ctrlKey && e.key === 'y'){
+    redo();
+  } else if(e.key === 'Delete'){
+    document.getElementById('clear').click();
+  }
+});
+
+// ----------------------------
+// Initialize Canvas
+// ----------------------------
+renderCanvas();
