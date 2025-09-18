@@ -8,9 +8,158 @@ const isLightMode = true; // set false for dark
 // ----------------------------
 const palettes = {
   default: isLightMode
-    ? ['transparent', '#FFF2E0', '#FFE0B3', '#FFD8A6', '#FFCB88', '#E6B273', '#C4945E', '#A9745B', '#8B5E3C', '#6B4226', '#4A2B17']
-    : ['transparent', '#E0ECFA', '#C2DAF7', '#9CC7F0', '#6FA6E0', '#4A90E2', '#2B6FB2', '#1F5FBF', '#173F80', '#0D264D', '#08162B'],
-  // ... include other palettes you already had
+    ? [
+        'transparent',
+        '#FFF2E0', '#FFE0B3', '#FFD8A6',
+        '#FFCB88', '#E6B273', '#C4945E',
+        '#A9745B', '#8B5E3C', '#6B4226', '#4A2B17'
+      ]
+    : [
+        'transparent',
+        '#E0ECFA', '#C2DAF7', '#9CC7F0',
+        '#6FA6E0', '#4A90E2', '#2B6FB2',
+        '#1F5FBF', '#173F80', '#0D264D', '#08162B'
+      ],
+
+  candy: isLightMode
+    ? [
+        'transparent',
+        '#FF6B6B', '#FFA94D', '#FFD93D',
+        '#6BCB77', '#4D96FF', '#9D4EDD',
+        '#FF8FAB', '#FFB5E8', '#FFDEE9', '#FFFFFF'
+      ]
+    : [
+        'transparent',
+        '#FF8787', '#FFB86B', '#FFE066',
+        '#8CE99A', '#74C0FC', '#B197FC',
+        '#FF99C8', '#FFB3DE', '#FFC2E5', '#F8F9FA'
+      ],
+
+  desert: isLightMode
+    ? [
+        'transparent',
+        '#F4E1D2', '#E2B07E', '#D89C5C',
+        '#C97B3D', '#A0522D', '#8B5E3C',
+        '#6B4226', '#4B2E1F', '#2E1A12', '#000000'
+      ]
+    : [
+        'transparent',
+        '#E6CBB3', '#D4A373', '#BF8040',
+        '#A0522D', '#7B4B24', '#5C3720',
+        '#3E2414', '#24140D', '#120A06', '#000000'
+      ],
+
+  ocean: isLightMode
+    ? [
+        'transparent',
+        '#A2D2FF', '#80C0FF', '#5AA9FA',
+        '#4682B4', '#2E5984', '#1B3B5F',
+        '#0F2A44', '#082136', '#041626', '#000814'
+      ]
+    : [
+        'transparent',
+        '#90C8F8', '#66AEEF', '#3D91E0',
+        '#2E6FA3', '#1D4E72', '#103552',
+        '#0A2438', '#061C2B', '#03111B', '#000814'
+      ],
+
+  ember: isLightMode
+    ? [
+        'transparent',
+        '#FFF3B0', '#FFD93D', '#FFA200',
+        '#FF6B35', '#E63946', '#B51709',
+        '#800F00', '#4D0600', '#260300', '#0D0000'
+      ]
+    : [
+        'transparent',
+        '#FFE066', '#FFC300', '#FF8C00',
+        '#FF5733', '#C70039', '#900C3F',
+        '#581845', '#2C0B27', '#160513', '#0B0208'
+      ],
+
+  meadow: isLightMode
+    ? [
+        'transparent',
+        '#E0F7E9', '#B2F2BB', '#8CE99A',
+        '#69DB7C', '#38D9A9', '#20C997',
+        '#12B886', '#0CA678', '#087F5B', '#045040'
+      ]
+    : [
+        'transparent',
+        '#C3F5D5', '#96E6A8', '#70D78B',
+        '#4CB372', '#31A67F', '#24916B',
+        '#1A7257', '#115745', '#0A3A2D', '#041E16'
+      ],
+
+  neon: isLightMode
+    ? [
+        'transparent',
+        '#FF00FF', '#FF1493', '#FF4500',
+        '#FFD700', '#ADFF2F', '#00FF7F',
+        '#00FFFF', '#1E90FF', '#8A2BE2', '#FFFFFF'
+      ]
+    : [
+        'transparent',
+        '#FF4DFF', '#FF69B4', '#FF6347',
+        '#FFE066', '#C0FF66', '#66FFB2',
+        '#66FFFF', '#66A3FF', '#B266FF', '#F8F9FA'
+      ],
+
+  pastel: isLightMode
+    ? [
+        'transparent',
+        '#FFB5E8', '#FFDEB4', '#FFF5BA',
+        '#B5EAD7', '#C7CEEA', '#E0BBE4',
+        '#FEC8D8', '#D8E2DC', '#F1F0C0', '#FFFFFF'
+      ]
+    : [
+        'transparent',
+        '#FF99CC', '#FFCC99', '#FFF2A8',
+        '#99E2C3', '#A8B9E6', '#C7A9D6',
+        '#F5A3C7', '#CFCFCF', '#EAE6B8', '#F8F9FA'
+      ],
+
+  gothic: isLightMode
+    ? [
+        'transparent',
+        '#1A1A1A', '#2E2E2E', '#444444',
+        '#5E2750', '#87255B', '#D90368',
+        '#FF6F61', '#C9ADA7', '#EAEAEA', '#FFFFFF'
+      ]
+    : [
+        'transparent',
+        '#000000', '#1A1A1A', '#333333',
+        '#5E2750', '#7A1E48', '#B30C5C',
+        '#FF4F5E', '#A99A93', '#D6D6D6', '#F5F5F5'
+      ],
+
+  aurora: isLightMode
+    ? [
+        'transparent',
+        '#A5FFD6', '#82FFC7', '#5DFDCB',
+        '#3EDBF0', '#3B9AE1', '#6F69AC',
+        '#9D4EDD', '#FF5D8F', '#FF87AB', '#FFFFFF'
+      ]
+    : [
+        'transparent',
+        '#7DFFBF', '#5AF7B0', '#32E1B5',
+        '#1EB7D8', '#2070B0', '#514080',
+        '#7A29C6', '#FF4D7A', '#FF6F9F', '#F8F9FA'
+      ],
+
+  clay: isLightMode
+    ? [
+        'transparent',
+        '#F5E0C0', '#E0C097', '#CC9B6D',
+        '#B0724A', '#8C4A2F', '#6E3923',
+        '#4E2817', '#321B10', '#1A0D08', '#000000'
+      ]
+    : [
+        'transparent',
+        '#EAD2B0', '#D1A374', '#B97849',
+        '#8E5432', '#6B3C24', '#502C1A',
+        '#361E12', '#22120B', '#120805', '#000000'
+      ],
 };
 
 // ----------------------------
