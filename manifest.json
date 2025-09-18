@@ -1,10 +1,10 @@
 {
-  "name": "Pixel Sprite Editor",
-  "short_name": "SpriteEditor",
-  "description": "A pixel sprite editor with palettes, undo/redo, and export features.",
+  "name": "Jerry Editor",
+  "short_name": "JerryEditor",
+  "description": "A pixel sprite editor for Jerry palettes.",
   "start_url": "./index.html",
   "display": "standalone",
-  "background_color": "#1c1c1c",
+  "background_color": "1c1c1c",
   "theme_color": "#1c1c1c",
   "orientation": "portrait",
   "icons": [
