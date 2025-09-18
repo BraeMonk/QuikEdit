@@ -3,12 +3,16 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Jerry Editor</title>
-  <link rel="stylesheet" href="./styles.css">
+  <title>QuikEdit Sprite Editor</title>
+  <link rel="stylesheet" href="styles.css">
+
+  <!-- PWA Manifest -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#f5f5f5">
 </head>
 <body>
   <header>
-    <h1>Jerry Editor</h1>
+    <h1>QuikEdit Sprite Editor</h1>
   </header>
 
   <section id="controls">
@@ -53,6 +57,15 @@
   </section>
 
   <!-- JS -->
-  <script src="./editor.js"></script>
+  <script src="editor.js"></script>
+
+  <!-- Register Service Worker -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('sw.js')
+      .then(() => console.log('Service Worker Registered'))
+      .catch(err => console.error('Service Worker registration failed:', err));
+    }
+  </script>
 </body>
 </html>
