@@ -351,6 +351,89 @@ document.getElementById('exportJSON').addEventListener('click', ()=> {
   link.click();
 });
 
+// =============================
+// Import JSON (Handles Sprite + Theme or Raw Arrays)
+// =============================
+document.getElementById('importFile').addEventListener('change', e => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(evt) {
+    try {
+      let importedData = JSON.parse(evt.target.result);
+
+      // --- Case 1: New structured format ---
+      if (importedData.sprite && Array.isArray(importedData.sprite.data)) {
+        const spriteName = importedData.sprite.name || `Sprite ${allSprites.length+1}`;
+        const spriteData = importedData.sprite.data.map(r => r.slice());
+
+        // Add sprite to list
+        allSprites.push(spriteData);
+        const opt = document.createElement('option');
+        opt.value = allSprites.length - 1;
+        opt.textContent = spriteName;
+        spriteSelector.appendChild(opt);
+
+        // Load it immediately
+        loadSprite(allSprites.length - 1);
+        spriteSelector.value = allSprites.length - 1;
+
+        // Add custom theme if present
+        if (importedData.theme && Array.isArray(importedData.theme.data)) {
+          const themeName = importedData.theme.name || 'Custom Theme';
+          if (!palettes[themeName]) {
+            palettes[themeName] = importedData.theme.data.slice();
+            const themeOpt = document.createElement('option');
+            themeOpt.value = themeName;
+            themeOpt.textContent = themeName;
+            paletteSelector.appendChild(themeOpt);
+          }
+          paletteSelector.value = themeName;
+          colors = palettes[themeName].slice();
+          customTheme = palettes[themeName].slice();
+          renderSwatches();
+          updateCanvasColors();
+        }
+
+      // --- Case 2: Raw array(s) ---
+      } else if (Array.isArray(importedData)) {
+        // Single sprite (2D array)
+        if (Array.isArray(importedData[0]) && typeof importedData[0][0] === 'number') {
+          allSprites.push(importedData.map(r => r.slice()));
+        }
+        // Multiple sprites (3D array)
+        else {
+          importedData.forEach(spr => {
+            if (Array.isArray(spr) && Array.isArray(spr[0])) {
+              allSprites.push(spr.map(r => r.slice()));
+            }
+          });
+        }
+
+        // Rebuild dropdown
+        spriteSelector.innerHTML = '';
+        allSprites.forEach((_, i) => {
+          const opt = document.createElement('option');
+          opt.value = i;
+          opt.textContent = `Sprite ${i+1}`;
+          spriteSelector.appendChild(opt);
+        });
+        loadSprite(allSprites.length - 1);
+        spriteSelector.value = allSprites.length - 1;
+
+      } else {
+        throw new Error("Unsupported JSON format");
+      }
+
+      saveToLocalStorage();
+    } catch (err) {
+      alert('Invalid JSON file: ' + err.message);
+    }
+  };
+  reader.readAsText(file);
+});
+
+
 
 // =============================
 // Clear Canvas
