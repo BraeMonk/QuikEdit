@@ -323,45 +323,34 @@ document.getElementById('saveCustomPalette').addEventListener('click', ()=>{
 renderCustomPalettePickers();
 
 // =============================
-// Export / Import JSON
+// Export / Import JSON (Updated for Jerry Upload)
 // =============================
-document.getElementById('exportJSON').addEventListener('click', ()=>{
-  allSprites[currentSpriteIndex] = array.map(r=>r.slice());
+document.getElementById('exportJSON').addEventListener('click', ()=> {
+  allSprites[currentSpriteIndex] = array.map(r => r.slice());
 
-  const horizontalJSON = '[' + allSprites.map(sprite => 
-    '[' + sprite.map(row => '[' + row.join(',') + ']').join(',\n') + ']'
-  ).join(',\n') + ']';
-
-  document.getElementById('output').textContent = horizontalJSON;
-});
-
-document.getElementById('importFile').addEventListener('change', e=>{
-  const file = e.target.files[0];
-  if(!file) return;
-  const reader = new FileReader();
-  reader.onload = function(evt){
-    try {
-      let importedData = JSON.parse(evt.target.result);
-      if(!Array.isArray(importedData) && typeof importedData==='object'){
-        importedData = Object.values(importedData);
-      }
-      allSprites = importedData.map(spr=>spr.map(r=>r.slice()));
-      loadSprite(0);
-      spriteSelector.innerHTML = '';
-      allSprites.forEach((_,i)=>{
-        const opt = document.createElement('option');
-        opt.value = i;
-        opt.textContent = `Sprite ${i+1}`;
-        spriteSelector.appendChild(opt);
-      });
-      spriteSelector.value = 0;
-      saveToLocalStorage();
-    } catch(err){
-      alert('Invalid JSON file: '+err);
+  const exportData = {
+    sprite: {
+      name: `Sprite ${currentSpriteIndex+1}`,
+      category: 'jerry', // or let the user specify if you want
+      data: allSprites[currentSpriteIndex]
+    },
+    theme: {
+      name: paletteSelector.value === 'default' ? 'customTheme' : paletteSelector.value,
+      data: colors
     }
   };
-  reader.readAsText(file);
+
+  const jsonStr = JSON.stringify(exportData, null, 2);
+  document.getElementById('output').textContent = jsonStr;
+
+  // Optional: download as file
+  const blob = new Blob([jsonStr], { type: 'application/json' });
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = `jerrySprite_${Date.now()}.json`;
+  link.click();
 });
+
 
 // =============================
 // Clear Canvas
