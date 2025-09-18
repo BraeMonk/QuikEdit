@@ -356,7 +356,7 @@ document.getElementById('exportJSON').addEventListener('click', () => {
   // Include theme only if current palette is a custom theme
   if (paletteSelector.value === 'customTheme') {
     exportData.theme = {
-      name: 'customTheme',
+      name: 'theme',
       data: colors
     };
   }
