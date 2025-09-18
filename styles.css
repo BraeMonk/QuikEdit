@@ -23,18 +23,26 @@ h1 {
 /* ============================= */
 /* Control Panels                */
 /* ============================= */
-#controls, #customPaletteContainer, #jsonExportContainer {
+#controls {
     display: flex;
+    flex-direction: column;
     flex-wrap: wrap;
     justify-content: center;
     gap: 12px;
     margin-bottom: 20px;
+    width: 100%;
+    max-width: 900px;
+}
+
+#controls .row {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 12px;
 }
 
 #controls select,
-#controls button,
-#customPaletteContainer button,
-#jsonExportContainer input[type=file] {
+#controls button {
     padding: 8px 12px;
     font-size: 1rem;
     border-radius: 6px;
@@ -49,16 +57,12 @@ h1 {
     min-width: 120px;
 }
 
-/* Hover Effects */
 #controls button:hover,
-#customPaletteContainer button:hover,
-#controls select:hover,
-#jsonExportContainer input[type=file]:hover {
+#controls select:hover {
     background-color: #555;
 }
 
-button:active,
-input[type=file]:active {
+button:active {
     transform: scale(0.95);
 }
 
@@ -88,20 +92,55 @@ input[type=file]:active {
 }
 
 /* ============================= */
-/* Canvas                        */
+/* Canvas Container              */
 /* ============================= */
+#canvas-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    max-width: 900px;
+    margin-bottom: 30px;
+}
+
 #canvas {
     display: grid;
     background-color: #2b2b2b;
     border: 3px solid #444;
     touch-action: none; /* prevent mobile scrolling while painting */
-    margin-bottom: 20px;
-    max-width: 100%;
+    width: 100%;
+    max-width: 900px;
+    margin-bottom: 10px;
 }
 
 .cell {
     border: 1px solid #3a3a3a;
     box-sizing: border-box;
+}
+
+/* ============================= */
+/* Zoom Buttons                  */
+/* ============================= */
+.zoom-controls {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.zoom-controls button {
+    padding: 8px 12px;
+    font-size: 1.2rem;
+    border-radius: 6px;
+    border: none;
+    cursor: pointer;
+    background-color: #333;
+    color: #fff;
+    transition: background 0.2s;
+}
+
+.zoom-controls button:hover {
+    background-color: #555;
 }
 
 /* ============================= */
@@ -127,9 +166,17 @@ input[type=file]:active {
 /* ============================= */
 /* JSON Export/Import            */
 /* ============================= */
-#output {
-    width: 90%;
+#jsonExportContainer {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+    width: 100%;
     max-width: 600px;
+}
+
+#jsonExportContainer textarea {
+    width: 100%;
     height: 140px;
     background-color: #222;
     color: #f0f0f0;
@@ -139,49 +186,32 @@ input[type=file]:active {
     white-space: pre-wrap;
     border-radius: 6px;
     font-family: monospace;
-    margin-bottom: 20px;
 }
 
+#jsonExportContainer button,
 #jsonExportContainer input[type=file] {
-    min-width: 150px;
+    padding: 8px 12px;
+    background-color: #333;
+    color: #fff;
+    border-radius: 6px;
+    border: none;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: background 0.2s;
+}
+
+#jsonExportContainer button:hover,
+#jsonExportContainer input[type=file]:hover {
+    background-color: #555;
 }
 
 /* ============================= */
-/* Responsive Canvas Scaling     */
+/* Responsive Canvas & Layout    */
 /* ============================= */
 @media (max-width: 800px) {
-    #canvas {
-        width: 100%;
-    }
-
-    .cell {
-        min-width: 24px;
-        min-height: 24px;
-    }
+    .cell { min-width: 24px; min-height: 24px; }
 }
 
 @media (max-width: 500px) {
-    #canvas {
-        width: 100%;
-    }
-
-    .cell {
-        min-width: 18px;
-        min-height: 18px;
-    }
-}
-
-/* ============================= */
-/* Optional: Zoom Buttons        */
-/* ============================= */
-.zoom-controls {
-    display: flex;
-    justify-content: center;
-    gap: 10px;
-    margin-bottom: 20px;
-}
-
-.zoom-controls button {
-    padding: 6px 10px;
-    font-size: 1rem;
+    .cell { min-width: 18px; min-height: 18px; }
 }
