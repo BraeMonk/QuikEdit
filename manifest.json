@@ -1,13 +1,20 @@
 {
   "name": "Jerry Editor",
-  "short_name": "JerryEditor",
-  "description": "A pixel sprite editor for Jerry palettes.",
-  "start_url": "./index.html",
+  "short_name": "JerryEdit",
+  "start_url": ".",
   "display": "standalone",
-  "background_color": "1c1c1c",
-  "theme_color": "#1c1c1c",
-  "orientation": "portrait",
+  "background_color": "#f5f5f5",
+  "theme_color": "#f5f5f5",
   "icons": [
-    { "src": "./JEIcon.PNG", "sizes": "512x512", "type": "image/png" }
+    {
+      "src": "./JEIcon.PNG",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "./JEIcon.PNG",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
   ]
 }
