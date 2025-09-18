@@ -13,9 +13,9 @@ const palettes = {
   candy: isLightMode
     ? ['transparent','#FF6B6B','#FFA94D','#FFD93D','#6BCB77','#4D96FF','#9D4EDD','#FF8FAB','#FFB5E8','#FFDEE9','#FFFFFF']
     : ['transparent','#FF8787','#FFB86B','#FFE066','#8CE99A','#74C0FC','#B197FC','#FF99C8','#FFB3DE','#FFC2E5','#F8F9FA'],
-  desert: isLightMode
-    ? ['transparent','#F4E1D2','#E2B07E','#D89C5C','#C97B3D','#A0522D','#8B5E3C','#6B4226','#4B2E1F','#2E1A12','#000000']
-    : ['transparent','#E6CBB3','#D4A373','#BF8040','#A0522D','#7B4B24','#5C3720','#3E2414','#24140D','#120A06','#000000'],
+  retroPixel: isLightMode
+    ? ['transparent','#FFFFFF','#FFD800','#FF8C00','#FF0000','#C000C0','#0000FF','#008080','#00C000','#404040','#000000']
+    : ['transparent','#E0E0E0','#E0C000','#D07000','#C00000','#A000A0','#0000A0','#006060','#00A000','#303030','#000000'],
   ocean: isLightMode
     ? ['transparent','#A2D2FF','#80C0FF','#5AA9FA','#4682B4','#2E5984','#1B3B5F','#0F2A44','#082136','#041626','#000814']
     : ['transparent','#90C8F8','#66AEEF','#3D91E0','#2E6FA3','#1D4E72','#103552','#0A2438','#061C2B','#03111B','#000814'],
@@ -37,9 +37,10 @@ const palettes = {
   aurora: isLightMode
     ? ['transparent','#A5FFD6','#82FFC7','#5DFDCB','#3EDBF0','#3B9AE1','#6F69AC','#9D4EDD','#FF5D8F','#FF87AB','#FFFFFF']
     : ['transparent','#7DFFBF','#5AF7B0','#32E1B5','#1EB7D8','#2070B0','#514080','#7A29C6','#FF4D7A','#FF6F9F','#F8F9FA'],
-  clay: isLightMode
-    ? ['transparent','#F5E0C0','#E0C097','#CC9B6D','#B0724A','#8C4A2F','#6E3923','#4E2817','#321B10','#1A0D08','#000000']
-    : ['transparent','#EAD2B0','#D1A374','#B97849','#8E5432','#6B3C24','#502C1A','#361E12','#22120B','#120805','#000000']
+  fantasySprite: isLightMode
+    ? ['transparent','#F0EAD6','#C2B280','#8E735B','#5C4B3B','#3B2F2F','#6B8E23','#4682B4','#9370DB','#FFD700','#000000']
+    : ['transparent','#D8D2BE','#A89C6E','#6E5B45','#44362C','#2C2222','#556B2F','#36648B','#7A5DC7','#E6C200','#000000']
+
 };
 
 // =============================
