@@ -257,18 +257,21 @@ function resizeCanvas(){
   saveToLocalStorage();
 }
 
-// =============================
-// Export PNG
-// =============================
 function exportPNG(){
-  const cellSize = 16;
+  // Dynamically calculate cell size to fit within 512px max for width/height
+  const maxDimension = 512;
+  const cellSize = Math.floor(Math.min(maxDimension / canvasWidth, maxDimension / canvasHeight));
+
   const offCanvas = document.createElement('canvas');
   offCanvas.width = canvasWidth * cellSize;
   offCanvas.height = canvasHeight * cellSize;
   const ctx = offCanvas.getContext('2d');
 
-  for(let y=0;y<canvasHeight;y++){
-    for(let x=0;x<canvasWidth;x++){
+  // Ensure fully transparent background
+  ctx.clearRect(0, 0, offCanvas.width, offCanvas.height);
+
+  for(let y=0; y<canvasHeight; y++){
+    for(let x=0; x<canvasWidth; x++){
       const color = colors[array[y][x]];
       if(color !== 'transparent'){
         ctx.fillStyle = color;
@@ -324,7 +327,12 @@ renderCustomPalettePickers();
 // =============================
 document.getElementById('exportJSON').addEventListener('click', ()=>{
   allSprites[currentSpriteIndex] = array.map(r=>r.slice());
-  document.getElementById('output').textContent = JSON.stringify(allSprites, null, 4);
+
+  const horizontalJSON = '[' + allSprites.map(sprite => 
+    '[' + sprite.map(row => '[' + row.join(',') + ']').join(',\n') + ']'
+  ).join(',\n') + ']';
+
+  document.getElementById('output').textContent = horizontalJSON;
 });
 
 document.getElementById('importFile').addEventListener('change', e=>{
