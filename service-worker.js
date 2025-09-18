@@ -1,4 +1,4 @@
-const CACHE_NAME = "sprite-editor-v1";
+const CACHE_NAME = "jerry-editor-v1";
 const FILES_TO_CACHE = [
   "./",
   "./index.html",
