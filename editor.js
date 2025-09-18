@@ -340,25 +340,31 @@ renderCustomPalettePickers();
 // =============================
 // Export / Import JSON (Updated for Jerry Upload)
 // =============================
-document.getElementById('exportJSON').addEventListener('click', ()=> {
+document.getElementById('exportJSON').addEventListener('click', () => {
+  // Save the current sprite
   allSprites[currentSpriteIndex] = array.map(r => r.slice());
 
+  // Base export with sprite only
   const exportData = {
     sprite: {
-      name: `Sprite ${currentSpriteIndex+1}`,
-      category: 'jerry', // or let the user specify if you want
+      name: `Sprite ${currentSpriteIndex + 1}`,
+      category: 'jerry',
       data: allSprites[currentSpriteIndex]
-    },
-    theme: {
-      name: paletteSelector.value === 'default' ? 'customTheme' : paletteSelector.value,
-      data: colors
     }
   };
+
+  // Include theme only if current palette is a custom theme
+  if (paletteSelector.value === 'customTheme') {
+    exportData.theme = {
+      name: 'customTheme',
+      data: colors
+    };
+  }
 
   const jsonStr = JSON.stringify(exportData, null, 2);
   document.getElementById('output').textContent = jsonStr;
 
-  // Optional: download as file
+  // Trigger download
   const blob = new Blob([jsonStr], { type: 'application/json' });
   const link = document.createElement('a');
   link.href = URL.createObjectURL(blob);
