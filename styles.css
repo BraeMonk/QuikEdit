@@ -1,60 +1,65 @@
 /* ============================= */
-/* General Layout and Body        */
+/* Body and General Layout       */
 /* ============================= */
 body {
-    font-family: Arial, Helvetica, sans-serif;
+    font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
     margin: 0;
-    padding: 10px;
+    padding: 20px;
     background-color: #1e1e1e;
     color: #f0f0f0;
     display: flex;
     flex-direction: column;
     align-items: center;
     min-height: 100vh;
+    box-sizing: border-box;
 }
 
 h1 {
-    margin: 10px 0;
-    font-size: 1.8rem;
+    margin: 0 0 20px 0;
+    font-size: 2rem;
     text-align: center;
 }
 
 /* ============================= */
-/* Controls Container            */
+/* Control Panels                */
 /* ============================= */
 #controls, #customPaletteContainer, #jsonExportContainer {
     display: flex;
     flex-wrap: wrap;
     justify-content: center;
-    gap: 10px;
-    margin-bottom: 15px;
+    gap: 12px;
+    margin-bottom: 20px;
 }
 
 #controls select,
 #controls button,
-#customPaletteContainer button {
-    padding: 5px 10px;
+#customPaletteContainer button,
+#jsonExportContainer input[type=file] {
+    padding: 8px 12px;
     font-size: 1rem;
-    border-radius: 4px;
+    border-radius: 6px;
     border: none;
     cursor: pointer;
+    transition: background 0.2s, transform 0.1s;
+    background-color: #333;
+    color: #fff;
 }
 
 #controls select {
-    background-color: #2c2c2c;
-    color: #f0f0f0;
+    min-width: 120px;
 }
 
-#controls button,
-#customPaletteContainer button {
-    background-color: #444;
-    color: #fff;
-    transition: background 0.2s;
-}
-
+/* Hover Effects */
 #controls button:hover,
-#customPaletteContainer button:hover {
-    background-color: #666;
+#customPaletteContainer button:hover,
+#controls select:hover,
+#jsonExportContainer input[type=file]:hover {
+    background-color: #555;
+}
+
+button:active,
+input[type=file]:active {
+    transform: scale(0.95);
 }
 
 /* ============================= */
@@ -64,32 +69,34 @@ h1 {
     display: flex;
     flex-wrap: wrap;
     justify-content: center;
-    gap: 5px;
-    margin-bottom: 10px;
+    gap: 6px;
+    margin-bottom: 20px;
 }
 
 .swatch {
-    width: 30px;
-    height: 30px;
-    border: 2px solid #333;
+    width: 32px;
+    height: 32px;
+    border: 2px solid #444;
     border-radius: 4px;
     cursor: pointer;
-    transition: transform 0.1s, border 0.1s;
+    transition: transform 0.1s, border-color 0.1s;
 }
 
 .swatch.selected {
-    border: 2px solid #fff;
+    border-color: #fff;
     transform: scale(1.1);
 }
 
 /* ============================= */
-/* Canvas Grid                   */
+/* Canvas                        */
 /* ============================= */
 #canvas {
     display: grid;
     background-color: #2b2b2b;
-    border: 2px solid #444;
-    touch-action: none; /* prevents mobile scrolling when painting */
+    border: 3px solid #444;
+    touch-action: none; /* prevent mobile scrolling while painting */
+    margin-bottom: 20px;
+    max-width: 100%;
 }
 
 .cell {
@@ -103,15 +110,15 @@ h1 {
 #colorPickers {
     display: flex;
     flex-wrap: wrap;
-    gap: 5px;
+    gap: 6px;
     justify-content: center;
-    margin-bottom: 10px;
+    margin-bottom: 20px;
 }
 
 #colorPickers input[type=color] {
-    width: 40px;
-    height: 40px;
-    border: 2px solid #333;
+    width: 42px;
+    height: 42px;
+    border: 2px solid #444;
     border-radius: 4px;
     cursor: pointer;
     padding: 0;
@@ -122,46 +129,59 @@ h1 {
 /* ============================= */
 #output {
     width: 90%;
-    max-width: 480px;
-    height: 120px;
+    max-width: 600px;
+    height: 140px;
     background-color: #222;
     color: #f0f0f0;
     border: 2px solid #444;
-    padding: 10px;
+    padding: 12px;
     overflow: auto;
     white-space: pre-wrap;
-    border-radius: 4px;
+    border-radius: 6px;
     font-family: monospace;
-    margin-bottom: 15px;
+    margin-bottom: 20px;
 }
 
 #jsonExportContainer input[type=file] {
-    background-color: #444;
-    color: #fff;
-    border: none;
-    padding: 5px;
-    border-radius: 4px;
-    cursor: pointer;
+    min-width: 150px;
 }
 
 /* ============================= */
 /* Responsive Canvas Scaling     */
 /* ============================= */
-@media (max-width: 600px) {
+@media (max-width: 800px) {
     #canvas {
         width: 100%;
-        height: auto;
     }
 
     .cell {
-        min-width: 20px;
-        min-height: 20px;
+        min-width: 24px;
+        min-height: 24px;
+    }
+}
+
+@media (max-width: 500px) {
+    #canvas {
+        width: 100%;
+    }
+
+    .cell {
+        min-width: 18px;
+        min-height: 18px;
     }
 }
 
 /* ============================= */
-/* Buttons Hover Feedback        */
+/* Optional: Zoom Buttons        */
 /* ============================= */
-button:active {
-    transform: scale(0.95);
+.zoom-controls {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.zoom-controls button {
+    padding: 6px 10px;
+    font-size: 1rem;
 }
