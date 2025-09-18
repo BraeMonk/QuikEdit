@@ -332,6 +332,13 @@ document.getElementById('saveCustomPalette').addEventListener('click', ()=>{
   colors = customTheme.slice();
   renderSwatches();
   updateCanvasColors();
+
+  // Add custom palette to palettes object
+  palettes['customTheme'] = customTheme.slice();
+
+  // Select it in the dropdown so export check passes
+  paletteSelector.value = 'customTheme';
+
   saveToLocalStorage();
 });
 
@@ -353,14 +360,15 @@ document.getElementById('exportJSON').addEventListener('click', () => {
     }
   };
 
-  // Include theme only if current palette is a custom theme
+  // Include theme under "theme" if the current palette is custom
   if (paletteSelector.value === 'customTheme') {
     exportData.theme = {
-      name: 'theme',
-      data: colors
+      name: 'theme', // exactly "theme"
+      data: colors    // current custom palette colors
     };
   }
 
+  // Convert to JSON string
   const jsonStr = JSON.stringify(exportData, null, 2);
   document.getElementById('output').textContent = jsonStr;
 
