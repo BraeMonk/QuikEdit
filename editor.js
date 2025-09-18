@@ -238,23 +238,38 @@ function redo(){
 // =============================
 // Resize Canvas
 // =============================
-function resizeCanvas(){
-  const w = parseInt(prompt("Enter new width:", canvasWidth));
-  const h = parseInt(prompt("Enter new height:", canvasHeight));
-  if(!w || !h) return;
+function resizeCanvas() {
+  // Temporarily disable painting intercepts
+  let prevIsPainting = isPainting;
+  isPainting = false;
 
-  const newArray = Array.from({length:h},()=>Array(w).fill(0));
-  for(let y=0;y<Math.min(h, canvasHeight);y++){
-    for(let x=0;x<Math.min(w, canvasWidth);x++){
+  // Use prompt for width/height
+  const w = parseInt(window.prompt("Enter new width:", canvasWidth));
+  const h = parseInt(window.prompt("Enter new height:", canvasHeight));
+
+  if (!w || !h) {
+    isPainting = prevIsPainting;
+    return;
+  }
+
+  // Create new array with new dimensions
+  const newArray = Array.from({ length: h }, () => Array(w).fill(0));
+  for (let y = 0; y < Math.min(h, canvasHeight); y++) {
+    for (let x = 0; x < Math.min(w, canvasWidth); x++) {
       newArray[y][x] = array[y][x];
     }
   }
+
   array = newArray;
   canvasWidth = w;
   canvasHeight = h;
-  allSprites[currentSpriteIndex] = array.map(r=>r.slice());
+  allSprites[currentSpriteIndex] = array.map(r => r.slice());
+
   renderCanvas();
   saveToLocalStorage();
+
+  // Restore painting state
+  isPainting = prevIsPainting;
 }
 
 function exportPNG(){
