@@ -4,7 +4,7 @@ const FILES_TO_CACHE = [
   "./index.html",
   "./editor.js",
   "./manifest.json",
-  "./icons/icon-192.png"
+  "./JEIcon.PNG"
 ];
 
 self.addEventListener("install", (evt) => {
