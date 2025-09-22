@@ -75,6 +75,8 @@
     let previewArray = null;
     let moveStart = null;
     let moveOffset = { dx: 0, dy: 0 };
+    let symmetryMode = 'none'; // 'none', 'horizontal', 'vertical', 'both'
+    let symmetryAxis = { x: 8, y: 8 };
     let selectionStart = null;
     let selectionEnd = null;
     let selectionBounds = null;
@@ -187,79 +189,110 @@
     
         onStart: (x, y) => {
             if (selectionBounds && selectionArray) {
-                // Click must be inside selection
+                // Check if click is inside selection bounds
                 if (x >= selectionBounds.x0 && x <= selectionBounds.x1 &&
                     y >= selectionBounds.y0 && y <= selectionBounds.y1) {
                     moveStart = { x, y };
                     moveOffset = { dx: 0, dy: 0 };
+                    
+                    // Create preview array with selection area cleared
+                    previewArray = array.map(row => row.slice());
+                    
+                    // Clear the selection area in preview
+                    for (let i = selectionBounds.y0; i <= selectionBounds.y1; i++) {
+                        for (let j = selectionBounds.x0; j <= selectionBounds.x1; j++) {
+                            previewArray[i][j] = 0; // Clear to transparent/background
+                        }
+                    }
                     return;
                 }
-            } else {
-                // No selection → move the whole canvas
-                moveStart = { x, y };
-                moveOffset = { dx: 0, dy: 0 };
             }
+            
+            // If no selection or click outside selection, deselect
+            selectionBounds = null;
+            selectionArray = null;
+            previewArray = null;
+            renderCanvas();
         },
     
         onDrag: (x, y) => {
-            if (!moveStart) return;
+            if (!moveStart || !selectionBounds || !selectionArray) return;
     
             const dx = x - moveStart.x;
             const dy = y - moveStart.y;
+            
+            // Update move offset
+            moveOffset = { dx, dy };
     
-            const movingArray = selectionArray || array;
-            const bounds = selectionBounds || { x0: 0, y0: 0, x1: canvasWidth - 1, y1: canvasHeight - 1 };
+            // Create fresh preview with original array but selection cleared
+            previewArray = array.map(row => row.slice());
+            
+            // Clear original selection area
+            for (let i = selectionBounds.y0; i <= selectionBounds.y1; i++) {
+                for (let j = selectionBounds.x0; j <= selectionBounds.x1; j++) {
+                    previewArray[i][j] = 0; // Clear to background
+                }
+            }
     
-            // Clear original area in the array first
-            for (let i = bounds.y0; i <= bounds.y1; i++) {
-                for (let j = bounds.x0; j <= bounds.x1; j++) {
-                    const ny = i;
-                    const nx = j;
-                    // Only clear if the cell isn’t overlapping with moved area
-                    const movedY = ny - dy;
-                    const movedX = nx - dx;
-                    if (
-                        movedY < bounds.y0 || movedY > bounds.y1 ||
-                        movedX < bounds.x0 || movedX > bounds.x1
-                    ) {
-                        if (ny >= 0 && ny < canvasHeight && nx >= 0 && nx < canvasWidth) {
-                            paintCell(nx, ny, null);
-                        }
+            // Draw selection at new position
+            for (let i = 0; i < selectionArray.length; i++) {
+                for (let j = 0; j < selectionArray[i].length; j++) {
+                    const newY = selectionBounds.y0 + dy + i;
+                    const newX = selectionBounds.x0 + dx + j;
+                    
+                    // Only draw if within canvas bounds and pixel is not transparent
+                    if (newY >= 0 && newY < canvasHeight && 
+                        newX >= 0 && newX < canvasWidth && 
+                        selectionArray[i][j] !== 0) {
+                        previewArray[newY][newX] = selectionArray[i][j];
                     }
                 }
             }
     
-            // Paste moving area directly into array
-            for (let i = 0; i < movingArray.length; i++) {
-                for (let j = 0; j < movingArray[i].length; j++) {
-                    const ny = bounds.y0 + dy + i;
-                    const nx = bounds.x0 + dx + j;
-                    if (ny >= 0 && ny < canvasHeight && nx >= 0 && nx < canvasWidth) {
-                        paintCell(nx, ny, movingArray[i][j]);
-                    }
-                }
-            }
+            renderPreview(previewArray);
         },
     
         onEnd: (x, y) => {
-            if (!moveStart) return;
+            if (!moveStart || !selectionBounds || !selectionArray) return;
     
             const dx = x - moveStart.x;
             const dy = y - moveStart.y;
     
-            // Update selection bounds if a selection exists
-            if (selectionBounds) {
-                selectionBounds.x0 += dx;
-                selectionBounds.x1 += dx;
-                selectionBounds.y0 += dy;
-                selectionBounds.y1 += dy;
+            // Apply the move to the actual array
+            // First clear the original selection area
+            for (let i = selectionBounds.y0; i <= selectionBounds.y1; i++) {
+                for (let j = selectionBounds.x0; j <= selectionBounds.x1; j++) {
+                    paintCell(j, i, 0);
+                }
             }
     
+            // Then place selection at new position
+            for (let i = 0; i < selectionArray.length; i++) {
+                for (let j = 0; j < selectionArray[i].length; j++) {
+                    const newY = selectionBounds.y0 + dy + i;
+                    const newX = selectionBounds.x0 + dx + j;
+                    
+                    if (newY >= 0 && newY < canvasHeight && 
+                        newX >= 0 && newX < canvasWidth && 
+                        selectionArray[i][j] !== 0) {
+                        paintCell(newX, newY, selectionArray[i][j]);
+                    }
+                }
+            }
+    
+            // Update selection bounds
+            selectionBounds.x0 += dx;
+            selectionBounds.x1 += dx;
+            selectionBounds.y0 += dy;
+            selectionBounds.y1 += dy;
+    
+            // Keep selection active for potential additional moves
             moveStart = null;
             moveOffset = { dx: 0, dy: 0 };
+            previewArray = null;
+            renderCanvas();
         }
     };
-
     // ------------------- RECTANGLE TOOL -------------------
     tools.rect = {
       cursor: 'crosshair',
@@ -616,6 +649,218 @@
       }
     }
 
+    // =============================
+    // Transform Functions
+    // =============================
+    function rotateSelection(degrees) {
+        if (!selectionBounds || !selectionArray) {
+            alert('Please select an area first');
+            return;
+        }
+        
+        saveState();
+        
+        const width = selectionArray[0].length;
+        const height = selectionArray.length;
+        let rotatedArray;
+        
+        switch (degrees) {
+            case 90:
+                // Rotate 90 degrees clockwise
+                rotatedArray = Array(width).fill().map(() => Array(height).fill(0));
+                for (let y = 0; y < height; y++) {
+                    for (let x = 0; x < width; x++) {
+                        rotatedArray[x][height - 1 - y] = selectionArray[y][x];
+                    }
+                }
+                break;
+            case 180:
+                // Rotate 180 degrees
+                rotatedArray = Array(height).fill().map(() => Array(width).fill(0));
+                for (let y = 0; y < height; y++) {
+                    for (let x = 0; x < width; x++) {
+                        rotatedArray[height - 1 - y][width - 1 - x] = selectionArray[y][x];
+                    }
+                }
+                break;
+            case 270:
+                // Rotate 270 degrees clockwise (90 counterclockwise)
+                rotatedArray = Array(width).fill().map(() => Array(height).fill(0));
+                for (let y = 0; y < height; y++) {
+                    for (let x = 0; x < width; x++) {
+                        rotatedArray[width - 1 - x][y] = selectionArray[y][x];
+                    }
+                }
+                break;
+            default:
+                return;
+        }
+        
+        // Clear original selection
+        for (let i = selectionBounds.y0; i <= selectionBounds.y1; i++) {
+            for (let j = selectionBounds.x0; j <= selectionBounds.x1; j++) {
+                paintCell(j, i, 0);
+            }
+        }
+        
+        // Place rotated selection back
+        selectionArray = rotatedArray;
+        const newHeight = rotatedArray.length;
+        const newWidth = rotatedArray[0].length;
+        
+        // Update bounds (center the rotated selection)
+        const centerX = (selectionBounds.x0 + selectionBounds.x1) / 2;
+        const centerY = (selectionBounds.y0 + selectionBounds.y1) / 2;
+        
+        selectionBounds.x0 = Math.floor(centerX - newWidth / 2);
+        selectionBounds.x1 = selectionBounds.x0 + newWidth - 1;
+        selectionBounds.y0 = Math.floor(centerY - newHeight / 2);
+        selectionBounds.y1 = selectionBounds.y0 + newHeight - 1;
+        
+        // Draw rotated selection
+        for (let i = 0; i < newHeight; i++) {
+            for (let j = 0; j < newWidth; j++) {
+                const x = selectionBounds.x0 + j;
+                const y = selectionBounds.y0 + i;
+                if (x >= 0 && x < canvasWidth && y >= 0 && y < canvasHeight && rotatedArray[i][j] !== 0) {
+                    paintCell(x, y, rotatedArray[i][j]);
+                }
+            }
+        }
+    }
+    
+    function flipSelection(direction) {
+        if (!selectionBounds || !selectionArray) {
+            alert('Please select an area first');
+            return;
+        }
+        
+        saveState();
+        
+        const width = selectionArray[0].length;
+        const height = selectionArray.length;
+        const flippedArray = Array(height).fill().map(() => Array(width).fill(0));
+        
+        if (direction === 'horizontal') {
+            for (let y = 0; y < height; y++) {
+                for (let x = 0; x < width; x++) {
+                    flippedArray[y][width - 1 - x] = selectionArray[y][x];
+                }
+            }
+        } else if (direction === 'vertical') {
+            for (let y = 0; y < height; y++) {
+                for (let x = 0; x < width; x++) {
+                    flippedArray[height - 1 - y][x] = selectionArray[y][x];
+                }
+            }
+        }
+        
+        // Clear original selection
+        for (let i = selectionBounds.y0; i <= selectionBounds.y1; i++) {
+            for (let j = selectionBounds.x0; j <= selectionBounds.x1; j++) {
+                paintCell(j, i, 0);
+            }
+        }
+        
+        // Place flipped selection back
+        selectionArray = flippedArray;
+        for (let i = 0; i < height; i++) {
+            for (let j = 0; j < width; j++) {
+                const x = selectionBounds.x0 + j;
+                const y = selectionBounds.y0 + i;
+                if (x >= 0 && x < canvasWidth && y >= 0 && y < canvasHeight && flippedArray[i][j] !== 0) {
+                    paintCell(x, y, flippedArray[i][j]);
+                }
+            }
+        }
+    }
+
+    // =============================
+    // Symmetrical Drawing
+    // =============================
+    function setSymmetryMode(mode) {
+        symmetryMode = mode;
+        // Update symmetry axis to canvas center
+        symmetryAxis.x = Math.floor(canvasWidth / 2);
+        symmetryAxis.y = Math.floor(canvasHeight / 2);
+        
+        // Update UI
+        document.querySelectorAll('.symmetry-btn').forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.symmetry === mode);
+        });
+        
+        updateCanvasInfo();
+        renderSymmetryGuides();
+    }
+    
+    function renderSymmetryGuides() {
+        // Remove existing guides
+        document.querySelectorAll('.symmetry-guide').forEach(guide => guide.remove());
+        
+        if (symmetryMode === 'none') return;
+        
+        const canvasRect = canvas.getBoundingClientRect();
+        const cellSize = Math.max(8, Math.floor(400 / Math.max(canvasWidth, canvasHeight)) * zoomLevel);
+        
+        if (symmetryMode === 'horizontal' || symmetryMode === 'both') {
+            const guide = document.createElement('div');
+            guide.className = 'symmetry-guide horizontal';
+            guide.style.position = 'absolute';
+            guide.style.left = '0';
+            guide.style.right = '0';
+            guide.style.top = (symmetryAxis.y * cellSize) + 'px';
+            guide.style.height = '1px';
+            guide.style.backgroundColor = '#ff00ff';
+            guide.style.pointerEvents = 'none';
+            guide.style.zIndex = '10';
+            canvas.parentElement.appendChild(guide);
+        }
+        
+        if (symmetryMode === 'vertical' || symmetryMode === 'both') {
+            const guide = document.createElement('div');
+            guide.className = 'symmetry-guide vertical';
+            guide.style.position = 'absolute';
+            guide.style.top = '0';
+            guide.style.bottom = '0';
+            guide.style.left = (symmetryAxis.x * cellSize) + 'px';
+            guide.style.width = '1px';
+            guide.style.backgroundColor = '#ff00ff';
+            guide.style.pointerEvents = 'none';
+            guide.style.zIndex = '10';
+            canvas.parentElement.appendChild(guide);
+        }
+    }
+    
+    function paintWithSymmetry(x, y, colorIndex) {
+        // Paint the original point
+        paintCell(x, y, colorIndex);
+        
+        if (symmetryMode === 'none') return;
+        
+        if (symmetryMode === 'horizontal' || symmetryMode === 'both') {
+            const mirrorY = symmetryAxis.y * 2 - y;
+            if (mirrorY >= 0 && mirrorY < canvasHeight && mirrorY !== y) {
+                paintCell(x, mirrorY, colorIndex);
+            }
+        }
+        
+        if (symmetryMode === 'vertical' || symmetryMode === 'both') {
+            const mirrorX = symmetryAxis.x * 2 - x;
+            if (mirrorX >= 0 && mirrorX < canvasWidth && mirrorX !== x) {
+                paintCell(mirrorX, y, colorIndex);
+            }
+        }
+        
+        if (symmetryMode === 'both') {
+            const mirrorX = symmetryAxis.x * 2 - x;
+            const mirrorY = symmetryAxis.y * 2 - y;
+            if (mirrorX >= 0 && mirrorX < canvasWidth && 
+                mirrorY >= 0 && mirrorY < canvasHeight && 
+                (mirrorX !== x || mirrorY !== y)) {
+                paintCell(mirrorX, mirrorY, colorIndex);
+            }
+        }
+    }
     // =============================
     // Drawing Functions
     // =============================
