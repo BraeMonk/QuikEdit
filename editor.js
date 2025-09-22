@@ -628,16 +628,6 @@
         renderSymmetryGuides();
     }
     
-    // Update canvas info to show symmetry mode
-    function updateCanvasInfo(x = null, y = null) {
-        const pos = x !== null ? ` | ${x},${y}` : '';
-        const color = colors[primaryColor] || 'transparent';
-        const symmetryInfo = symmetryMode !== 'none' ? ` | Symmetry: ${symmetryMode}` : '';
-        canvasInfo.textContent = `${canvasWidth}×${canvasHeight} | ${currentTool}${pos} | ${color}${symmetryInfo}`;
-    }
-
-
-
     function renderPreview(tempArray) {
       document.querySelectorAll('.cell').forEach(cell => {
         const x = parseInt(cell.dataset.x);
@@ -1187,7 +1177,15 @@
     function updateCanvasInfo(x = null, y = null) {
       const pos = x !== null ? ` | ${x},${y}` : '';
       const color = colors[primaryColor] || 'transparent';
-      canvasInfo.textContent = `${canvasWidth}×${canvasHeight} | ${currentTool}${pos} | ${color}`;
+      
+      // Show if using symmetric tool
+      const isSymmetricTool = currentTool.startsWith('symmetric');
+      const toolDisplay = isSymmetricTool ? currentTool.replace('symmetric', '') + ' (Symmetric)' : currentTool;
+      
+      // Show symmetry mode when using symmetric tools or when symmetry mode is active
+      const symmetryInfo = (isSymmetricTool && symmetryMode !== 'none') ? ` | Mode: ${symmetryMode}` : '';
+      
+      canvasInfo.textContent = `${canvasWidth}×${canvasHeight} | ${toolDisplay}${pos} | ${color}${symmetryInfo}`;
     }
 
     function updateCanvasColors() {
@@ -1441,6 +1439,18 @@
       if (file) importJSON(file);
     });
 
+    // Transform buttons
+    document.getElementById('rotateLeft').addEventListener('click', () => rotateSelection(270));
+    document.getElementById('rotate180').addEventListener('click', () => rotateSelection(180));
+    document.getElementById('rotateRight').addEventListener('click', () => rotateSelection(90));
+    document.getElementById('flipHorizontal').addEventListener('click', () => flipSelection('horizontal'));
+    document.getElementById('flipVertical').addEventListener('click', () => flipSelection('vertical'));
+    
+    // Symmetry buttons
+    document.querySelectorAll('.symmetry-btn').forEach(btn => {
+      btn.addEventListener('click', () => setSymmetryMode(btn.dataset.symmetry));
+    });
+
     // Global event listeners
     document.addEventListener('mouseup', (e) => {
       if (tools[currentTool]?.onEnd) {
@@ -1475,15 +1485,58 @@
       if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
       
       switch(e.key.toLowerCase()) {
-        case 'b': setTool('pencil'); break;
-        case 'e': setTool('eraser'); break;
+        // Regular tools
+        case 'b': 
+          if (e.shiftKey) {
+            setTool('symmetricPencil');
+          } else {
+            setTool('pencil');
+          }
+          break;
+        case 'e': 
+          if (e.shiftKey) {
+            setTool('symmetricEraser');
+          } else {
+            setTool('eraser');
+          }
+          break;
+        case 'g': 
+          if (e.shiftKey) {
+            setTool('symmetricFill');
+          } else {
+            setTool('fill');
+          }
+          break;
         case 'i': setTool('eyedropper'); break;
-        case 'g': setTool('fill'); break;
         case 'm': setTool('select'); break;
         case 'v': setTool('move'); break;
         case 'l': setTool('line'); break;
         case 'r': setTool('rect'); break;
         case 'o': setTool('circle'); break;
+        
+        // Symmetry modes
+        case 'q': setSymmetryMode('none'); break;
+        case 'w': setSymmetryMode('horizontal'); break;
+        case 'a': setSymmetryMode('vertical'); break;
+        case 's': setSymmetryMode('both'); break;
+        
+        // Transform operations
+        case '[': rotateSelection(270); break; // Rotate left
+        case ']': rotateSelection(90); break;  // Rotate right
+        case 'h': 
+          if (e.ctrlKey || e.metaKey) {
+            e.preventDefault();
+            flipSelection('horizontal');
+          }
+          break;
+        case 'j':
+          if (e.ctrlKey || e.metaKey) {
+            e.preventDefault();
+            flipSelection('vertical');
+          }
+          break;
+        
+        // Undo/Redo
         case 'z': 
           if (e.ctrlKey || e.metaKey) {
             e.preventDefault();
@@ -1496,6 +1549,8 @@
             redo();
           }
           break;
+        
+        // Zoom
         case '+': 
         case '=': 
           zoomCanvas(1.25); 
@@ -1509,6 +1564,8 @@
             resetZoom();
           }
           break;
+        
+        // Clear
         case 'delete':
         case 'backspace':
           e.preventDefault();
@@ -1527,7 +1584,6 @@
         updateColorDisplay();
       }
     });
-
     // =============================
     // Initialization
     // =============================
