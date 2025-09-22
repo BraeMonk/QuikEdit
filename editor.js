@@ -132,6 +132,78 @@
       }
     };
 
+    // =============================
+    // Symmetric Tools
+    // =============================
+    tools.symmetricPencil = {
+        cursor: 'crosshair',
+        onStart: (x, y) => paintWithSymmetry(x, y, primaryColor),
+        onDrag: (x, y) => paintWithSymmetry(x, y, primaryColor),
+        onRightClick: (x, y) => paintWithSymmetry(x, y, secondaryColor)
+    };
+    
+    tools.symmetricEraser = {
+        cursor: 'crosshair',
+        onStart: (x, y) => paintWithSymmetry(x, y, 0),
+        onDrag: (x, y) => paintWithSymmetry(x, y, 0)
+    };
+    
+    tools.symmetricFill = {
+        cursor: 'crosshair',
+        onStart: (x, y) => {
+            floodFill(x, y, primaryColor);
+            if (symmetryMode !== 'none') {
+                if (symmetryMode === 'horizontal' || symmetryMode === 'both') {
+                    const mirrorY = symmetryAxis.y * 2 - y;
+                    if (mirrorY >= 0 && mirrorY < canvasHeight && mirrorY !== y) {
+                        floodFill(x, mirrorY, primaryColor);
+                    }
+                }
+                if (symmetryMode === 'vertical' || symmetryMode === 'both') {
+                    const mirrorX = symmetryAxis.x * 2 - x;
+                    if (mirrorX >= 0 && mirrorX < canvasWidth && mirrorX !== x) {
+                        floodFill(mirrorX, y, primaryColor);
+                    }
+                }
+                if (symmetryMode === 'both') {
+                    const mirrorX = symmetryAxis.x * 2 - x;
+                    const mirrorY = symmetryAxis.y * 2 - y;
+                    if (mirrorX >= 0 && mirrorX < canvasWidth && 
+                        mirrorY >= 0 && mirrorY < canvasHeight && 
+                        (mirrorX !== x || mirrorY !== y)) {
+                        floodFill(mirrorX, mirrorY, primaryColor);
+                    }
+                }
+            }
+        },
+        onRightClick: (x, y) => {
+            floodFill(x, y, secondaryColor);
+            if (symmetryMode !== 'none') {
+                if (symmetryMode === 'horizontal' || symmetryMode === 'both') {
+                    const mirrorY = symmetryAxis.y * 2 - y;
+                    if (mirrorY >= 0 && mirrorY < canvasHeight && mirrorY !== y) {
+                        floodFill(x, mirrorY, secondaryColor);
+                    }
+                }
+                if (symmetryMode === 'vertical' || symmetryMode === 'both') {
+                    const mirrorX = symmetryAxis.x * 2 - x;
+                    if (mirrorX >= 0 && mirrorX < canvasWidth && mirrorX !== x) {
+                        floodFill(mirrorX, y, secondaryColor);
+                    }
+                }
+                if (symmetryMode === 'both') {
+                    const mirrorX = symmetryAxis.x * 2 - x;
+                    const mirrorY = symmetryAxis.y * 2 - y;
+                    if (mirrorX >= 0 && mirrorX < canvasWidth && 
+                        mirrorY >= 0 && mirrorY < canvasHeight && 
+                        (mirrorX !== x || mirrorY !== y)) {
+                        floodFill(mirrorX, mirrorY, secondaryColor);
+                    }
+                }
+            }
+        }
+    };
+
     // ------------------- SELECT TOOL -------------------
     tools.select = {
       cursor: 'crosshair',
@@ -553,8 +625,16 @@
     
         updateCanvasInfo();
         updateZoomIndicator();
+        renderSymmetryGuides();
     }
-
+    
+    // Update canvas info to show symmetry mode
+    function updateCanvasInfo(x = null, y = null) {
+        const pos = x !== null ? ` | ${x},${y}` : '';
+        const color = colors[primaryColor] || 'transparent';
+        const symmetryInfo = symmetryMode !== 'none' ? ` | Symmetry: ${symmetryMode}` : '';
+        canvasInfo.textContent = `${canvasWidth}×${canvasHeight} | ${currentTool}${pos} | ${color}${symmetryInfo}`;
+    }
 
 
 
