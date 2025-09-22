@@ -184,85 +184,86 @@
     // ------------------- MOVE TOOL -------------------
     
     tools.move = {
-      cursor: 'move',
-      onStart: (x, y) => {
-        if (!selectionBounds || !selectionArray) return;
-    
-        // Click must be inside selection
-        if (
-          x >= selectionBounds.x0 && x <= selectionBounds.x1 &&
-          y >= selectionBounds.y0 && y <= selectionBounds.y1
-        ) {
-          moveStart = { x, y };
-          moveOffset = { dx: 0, dy: 0 };
+  cursor: 'move',
+
+  onStart: (x, y) => {
+    // Use entire canvas if no selection
+    if (!selectionBounds || !selectionArray) {
+      selectionBounds = { x0: 0, y0: 0, x1: canvasWidth - 1, y1: canvasHeight - 1 };
+      selectionArray = array.map(row => row.slice());
+    }
+
+    // Only start if clicked inside selection
+    if (
+      x >= selectionBounds.x0 && x <= selectionBounds.x1 &&
+      y >= selectionBounds.y0 && y <= selectionBounds.y1
+    ) {
+      moveStart = { x, y };
+      moveOffset = { dx: 0, dy: 0 };
+    }
+  },
+
+  onDrag: (x, y) => {
+    if (!moveStart || !selectionArray) return;
+
+    moveOffset.dx = x - moveStart.x;
+    moveOffset.dy = y - moveStart.y;
+
+    // Copy canvas to preview
+    previewArray = array.map(row => row.slice());
+
+    // Paste selection at dragged position
+    for (let i = 0; i < selectionArray.length; i++) {
+      for (let j = 0; j < selectionArray[i].length; j++) {
+        const ny = selectionBounds.y0 + moveOffset.dy + i;
+        const nx = selectionBounds.x0 + moveOffset.dx + j;
+        if (ny >= 0 && ny < canvasHeight && nx >= 0 && nx < canvasWidth) {
+          previewArray[ny][nx] = selectionArray[i][j];
         }
-      },
-      onDrag: (x, y) => {
-        if (!moveStart || !selectionArray) return;
-    
-        moveOffset.dx = x - moveStart.x;
-        moveOffset.dy = y - moveStart.y;
-    
-        previewArray = array.map(row => row.slice());
-    
-        // Clear original selection area in preview
-        for (let i = selectionBounds.y0; i <= selectionBounds.y1; i++) {
-          for (let j = selectionBounds.x0; j <= selectionBounds.x1; j++) {
-            if (i >= 0 && i < canvasHeight && j >= 0 && j < canvasWidth) {
-              previewArray[i][j] = null; // transparent in preview
-            }
-          }
-        }
-    
-        // Paste selection at offset
-        for (let i = 0; i < selectionArray.length; i++) {
-          for (let j = 0; j < selectionArray[i].length; j++) {
-            const ny = selectionBounds.y0 + moveOffset.dy + i;
-            const nx = selectionBounds.x0 + moveOffset.dx + j;
-            if (ny >= 0 && ny < canvasHeight && nx >= 0 && nx < canvasWidth) {
-              previewArray[ny][nx] = selectionArray[i][j];
-            }
-          }
-        }
-    
-        renderPreview(previewArray);
-      },
-      onEnd: (x, y) => {
-        if (!moveStart || !selectionArray) return;
-    
-        const dx = moveOffset.dx;
-        const dy = moveOffset.dy;
-    
-        // Commit move
-        for (let i = 0; i < selectionArray.length; i++) {
-          for (let j = 0; j < selectionArray[i].length; j++) {
-            const ny = selectionBounds.y0 + dy + i;
-            const nx = selectionBounds.x0 + dx + j;
-            if (ny >= 0 && ny < canvasHeight && nx >= 0 && nx < canvasWidth) {
-              paintCell(nx, ny, selectionArray[i][j]);
-            }
-          }
-        }
-    
-        // Clear original area after move
-        for (let i = selectionBounds.y0; i <= selectionBounds.y1; i++) {
-          for (let j = selectionBounds.x0; j <= selectionBounds.x1; j++) {
-            if (i >= 0 && i < canvasHeight && j >= 0 && j < canvasWidth) {
-              paintCell(j, i, null); // clear original
-            }
-          }
-        }
-    
-        // Update selection bounds
-        selectionBounds.x0 += dx;
-        selectionBounds.x1 += dx;
-        selectionBounds.y0 += dy;
-        selectionBounds.y1 += dy;
-    
-        moveStart = null;
-        previewArray = null;
       }
-    };
+    }
+
+    renderPreview(previewArray);
+  },
+
+  onEnd: (x, y) => {
+    if (!moveStart || !selectionArray) return;
+
+    const dx = moveOffset.dx;
+    const dy = moveOffset.dy;
+
+    // Move selection to new location
+    for (let i = 0; i < selectionArray.length; i++) {
+      for (let j = 0; j < selectionArray[i].length; j++) {
+        const ny = selectionBounds.y0 + dy + i;
+        const nx = selectionBounds.x0 + dx + j;
+        if (ny >= 0 && ny < canvasHeight && nx >= 0 && nx < canvasWidth) {
+          paintCell(nx, ny, selectionArray[i][j]);
+        }
+      }
+    }
+
+    // Clear original area
+    for (let i = selectionBounds.y0; i <= selectionBounds.y1; i++) {
+      for (let j = selectionBounds.x0; j <= selectionBounds.x1; j++) {
+        if (i >= 0 && i < canvasHeight && j >= 0 && j < canvasWidth) {
+          paintCell(j, i, null);
+        }
+      }
+    }
+
+    // Update selection bounds
+    selectionBounds.x0 += dx;
+    selectionBounds.x1 += dx;
+    selectionBounds.y0 += dy;
+    selectionBounds.y1 += dy;
+
+    moveStart = null;
+    moveOffset = { dx: 0, dy: 0 };
+    previewArray = null;
+    renderCanvas(); // refresh canvas fully
+  }
+};
 
     // ------------------- RECTANGLE TOOL -------------------
     tools.rect = {
