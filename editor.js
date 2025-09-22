@@ -182,87 +182,82 @@
     };
     
     // ------------------- MOVE TOOL -------------------
-    
     tools.move = {
-      cursor: 'move',
+        cursor: 'move',
     
-      onStart: (x, y) => {
-        // Use entire canvas if no selection
-        if (!selectionBounds || !selectionArray) {
-          selectionBounds = { x0: 0, y0: 0, x1: canvasWidth - 1, y1: canvasHeight - 1 };
-          selectionArray = array.map(row => row.slice());
-        }
-    
-        // Only start if clicked inside selection
-        if (
-          x >= selectionBounds.x0 && x <= selectionBounds.x1 &&
-          y >= selectionBounds.y0 && y <= selectionBounds.y1
-        ) {
-          moveStart = { x, y };
-          moveOffset = { dx: 0, dy: 0 };
-        }
-      },
-    
-      onDrag: (x, y) => {
-        if (!moveStart || !selectionArray) return;
-    
-        moveOffset.dx = x - moveStart.x;
-        moveOffset.dy = y - moveStart.y;
-    
-        // Copy canvas to preview
-        previewArray = array.map(row => row.slice());
-    
-        // Paste selection at dragged position
-        for (let i = 0; i < selectionArray.length; i++) {
-          for (let j = 0; j < selectionArray[i].length; j++) {
-            const ny = selectionBounds.y0 + moveOffset.dy + i;
-            const nx = selectionBounds.x0 + moveOffset.dx + j;
-            if (ny >= 0 && ny < canvasHeight && nx >= 0 && nx < canvasWidth) {
-              previewArray[ny][nx] = selectionArray[i][j];
+        onStart: (x, y) => {
+            if (selectionBounds && selectionArray) {
+                // Click must be inside selection
+                if (x >= selectionBounds.x0 && x <= selectionBounds.x1 &&
+                    y >= selectionBounds.y0 && y <= selectionBounds.y1) {
+                    moveStart = { x, y };
+                    moveOffset = { dx: 0, dy: 0 };
+                    return;
+                }
+            } else {
+                // No selection → move the whole canvas
+                moveStart = { x, y };
+                moveOffset = { dx: 0, dy: 0 };
             }
-          }
-        }
+        },
     
-        renderPreview(previewArray);
-      },
+        onDrag: (x, y) => {
+            if (!moveStart) return;
     
-      onEnd: (x, y) => {
-        if (!moveStart || !selectionArray) return;
+            const dx = x - moveStart.x;
+            const dy = y - moveStart.y;
     
-        const dx = moveOffset.dx;
-        const dy = moveOffset.dy;
+            const movingArray = selectionArray || array;
+            const bounds = selectionBounds || { x0: 0, y0: 0, x1: canvasWidth - 1, y1: canvasHeight - 1 };
     
-        // Move selection to new location
-        for (let i = 0; i < selectionArray.length; i++) {
-          for (let j = 0; j < selectionArray[i].length; j++) {
-            const ny = selectionBounds.y0 + dy + i;
-            const nx = selectionBounds.x0 + dx + j;
-            if (ny >= 0 && ny < canvasHeight && nx >= 0 && nx < canvasWidth) {
-              paintCell(nx, ny, selectionArray[i][j]);
+            // Clear original area in the array first
+            for (let i = bounds.y0; i <= bounds.y1; i++) {
+                for (let j = bounds.x0; j <= bounds.x1; j++) {
+                    const ny = i;
+                    const nx = j;
+                    // Only clear if the cell isn’t overlapping with moved area
+                    const movedY = ny - dy;
+                    const movedX = nx - dx;
+                    if (
+                        movedY < bounds.y0 || movedY > bounds.y1 ||
+                        movedX < bounds.x0 || movedX > bounds.x1
+                    ) {
+                        if (ny >= 0 && ny < canvasHeight && nx >= 0 && nx < canvasWidth) {
+                            paintCell(nx, ny, null);
+                        }
+                    }
+                }
             }
-          }
-        }
     
-        // Clear original area
-        for (let i = selectionBounds.y0; i <= selectionBounds.y1; i++) {
-          for (let j = selectionBounds.x0; j <= selectionBounds.x1; j++) {
-            if (i >= 0 && i < canvasHeight && j >= 0 && j < canvasWidth) {
-              paintCell(j, i, null);
+            // Paste moving area directly into array
+            for (let i = 0; i < movingArray.length; i++) {
+                for (let j = 0; j < movingArray[i].length; j++) {
+                    const ny = bounds.y0 + dy + i;
+                    const nx = bounds.x0 + dx + j;
+                    if (ny >= 0 && ny < canvasHeight && nx >= 0 && nx < canvasWidth) {
+                        paintCell(nx, ny, movingArray[i][j]);
+                    }
+                }
             }
-          }
+        },
+    
+        onEnd: (x, y) => {
+            if (!moveStart) return;
+    
+            const dx = x - moveStart.x;
+            const dy = y - moveStart.y;
+    
+            // Update selection bounds if a selection exists
+            if (selectionBounds) {
+                selectionBounds.x0 += dx;
+                selectionBounds.x1 += dx;
+                selectionBounds.y0 += dy;
+                selectionBounds.y1 += dy;
+            }
+    
+            moveStart = null;
+            moveOffset = { dx: 0, dy: 0 };
         }
-    
-        // Update selection bounds
-        selectionBounds.x0 += dx;
-        selectionBounds.x1 += dx;
-        selectionBounds.y0 += dy;
-        selectionBounds.y1 += dy;
-    
-        moveStart = null;
-        moveOffset = { dx: 0, dy: 0 };
-        previewArray = null;
-        renderCanvas(); // refresh canvas fully
-      }
     };
 
     // ------------------- RECTANGLE TOOL -------------------
