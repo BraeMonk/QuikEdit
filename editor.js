@@ -437,6 +437,20 @@
       updateSpriteSelector();
       renderCanvas();
       saveToLocalStorage();
+
+      // Add a zoom handler
+      canvas.parentElement.addEventListener('wheel', (e) => {
+        e.preventDefault(); // prevent page scrolling
+        
+        const zoomStep = 0.1; // 10% per scroll
+        if (e.deltaY < 0) {
+            zoomLevel = Math.min(zoomLevel + zoomStep, 5); // max 500%
+        } else {
+            zoomLevel = Math.max(zoomLevel - zoomStep, 0.2); // min 20%
+        }
+        
+        renderCanvas(); // re-render everything
+      });
     }
 
     function renderCanvas() {
@@ -445,20 +459,17 @@
         canvas.innerHTML = '';
         canvasGrid.innerHTML = '';
     
-        // Set CSS grid dimensions for both canvas and grid
+        // Calculate canvas pixel dimensions
+        const canvasPixelWidth = canvasWidth * cellSize;
+        const canvasPixelHeight = canvasHeight * cellSize;
+    
+        // Set canvas size and grid layout
+        canvas.style.width = `${canvasPixelWidth}px`;
+        canvas.style.height = `${canvasPixelHeight}px`;
         canvas.style.gridTemplateColumns = `repeat(${canvasWidth}, ${cellSize}px)`;
         canvas.style.gridTemplateRows = `repeat(${canvasHeight}, ${cellSize}px)`;
-        canvasGrid.style.gridTemplateColumns = `repeat(${canvasWidth}, ${cellSize}px)`;
-        canvasGrid.style.gridTemplateRows = `repeat(${canvasHeight}, ${cellSize}px)`;
     
-        // Make grid always cover the canvas fully
-        canvasGrid.style.position = 'absolute';
-        canvasGrid.style.top = '0';
-        canvasGrid.style.left = '0';
-        canvasGrid.style.width = '100%';
-        canvasGrid.style.height = '100%';
-        canvasGrid.style.pointerEvents = 'none'; // allow interaction with canvas cells
-    
+        // Fill canvas with cells
         for (let y = 0; y < canvasHeight; y++) {
             for (let x = 0; x < canvasWidth; x++) {
                 const cell = document.createElement('div');
@@ -470,12 +481,6 @@
                 cell.style.height = `${cellSize}px`;
                 cell.style.background = colors[array[y][x]] || 'transparent';
     
-                // Grid overlay cell
-                const gridCell = document.createElement('div');
-                gridCell.className = 'grid-cell';
-                gridCell.style.width = `${cellSize}px`;
-                gridCell.style.height = `${cellSize}px`;
-    
                 // Event listeners
                 cell.addEventListener('mousedown', handleCellMouseDown);
                 cell.addEventListener('mouseenter', handleCellMouseEnter);
@@ -486,13 +491,41 @@
                 cell.addEventListener('touchmove', handleCellTouchMove);
     
                 canvas.appendChild(cell);
+            }
+        }
+    
+        // Update and align grid overlay
+        canvasGrid.style.position = 'absolute';
+        canvasGrid.style.top = canvas.offsetTop + 'px';
+        canvasGrid.style.left = canvas.offsetLeft + 'px';
+        canvasGrid.style.width = `${canvasPixelWidth}px`;
+        canvasGrid.style.height = `${canvasPixelHeight}px`;
+        canvasGrid.style.gridTemplateColumns = `repeat(${canvasWidth}, ${cellSize}px)`;
+        canvasGrid.style.gridTemplateRows = `repeat(${canvasHeight}, ${cellSize}px)`;
+        canvasGrid.style.pointerEvents = 'none';
+    
+        // Fill grid cells
+        for (let y = 0; y < canvasHeight; y++) {
+            for (let x = 0; x < canvasWidth; x++) {
+                const gridCell = document.createElement('div');
+                gridCell.className = 'grid-cell';
+                gridCell.style.width = `${cellSize}px`;
+                gridCell.style.height = `${cellSize}px`;
                 canvasGrid.appendChild(gridCell);
             }
         }
     
+        // Center canvas + grid inside wrapper
+        const wrapper = canvas.parentElement;
+        wrapper.style.display = 'flex';
+        wrapper.style.justifyContent = 'center';
+        wrapper.style.alignItems = 'center';
+        wrapper.style.overflow = 'hidden';
+    
         updateCanvasInfo();
         updateZoomIndicator();
     }
+
 
 
 
