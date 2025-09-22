@@ -77,6 +77,11 @@
     let selectionEnd = null;
     let selectionBounds = null;
     let selectionArray = null;
+    let marchingAntsPhase = 0;
+    setInterval(() => {
+      marchingAntsPhase = (marchingAntsPhase + 1) % 2;
+      if (selectionBounds) renderPreview(previewArray || array);
+    }, 300); // every 300ms toggle
 
     // DOM elements
     const canvas = document.getElementById('canvas');
@@ -467,7 +472,14 @@ tools.move = {
         const x = parseInt(cell.dataset.x);
         const y = parseInt(cell.dataset.y);
         const colorIndex = tempArray[y][x];
-        cell.style.background = colors[colorIndex] || 'transparent';
+
+        if (value === -1) {
+            cell.style.background = 'transparent';
+            cell.style.outline = `1px dashed ${marchingAntsPhase ? '#000' : '#fff'}`;
+        } else {
+            cell.style.outline = 'none'; 
+            cell.style.background = colors[colorIndex] || 'transparent';
+        }
       });
     }
 
