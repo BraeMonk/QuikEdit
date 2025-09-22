@@ -3,62 +3,152 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Jerry Editor</title>
-  <link rel="stylesheet" href="./styles.css">
-
-  <!-- PWA Manifest -->
+  <title>Jerry Pixel Art Editor</title>
   <link rel="manifest" href="./manifest.json">
-  <meta name="theme-color" content="#f5f5f5">
+  <meta name="theme-color" content="#1a1a1a">
 </head>
 <body>
-  <header>
-    <h1>Jerry Editor</h1>
-  </header>
-
-  <section id="controls">
-    <div class="row">
-      <label>Palette:
-        <select id="paletteSelector"></select>
-      </label>
-      <label>Sprite:
-        <select id="spriteSelector"></select>
-      </label>
+  <div class="editor-container">
+    <!-- Header -->
+    <div class="header">
+      <div class="logo">Jerry Pixel Editor</div>
+      <div class="header-controls">
+        <button class="header-btn" id="newProject">New</button>
+        <button class="header-btn" id="saveProject">Save</button>
+        <button class="header-btn" id="exportPNG">Export</button>
+      </div>
     </div>
 
-    <div class="row">
-      <button id="newSprite">New Sprite</button>
-      <button id="resize">Resize</button>
-      <button id="undo">Undo</button>
-      <button id="redo">Redo</button>
-      <button id="clear">Clear</button>
-      <button id="exportPNG">Export PNG</button>
+    <!-- Tools Sidebar -->
+    <div class="sidebar">
+      <div class="tool-btn active" data-tool="pencil" title="Pencil (B)">✏️</div>
+      <div class="tool-btn" data-tool="eraser" title="Eraser (E)">🧹</div>
+      <div class="tool-btn" data-tool="eyedropper" title="Eyedropper (I)">💧</div>
+      <div class="tool-btn" data-tool="fill" title="Fill Bucket (G)">🪣</div>
+      <div class="tool-separator"></div>
+      <div class="tool-btn" data-tool="select" title="Select (M)">⬚</div>
+      <div class="tool-btn" data-tool="move" title="Move (V)">✋</div>
+      <div class="tool-separator"></div>
+      <div class="tool-btn" data-tool="line" title="Line (L)">📏</div>
+      <div class="tool-btn" data-tool="rect" title="Rectangle (R)">▭</div>
+      <div class="tool-btn" data-tool="circle" title="Circle (O)">○</div>
     </div>
 
-    <div class="row">
-      <div id="swatches"></div>
+    <!-- Canvas Area -->
+    <div class="canvas-area">
+      <div class="canvas-wrapper">
+        <div id="canvas"></div>
+        <div class="canvas-grid" id="canvasGrid"></div>
+      </div>
+      <div class="canvas-info" id="canvasInfo">16×16 | Pencil | #000000</div>
+      <div class="zoom-indicator" id="zoomIndicator">100%</div>
     </div>
 
-    <div class="row">
-      <div id="colorPickers"></div>
-      <button id="saveCustomPalette">Save Custom Palette</button>
-    </div>
-  </section>
+    <!-- Right Panels -->
+    <div class="panels">
+      <!-- Colors Panel -->
+      <div class="panel">
+        <div class="panel-header">
+          Colors <span>▼</span>
+        </div>
+        <div class="panel-content">
+          <div class="control-group">
+            <label>Primary/Secondary Colors</label>
+            <div class="control-row">
+              <div class="swatch primary selected" id="primaryColor" style="background: #000000"></div>
+              <div class="swatch secondary" id="secondaryColor" style="background: #ffffff"></div>
+            </div>
+          </div>
+          
+          <div class="control-group">
+            <label>Palette</label>
+            <select id="paletteSelector"></select>
+          </div>
+          
+          <div class="palette-grid" id="swatches"></div>
+          
+          <div class="control-group">
+            <label>Custom Colors</label>
+            <div id="colorPickers" class="palette-grid"></div>
+            <button class="btn btn-sm" id="saveCustomPalette">Save Palette</button>
+          </div>
+        </div>
+      </div>
 
-  <!-- Canvas & Export -->
-  <section id="canvas-container">
-    <div id="canvas"></div>
+      <!-- Canvas Panel -->
+      <div class="panel">
+        <div class="panel-header">
+          Canvas <span>▼</span>
+        </div>
+        <div class="panel-content">
+          <div class="control-group">
+            <label>Size</label>
+            <div class="control-row">
+              <input type="number" id="canvasWidth" value="16" min="1" max="128">
+              <span>×</span>
+              <input type="number" id="canvasHeight" value="16" min="1" max="128">
+              <button class="btn" id="resizeCanvas">Resize</button>
+            </div>
+          </div>
+          
+          <div class="control-group">
+            <label>Zoom</label>
+            <div class="btn-group">
+              <button class="btn" id="zoomOut">-</button>
+              <button class="btn" id="zoomReset">100%</button>
+              <button class="btn" id="zoomIn">+</button>
+            </div>
+          </div>
 
-    <div class="zoom-controls">
-      <button id="zoomIn">+</button>
-      <button id="zoomOut">-</button>
-    </div>
+          <div class="control-group">
+            <label>Actions</label>
+            <div class="btn-group">
+              <button class="btn" id="undo">Undo</button>
+              <button class="btn" id="redo">Redo</button>
+            </div>
+            <button class="btn" id="clear" style="margin-top: 8px; width: 100%;">Clear Canvas</button>
+          </div>
+        </div>
+      </div>
 
-    <div id="jsonExportContainer">
-      <textarea id="output" rows="8" placeholder="Exported JSON will appear here"></textarea>
-      <button id="exportJSON">Export JSON</button>
-      <input type="file" id="importFile">
+      <!-- Sprites Panel -->
+      <div class="panel">
+        <div class="panel-header">
+          Sprites <span>▼</span>
+        </div>
+        <div class="panel-content">
+          <div class="control-group">
+            <label>Current Sprite</label>
+            <select id="spriteSelector"></select>
+          </div>
+          
+          <div class="btn-group">
+            <button class="btn" id="newSprite">New</button>
+            <button class="btn" id="duplicateSprite">Duplicate</button>
+            <button class="btn" id="deleteSprite">Delete</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Export Panel -->
+      <div class="panel">
+        <div class="panel-header">
+          Export <span>▼</span>
+        </div>
+        <div class="panel-content">
+          <div class="btn-group">
+            <button class="btn primary" id="exportJSON">JSON</button>
+            <button class="btn" id="exportPNG2">PNG</button>
+          </div>
+          
+          <div class="export-area">
+            <textarea id="output" placeholder="Export data appears here..."></textarea>
+            <input type="file" id="importFile" accept=".json" style="margin-top: 8px;">
+          </div>
+        </div>
+      </div>
     </div>
-  </section>
+  </div>
 
   <!-- JS -->
   <script src="./editor.js"></script>
