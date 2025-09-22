@@ -73,6 +73,10 @@
     let gridVisible = true;
     let shapeStart = null;
     let previewArray = null;
+    let selectionStart = null;
+    let selectionEnd = null;
+    let selectionBounds = null;
+    let selectionArray = null;
 
     // DOM elements
     const canvas = document.getElementById('canvas');
@@ -117,6 +121,122 @@
         onRightClick: (x, y) => floodFill(x, y, secondaryColor)
       }
     };
+
+    // ------------------- SELECT TOOL -------------------
+tools.select = {
+  cursor: 'crosshair',
+  onStart: (x, y) => {
+    selectionStart = { x, y };
+    selectionEnd = { x, y };
+    previewArray = array.map(row => row.slice());
+  },
+  onDrag: (x, y) => {
+    if (!selectionStart) return;
+
+    selectionEnd = { x, y };
+    previewArray = array.map(row => row.slice());
+
+    const x0 = Math.min(selectionStart.x, x);
+    const x1 = Math.max(selectionStart.x, x);
+    const y0 = Math.min(selectionStart.y, y);
+    const y1 = Math.max(selectionStart.y, y);
+
+    // draw border only
+    for (let i = y0; i <= y1; i++) {
+      for (let j = x0; j <= x1; j++) {
+        if (i === y0 || i === y1 || j === x0 || j === x1) {
+          previewArray[i][j] = -1; // marker for "selection border"
+        }
+      }
+    }
+
+    renderPreview(previewArray);
+  },
+  onEnd: (x, y) => {
+    if (!selectionStart) return;
+
+    const x0 = Math.min(selectionStart.x, x);
+    const x1 = Math.max(selectionStart.x, x);
+    const y0 = Math.min(selectionStart.y, y);
+    const y1 = Math.max(selectionStart.y, y);
+
+    selectionBounds = { x0, y0, x1, y1 };
+
+    // Copy pixels into selection array
+    selectionArray = [];
+    for (let i = y0; i <= y1; i++) {
+      selectionArray.push(array[i].slice(x0, x1 + 1));
+    }
+
+    selectionStart = null;
+    previewArray = null;
+  }
+};
+
+// ------------------- MOVE TOOL -------------------
+let moveStart = null;
+
+tools.move = {
+  cursor: 'move',
+  onStart: (x, y) => {
+    if (!selectionBounds || !selectionArray) return;
+
+    // Check if click is inside selection
+    if (
+      x >= selectionBounds.x0 && x <= selectionBounds.x1 &&
+      y >= selectionBounds.y0 && y <= selectionBounds.y1
+    ) {
+      moveStart = { x, y };
+    }
+  },
+  onDrag: (x, y) => {
+    if (!moveStart || !selectionArray) return;
+
+    const dx = x - moveStart.x;
+    const dy = y - moveStart.y;
+
+    previewArray = array.map(row => row.slice());
+
+    // Paste selection at offset
+    for (let i = 0; i < selectionArray.length; i++) {
+      for (let j = 0; j < selectionArray[i].length; j++) {
+        const ny = selectionBounds.y0 + dy + i;
+        const nx = selectionBounds.x0 + dx + j;
+        if (ny >= 0 && ny < canvasHeight && nx >= 0 && nx < canvasWidth) {
+          previewArray[ny][nx] = selectionArray[i][j];
+        }
+      }
+    }
+
+    renderPreview(previewArray);
+  },
+  onEnd: (x, y) => {
+    if (!moveStart || !selectionArray) return;
+
+    const dx = x - moveStart.x;
+    const dy = y - moveStart.y;
+
+    // Commit move
+    for (let i = 0; i < selectionArray.length; i++) {
+      for (let j = 0; j < selectionArray[i].length; j++) {
+        const ny = selectionBounds.y0 + dy + i;
+        const nx = selectionBounds.x0 + dx + j;
+        if (ny >= 0 && ny < canvasHeight && nx >= 0 && nx < canvasWidth) {
+          paintCell(nx, ny, selectionArray[i][j]);
+        }
+      }
+    }
+
+    // Update selection bounds
+    selectionBounds.x0 += dx;
+    selectionBounds.x1 += dx;
+    selectionBounds.y0 += dy;
+    selectionBounds.y1 += dy;
+
+    moveStart = null;
+    previewArray = null;
+  }
+};
 
     // ------------------- RECTANGLE TOOL -------------------
     tools.rect = {
