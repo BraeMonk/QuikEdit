@@ -119,156 +119,156 @@
     };
 
     // ------------------- RECTANGLE TOOL -------------------
-tools.rect = {
-  cursor: 'crosshair',
-  onStart: (x, y) => {
-    shapeStart = { x, y };
-    previewArray = array.map(row => row.slice());
-  },
-  onDrag: (x, y) => {
-    if (!shapeStart) return;
-
-    previewArray = array.map(row => row.slice());
-
-    const x0 = Math.min(shapeStart.x, x);
-    const x1 = Math.max(shapeStart.x, x);
-    const y0 = Math.min(shapeStart.y, y);
-    const y1 = Math.max(shapeStart.y, y);
-
-    for (let i = y0; i <= y1; i++) {
-      for (let j = x0; j <= x1; j++) {
-        previewArray[i][j] = primaryColor;
-      }
-    }
-
-    renderPreview(previewArray);
-  },
-  onEnd: (x, y) => {
-    if (!shapeStart) return;
-
-    const x0 = Math.min(shapeStart.x, x);
-    const x1 = Math.max(shapeStart.x, x);
-    const y0 = Math.min(shapeStart.y, y);
-    const y1 = Math.max(shapeStart.y, y);
-
-    for (let i = y0; i <= y1; i++) {
-      for (let j = x0; j <= x1; j++) {
-        paintCell(j, i, primaryColor);
-      }
-    }
-
-    shapeStart = null;
-    previewArray = null;
-  }
-};
-
-// ------------------- LINE TOOL -------------------
-tools.line = {
-  cursor: 'crosshair',
-  onStart: (x, y) => {
-    shapeStart = { x, y };
-    previewArray = array.map(row => row.slice());
-  },
-  onDrag: (x, y) => {
-    if (!shapeStart) return;
-
-    previewArray = array.map(row => row.slice());
-
-    const x0 = shapeStart.x;
-    const y0 = shapeStart.y;
-    const dx = Math.abs(x - x0);
-    const dy = Math.abs(y - y0);
-    const sx = x0 < x ? 1 : -1;
-    const sy = y0 < y ? 1 : -1;
-    let err = dx - dy;
-    let cx = x0;
-    let cy = y0;
-
-    while (true) {
-      previewArray[cy][cx] = primaryColor;
-      if (cx === x && cy === y) break;
-      const e2 = 2 * err;
-      if (e2 > -dy) { err -= dy; cx += sx; }
-      if (e2 < dx) { err += dx; cy += sy; }
-    }
-
-    renderPreview(previewArray);
-  },
-  onEnd: (x, y) => {
-    if (!shapeStart) return;
-
-    const x0 = shapeStart.x;
-    const y0 = shapeStart.y;
-    const dx = Math.abs(x - x0);
-    const dy = Math.abs(y - y0);
-    const sx = x0 < x ? 1 : -1;
-    const sy = y0 < y ? 1 : -1;
-    let err = dx - dy;
-    let cx = x0;
-    let cy = y0;
-
-    while (true) {
-      paintCell(cx, cy, primaryColor);
-      if (cx === x && cy === y) break;
-      const e2 = 2 * err;
-      if (e2 > -dy) { err -= dy; cx += sx; }
-      if (e2 < dx) { err += dx; cy += sy; }
-    }
-
-    shapeStart = null;
-    previewArray = null;
-  }
-};
-
-// ------------------- CIRCLE/ELLIPSE TOOL -------------------
-tools.circle = {
-  cursor: 'crosshair',
-  onStart: (x, y) => {
-    shapeStart = { x, y };
-    previewArray = array.map(row => row.slice());
-  },
-  onDrag: (x, y) => {
-    if (!shapeStart) return;
-
-    previewArray = array.map(row => row.slice());
-
-    const cx = Math.floor((shapeStart.x + x) / 2);
-    const cy = Math.floor((shapeStart.y + y) / 2);
-    const rx = Math.abs(x - shapeStart.x) / 2;
-    const ry = Math.abs(y - shapeStart.y) / 2;
-
-    for (let i = Math.floor(cy - ry); i <= Math.ceil(cy + ry); i++) {
-      for (let j = Math.floor(cx - rx); j <= Math.ceil(cx + rx); j++) {
-        if (j < 0 || j >= canvasWidth || i < 0 || i >= canvasHeight) continue;
-        if (((j - cx) ** 2) / (rx ** 2) + ((i - cy) ** 2) / (ry ** 2) <= 1) {
-          previewArray[i][j] = primaryColor;
+    tools.rect = {
+      cursor: 'crosshair',
+      onStart: (x, y) => {
+        shapeStart = { x, y };
+        previewArray = array.map(row => row.slice());
+      },
+      onDrag: (x, y) => {
+        if (!shapeStart) return;
+    
+        previewArray = array.map(row => row.slice());
+    
+        const x0 = Math.min(shapeStart.x, x);
+        const x1 = Math.max(shapeStart.x, x);
+        const y0 = Math.min(shapeStart.y, y);
+        const y1 = Math.max(shapeStart.y, y);
+    
+        for (let i = y0; i <= y1; i++) {
+          for (let j = x0; j <= x1; j++) {
+            previewArray[i][j] = primaryColor;
+          }
         }
-      }
-    }
-
-    renderPreview(previewArray);
-  },
-  onEnd: (x, y) => {
-    if (!shapeStart) return;
-
-    const cx = Math.floor((shapeStart.x + x) / 2);
-    const cy = Math.floor((shapeStart.y + y) / 2);
-    const rx = Math.abs(x - shapeStart.x) / 2;
-    const ry = Math.abs(y - shapeStart.y) / 2;
-
-    for (let i = Math.floor(cy - ry); i <= Math.ceil(cy + ry); i++) {
-      for (let j = Math.floor(cx - rx); j <= Math.ceil(cx + rx); j++) {
-        if (j < 0 || j >= canvasWidth || i < 0 || i >= canvasHeight) continue;
-        if (((j - cx) ** 2) / (rx ** 2) + ((i - cy) ** 2) / (ry ** 2) <= 1) {
-          paintCell(j, i, primaryColor);
+    
+        renderPreview(previewArray);
+      },
+      onEnd: (x, y) => {
+        if (!shapeStart) return;
+    
+        const x0 = Math.min(shapeStart.x, x);
+        const x1 = Math.max(shapeStart.x, x);
+        const y0 = Math.min(shapeStart.y, y);
+        const y1 = Math.max(shapeStart.y, y);
+    
+        for (let i = y0; i <= y1; i++) {
+          for (let j = x0; j <= x1; j++) {
+            paintCell(j, i, primaryColor);
+          }
         }
+    
+        shapeStart = null;
+        previewArray = null;
       }
-    }
-
-    shapeStart = null;
-    previewArray = null;
-  }
-};
+    };
+    
+    // ------------------- LINE TOOL -------------------
+    tools.line = {
+      cursor: 'crosshair',
+      onStart: (x, y) => {
+        shapeStart = { x, y };
+        previewArray = array.map(row => row.slice());
+      },
+      onDrag: (x, y) => {
+        if (!shapeStart) return;
+    
+        previewArray = array.map(row => row.slice());
+    
+        const x0 = shapeStart.x;
+        const y0 = shapeStart.y;
+        const dx = Math.abs(x - x0);
+        const dy = Math.abs(y - y0);
+        const sx = x0 < x ? 1 : -1;
+        const sy = y0 < y ? 1 : -1;
+        let err = dx - dy;
+        let cx = x0;
+        let cy = y0;
+    
+        while (true) {
+          previewArray[cy][cx] = primaryColor;
+          if (cx === x && cy === y) break;
+          const e2 = 2 * err;
+          if (e2 > -dy) { err -= dy; cx += sx; }
+          if (e2 < dx) { err += dx; cy += sy; }
+        }
+    
+        renderPreview(previewArray);
+      },
+      onEnd: (x, y) => {
+        if (!shapeStart) return;
+    
+        const x0 = shapeStart.x;
+        const y0 = shapeStart.y;
+        const dx = Math.abs(x - x0);
+        const dy = Math.abs(y - y0);
+        const sx = x0 < x ? 1 : -1;
+        const sy = y0 < y ? 1 : -1;
+        let err = dx - dy;
+        let cx = x0;
+        let cy = y0;
+    
+        while (true) {
+          paintCell(cx, cy, primaryColor);
+          if (cx === x && cy === y) break;
+          const e2 = 2 * err;
+          if (e2 > -dy) { err -= dy; cx += sx; }
+          if (e2 < dx) { err += dx; cy += sy; }
+        }
+    
+        shapeStart = null;
+        previewArray = null;
+      }
+    };
+    
+    // ------------------- CIRCLE/ELLIPSE TOOL -------------------
+    tools.circle = {
+      cursor: 'crosshair',
+      onStart: (x, y) => {
+        shapeStart = { x, y };
+        previewArray = array.map(row => row.slice());
+      },
+      onDrag: (x, y) => {
+        if (!shapeStart) return;
+    
+        previewArray = array.map(row => row.slice());
+    
+        const cx = Math.floor((shapeStart.x + x) / 2);
+        const cy = Math.floor((shapeStart.y + y) / 2);
+        const rx = Math.abs(x - shapeStart.x) / 2;
+        const ry = Math.abs(y - shapeStart.y) / 2;
+    
+        for (let i = Math.floor(cy - ry); i <= Math.ceil(cy + ry); i++) {
+          for (let j = Math.floor(cx - rx); j <= Math.ceil(cx + rx); j++) {
+            if (j < 0 || j >= canvasWidth || i < 0 || i >= canvasHeight) continue;
+            if (((j - cx) ** 2) / (rx ** 2) + ((i - cy) ** 2) / (ry ** 2) <= 1) {
+              previewArray[i][j] = primaryColor;
+            }
+          }
+        }
+    
+        renderPreview(previewArray);
+      },
+      onEnd: (x, y) => {
+        if (!shapeStart) return;
+    
+        const cx = Math.floor((shapeStart.x + x) / 2);
+        const cy = Math.floor((shapeStart.y + y) / 2);
+        const rx = Math.abs(x - shapeStart.x) / 2;
+        const ry = Math.abs(y - shapeStart.y) / 2;
+    
+        for (let i = Math.floor(cy - ry); i <= Math.ceil(cy + ry); i++) {
+          for (let j = Math.floor(cx - rx); j <= Math.ceil(cx + rx); j++) {
+            if (j < 0 || j >= canvasWidth || i < 0 || i >= canvasHeight) continue;
+            if (((j - cx) ** 2) / (rx ** 2) + ((i - cy) ** 2) / (ry ** 2) <= 1) {
+              paintCell(j, i, primaryColor);
+            }
+          }
+        }
+    
+        shapeStart = null;
+        previewArray = null;
+      }
+    };
 
     function setTool(toolName) {
       currentTool = toolName;
