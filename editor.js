@@ -92,6 +92,7 @@
     const spriteSelector = document.getElementById('spriteSelector');
     const canvasInfo = document.getElementById('canvasInfo');
     const zoomIndicator = document.getElementById('zoomIndicator');
+    const gridToggle = document.getElementById('gridToggle');
 
     // =============================
     // Tool System
@@ -809,6 +810,14 @@
         saveToLocalStorage();
       }
     }
+
+    gridToggle.addEventListener('change', () => {
+      if (gridToggle.checked) {
+        canvasGrid.style.display = 'grid';
+      } else {
+        canvasGrid.style.display = 'none';
+      }
+    });
 
     // =============================
     // Zoom Controls
