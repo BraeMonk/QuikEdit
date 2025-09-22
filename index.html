@@ -22,14 +22,28 @@
 
     <!-- Tools Sidebar -->
     <div class="sidebar">
+      <!-- Regular Drawing Tools -->
       <div class="tool-btn active" data-tool="pencil" title="Pencil (B)">✏️</div>
       <div class="tool-btn" data-tool="eraser" title="Eraser (E)">🧹</div>
       <div class="tool-btn" data-tool="eyedropper" title="Eyedropper (I)">💧</div>
       <div class="tool-btn" data-tool="fill" title="Fill Bucket (G)">🪣</div>
+      
       <div class="tool-separator"></div>
+      
+      <!-- Symmetric Drawing Tools -->
+      <div class="tool-btn symmetric-tool" data-tool="symmetricPencil" title="Symmetric Pencil (Shift+B)">✏️⚌</div>
+      <div class="tool-btn symmetric-tool" data-tool="symmetricEraser" title="Symmetric Eraser (Shift+E)">🧹⚌</div>
+      <div class="tool-btn symmetric-tool" data-tool="symmetricFill" title="Symmetric Fill (Shift+G)">🪣⚌</div>
+      
+      <div class="tool-separator"></div>
+      
+      <!-- Selection and Movement Tools -->
       <div class="tool-btn" data-tool="select" title="Select (M)">⬚</div>
       <div class="tool-btn" data-tool="move" title="Move (V)">✋</div>
+      
       <div class="tool-separator"></div>
+      
+      <!-- Shape Tools -->
       <div class="tool-btn" data-tool="line" title="Line (L)">📏</div>
       <div class="tool-btn" data-tool="rect" title="Rectangle (R)">▭</div>
       <div class="tool-btn" data-tool="circle" title="Circle (O)">○</div>
@@ -72,6 +86,58 @@
             <label>Custom Colors</label>
             <div id="colorPickers" class="palette-grid"></div>
             <button class="btn btn-sm" id="saveCustomPalette">Save Palette</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Symmetry Panel -->
+      <div class="panel">
+        <div class="panel-header">
+          Symmetry <span>▼</span>
+        </div>
+        <div class="panel-content">
+          <div class="control-group">
+            <label>Symmetry Mode</label>
+            <div class="btn-group symmetry-controls">
+              <button class="btn symmetry-btn active" data-symmetry="none" title="No Symmetry (Q)">None</button>
+              <button class="btn symmetry-btn" data-symmetry="horizontal" title="Horizontal Symmetry (W)">─</button>
+            </div>
+            <div class="btn-group symmetry-controls">
+              <button class="btn symmetry-btn" data-symmetry="vertical" title="Vertical Symmetry (A)">│</button>
+              <button class="btn symmetry-btn" data-symmetry="both" title="Both Axes (S)">┼</button>
+            </div>
+          </div>
+          <div class="symmetry-info">
+            <small>Use symmetric tools (⚌) to draw with active symmetry mode</small>
+          </div>
+        </div>
+      </div>
+
+      <!-- Transform Panel -->
+      <div class="panel">
+        <div class="panel-header">
+          Transform <span>▼</span>
+        </div>
+        <div class="panel-content">
+          <div class="control-group">
+            <label>Rotate Selection</label>
+            <div class="btn-group">
+              <button class="btn" id="rotateLeft" title="Rotate 90° Left ([)">↶ 90°</button>
+              <button class="btn" id="rotate180" title="Rotate 180°">↻ 180°</button>
+              <button class="btn" id="rotateRight" title="Rotate 90° Right (])">↷ 90°</button>
+            </div>
+          </div>
+          
+          <div class="control-group">
+            <label>Flip Selection</label>
+            <div class="btn-group">
+              <button class="btn" id="flipHorizontal" title="Flip Horizontal (Ctrl+H)">↔ Flip H</button>
+              <button class="btn" id="flipVertical" title="Flip Vertical (Ctrl+J)">↕ Flip V</button>
+            </div>
+          </div>
+          
+          <div class="transform-info">
+            <small>Select an area first to use transform tools</small>
           </div>
         </div>
       </div>
