@@ -1,217 +1,479 @@
 /* ============================= */
-/* Body and General Layout       */
-/* ============================= */
-body {
-    font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-    margin: 0;
-    padding: 20px;
-    background-color: #1e1e1e;
-    color: #f0f0f0;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    min-height: 100vh;
-    box-sizing: border-box;
-}
+    /* Reset & Base Styles           */
+    /* ============================= */
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
 
-h1 {
-    margin: 0 0 20px 0;
-    font-size: 2rem;
-    text-align: center;
-}
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #1a1a1a;
+      color: #e0e0e0;
+      overflow: hidden;
+      height: 100vh;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-touch-callout: none;
+    }
 
-/* ============================= */
-/* Control Panels                */
-/* ============================= */
-#controls {
-    display: flex;
-    flex-direction: column;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 12px;
-    margin-bottom: 20px;
-    width: 100%;
-    max-width: 900px;
-}
+    /* ============================= */
+    /* Main Layout                   */
+    /* ============================= */
+    .editor-container {
+      display: grid;
+      grid-template-areas: 
+        "header header header"
+        "sidebar canvas panels"
+        "sidebar canvas panels";
+      grid-template-columns: 60px 1fr 280px;
+      grid-template-rows: 50px 1fr;
+      height: 100vh;
+      gap: 1px;
+      background: #2a2a2a;
+    }
 
-#controls .row {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 12px;
-}
+    /* ============================= */
+    /* Header                        */
+    /* ============================= */
+    .header {
+      grid-area: header;
+      background: #1a1a1a;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 16px;
+      border-bottom: 1px solid #333;
+    }
 
-#controls select,
-#controls button {
-    padding: 8px 12px;
-    font-size: 1rem;
-    border-radius: 6px;
-    border: none;
-    cursor: pointer;
-    transition: background 0.2s, transform 0.1s;
-    background-color: #333;
-    color: #fff;
-}
+    .logo {
+      font-size: 18px;
+      font-weight: 600;
+      color: #4CAF50;
+    }
 
-#controls select {
-    min-width: 120px;
-}
+    .header-controls {
+      display: flex;
+      gap: 8px;
+    }
 
-#controls button:hover,
-#controls select:hover {
-    background-color: #555;
-}
+    .header-btn {
+      padding: 6px 12px;
+      background: #333;
+      border: none;
+      border-radius: 4px;
+      color: #e0e0e0;
+      font-size: 12px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
 
-button:active {
-    transform: scale(0.95);
-}
+    .header-btn:hover {
+      background: #444;
+    }
 
-/* ============================= */
-/* Swatches                      */
-/* ============================= */
-#swatches {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 6px;
-    margin-bottom: 20px;
-}
+    /* ============================= */
+    /* Sidebar Tools                 */
+    /* ============================= */
+    .sidebar {
+      grid-area: sidebar;
+      background: #1e1e1e;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 8px 0;
+      gap: 4px;
+      border-right: 1px solid #333;
+    }
 
-.swatch {
-    width: 32px;
-    height: 32px;
-    border: 2px solid #444;
-    border-radius: 4px;
-    cursor: pointer;
-    transition: transform 0.1s, border-color 0.1s;
-}
+    .tool-btn {
+      width: 44px;
+      height: 44px;
+      background: #333;
+      border: 2px solid transparent;
+      border-radius: 6px;
+      color: #e0e0e0;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      transition: all 0.2s;
+      position: relative;
+    }
 
-.swatch.selected {
-    border-color: #fff;
-    transform: scale(1.1);
-}
+    .tool-btn:hover {
+      background: #444;
+      border-color: #555;
+    }
 
-/* ============================= */
-/* Canvas Container              */
-/* ============================= */
-#canvas-container {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    width: 100%;
-    max-width: 900px;
-    margin-bottom: 30px;
-}
+    .tool-btn.active {
+      background: #4CAF50;
+      border-color: #66BB6A;
+      color: #000;
+    }
 
-#canvas {
-    display: grid;
-    background-color: #2b2b2b;
-    border: 3px solid #444;
-    touch-action: none; /* prevent mobile scrolling while painting */
-    width: 100%;
-    max-width: 900px;
-    margin-bottom: 10px;
-}
+    .tool-separator {
+      width: 80%;
+      height: 1px;
+      background: #333;
+      margin: 4px 0;
+    }
 
-.cell {
-    border: 1px solid #3a3a3a;
-    box-sizing: border-box;
-}
+    /* ============================= */
+    /* Canvas Area                   */
+    /* ============================= */
+    .canvas-area {
+      grid-area: canvas;
+      background: #1a1a1a;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      overflow: auto;
+    }
 
-/* ============================= */
-/* Zoom Buttons                  */
-/* ============================= */
-.zoom-controls {
-    display: flex;
-    justify-content: center;
-    gap: 10px;
-    margin-bottom: 20px;
-}
+    .canvas-wrapper {
+      position: relative;
+      background: 
+        linear-gradient(45deg, #2a2a2a 25%, transparent 25%), 
+        linear-gradient(-45deg, #2a2a2a 25%, transparent 25%), 
+        linear-gradient(45deg, transparent 75%, #2a2a2a 75%), 
+        linear-gradient(-45deg, transparent 75%, #2a2a2a 75%);
+      background-size: 20px 20px;
+      background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+      padding: 20px;
+      border-radius: 8px;
+    }
 
-.zoom-controls button {
-    padding: 8px 12px;
-    font-size: 1.2rem;
-    border-radius: 6px;
-    border: none;
-    cursor: pointer;
-    background-color: #333;
-    color: #fff;
-    transition: background 0.2s;
-}
+    #canvas {
+      display: grid;
+      border: 2px solid #444;
+      background: transparent;
+      cursor: crosshair;
+      touch-action: none;
+      position: relative;
+    }
 
-.zoom-controls button:hover {
-    background-color: #555;
-}
+    .canvas-grid {
+      display: grid;
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      opacity: 0.3;
+    }
 
-/* ============================= */
-/* Custom Palette Pickers        */
-/* ============================= */
-#colorPickers {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-    justify-content: center;
-    margin-bottom: 20px;
-}
+    .grid-cell {
+      border: 0.5px solid #444;
+    }
 
-#colorPickers input[type=color] {
-    width: 42px;
-    height: 42px;
-    border: 2px solid #444;
-    border-radius: 4px;
-    cursor: pointer;
-    padding: 0;
-}
+    .cell {
+      position: relative;
+      border: none;
+      transition: opacity 0.1s;
+    }
 
-/* ============================= */
-/* JSON Export/Import            */
-/* ============================= */
-#jsonExportContainer {
-    display: flex;
-    flex-direction: column;
-    align-items: stretch;
-    gap: 10px;
-    width: 100%;
-    max-width: 600px;
-}
+    .cell::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      border: 1px solid rgba(255,255,255,0.1);
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.1s;
+    }
 
-#jsonExportContainer textarea {
-    width: 100%;
-    height: 140px;
-    background-color: #222;
-    color: #f0f0f0;
-    border: 2px solid #444;
-    padding: 12px;
-    overflow: auto;
-    white-space: pre-wrap;
-    border-radius: 6px;
-    font-family: monospace;
-}
+    .cell:hover::before {
+      opacity: 1;
+    }
 
-#jsonExportContainer button,
-#jsonExportContainer input[type=file] {
-    padding: 8px 12px;
-    background-color: #333;
-    color: #fff;
-    border-radius: 6px;
-    border: none;
-    cursor: pointer;
-    font-size: 1rem;
-    transition: background 0.2s;
-}
+    .cell.preview {
+      opacity: 0.7;
+    }
 
-#jsonExportContainer button:hover,
-#jsonExportContainer input[type=file]:hover {
-    background-color: #555;
-}
+    /* ============================= */
+    /* Right Panels                  */
+    /* ============================= */
+    .panels {
+      grid-area: panels;
+      background: #1e1e1e;
+      display: flex;
+      flex-direction: column;
+      border-left: 1px solid #333;
+      overflow-y: auto;
+    }
 
-/* ============================= */
-/* Responsive Canvas & Layout    */
-/* ============================= */
-@media (max-width: 800px) {
-    .cell { min-width: 24px; min-height: 24px; }
-}
+    .panel {
+      background: #1e1e1e;
+      border-bottom: 1px solid #333;
+    }
 
-@media (max-width: 500px) {
-    .cell { min-width: 18px; min-height: 18px; }
-}
+    .panel-header {
+      background: #2a2a2a;
+      padding: 12px 16px;
+      font-size: 14px;
+      font-weight: 600;
+      border-bottom: 1px solid #333;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .panel-content {
+      padding: 16px;
+    }
+
+    .panel.collapsed .panel-content {
+      display: none;
+    }
+
+    /* ============================= */
+    /* Color Palette                 */
+    /* ============================= */
+    .palette-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(24px, 1fr));
+      gap: 4px;
+      margin-bottom: 12px;
+    }
+
+    .swatch {
+      width: 24px;
+      height: 24px;
+      border: 2px solid #444;
+      border-radius: 3px;
+      cursor: pointer;
+      transition: all 0.2s;
+      position: relative;
+    }
+
+    .swatch.selected {
+      border-color: #4CAF50;
+      transform: scale(1.1);
+    }
+
+    .swatch.primary {
+      border-width: 3px;
+    }
+
+    .swatch.secondary {
+      border-style: dashed;
+    }
+
+    /* ============================= */
+    /* Controls                      */
+    /* ============================= */
+    .control-group {
+      margin-bottom: 16px;
+    }
+
+    .control-group label {
+      display: block;
+      font-size: 12px;
+      margin-bottom: 6px;
+      color: #bbb;
+    }
+
+    .control-row {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+
+    select, input[type="number"] {
+      background: #333;
+      border: 1px solid #555;
+      color: #e0e0e0;
+      padding: 6px 8px;
+      border-radius: 4px;
+      font-size: 12px;
+      width: 100%;
+    }
+
+    .btn {
+      background: #333;
+      border: 1px solid #555;
+      color: #e0e0e0;
+      padding: 8px 12px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 12px;
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+
+    .btn:hover {
+      background: #444;
+      border-color: #666;
+    }
+
+    .btn.primary {
+      background: #4CAF50;
+      border-color: #66BB6A;
+      color: #000;
+    }
+
+    .btn.primary:hover {
+      background: #66BB6A;
+    }
+
+    .btn-group {
+      display: flex;
+      gap: 4px;
+    }
+
+    .btn-group .btn {
+      flex: 1;
+    }
+
+    /* ============================= */
+    /* Canvas Info                   */
+    /* ============================= */
+    .canvas-info {
+      position: absolute;
+      bottom: 8px;
+      left: 8px;
+      background: rgba(0,0,0,0.7);
+      color: #e0e0e0;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-family: monospace;
+    }
+
+    /* ============================= */
+    /* Export Area                   */
+    /* ============================= */
+    .export-area {
+      margin-top: 12px;
+    }
+
+    .export-area textarea {
+      width: 100%;
+      height: 80px;
+      background: #333;
+      border: 1px solid #555;
+      color: #e0e0e0;
+      padding: 8px;
+      border-radius: 4px;
+      font-family: monospace;
+      font-size: 11px;
+      resize: vertical;
+    }
+
+    /* ============================= */
+    /* Mobile Responsive             */
+    /* ============================= */
+    @media (max-width: 768px) {
+      .editor-container {
+        grid-template-areas: 
+          "header header"
+          "canvas canvas"
+          "mobile-tools mobile-panels";
+        grid-template-columns: 1fr 1fr;
+        grid-template-rows: 50px 1fr 200px;
+      }
+
+      .sidebar {
+        grid-area: mobile-tools;
+        flex-direction: row;
+        justify-content: space-around;
+        padding: 8px;
+        overflow-x: auto;
+      }
+
+      .panels {
+        grid-area: mobile-panels;
+        max-height: 200px;
+      }
+
+      .tool-btn {
+        width: 40px;
+        height: 40px;
+        flex-shrink: 0;
+      }
+
+      .canvas-area {
+        padding: 8px;
+      }
+
+      .panel-content {
+        padding: 12px;
+      }
+
+      .palette-grid {
+        grid-template-columns: repeat(auto-fit, minmax(20px, 1fr));
+      }
+
+      .swatch {
+        width: 20px;
+        height: 20px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .editor-container {
+        grid-template-rows: 45px 1fr 180px;
+      }
+
+      .header {
+        padding: 0 12px;
+      }
+
+      .logo {
+        font-size: 16px;
+      }
+
+      .tool-btn {
+        width: 36px;
+        height: 36px;
+        font-size: 18px;
+      }
+    }
+
+    /* ============================= */
+    /* Animations & Effects          */
+    /* ============================= */
+    .fade-in {
+      animation: fadeIn 0.3s ease-out;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .tool-tooltip {
+      position: absolute;
+      background: #000;
+      color: #fff;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      white-space: nowrap;
+      pointer-events: none;
+      z-index: 1000;
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+
+    .zoom-indicator {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      background: rgba(0,0,0,0.7);
+      color: #e0e0e0;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+    }
