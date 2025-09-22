@@ -440,69 +440,60 @@
     }
 
     function renderCanvas() {
-      const cellSize = Math.max(8, Math.floor(400 / Math.max(canvasWidth, canvasHeight)) * zoomLevel);
+        const cellSize = Math.max(8, Math.floor(400 / Math.max(canvasWidth, canvasHeight)) * zoomLevel);
     
-      canvas.innerHTML = '';
-      canvasGrid.innerHTML = '';
+        canvas.innerHTML = '';
+        canvasGrid.innerHTML = '';
     
-      // Set exact canvas size
-      const totalWidth = cellSize * canvasWidth;
-      const totalHeight = cellSize * canvasHeight;
+        // Set CSS grid dimensions for both canvas and grid
+        canvas.style.gridTemplateColumns = `repeat(${canvasWidth}, ${cellSize}px)`;
+        canvas.style.gridTemplateRows = `repeat(${canvasHeight}, ${cellSize}px)`;
+        canvasGrid.style.gridTemplateColumns = `repeat(${canvasWidth}, ${cellSize}px)`;
+        canvasGrid.style.gridTemplateRows = `repeat(${canvasHeight}, ${cellSize}px)`;
     
-      canvas.style.width = `${totalWidth}px`;
-      canvas.style.height = `${totalHeight}px`;
-      canvas.style.gridTemplateColumns = `repeat(${canvasWidth}, ${cellSize}px)`;
-      canvas.style.gridTemplateRows = `repeat(${canvasHeight}, ${cellSize}px)`;
+        // Make grid always cover the canvas fully
+        canvasGrid.style.position = 'absolute';
+        canvasGrid.style.top = '0';
+        canvasGrid.style.left = '0';
+        canvasGrid.style.width = '100%';
+        canvasGrid.style.height = '100%';
+        canvasGrid.style.pointerEvents = 'none'; // allow interaction with canvas cells
     
-      canvasGrid.style.width = `${totalWidth}px`;
-      canvasGrid.style.height = `${totalHeight}px`;
-      canvasGrid.style.gridTemplateColumns = `repeat(${canvasWidth}, ${cellSize}px)`;
-      canvasGrid.style.gridTemplateRows = `repeat(${canvasHeight}, ${cellSize}px)`;
+        for (let y = 0; y < canvasHeight; y++) {
+            for (let x = 0; x < canvasWidth; x++) {
+                const cell = document.createElement('div');
+                cell.className = 'cell';
+                cell.dataset.x = x;
+                cell.dataset.y = y;
+                cell.dataset.value = array[y][x];
+                cell.style.width = `${cellSize}px`;
+                cell.style.height = `${cellSize}px`;
+                cell.style.background = colors[array[y][x]] || 'transparent';
     
-      // Create cells
-      for (let y = 0; y < canvasHeight; y++) {
-        for (let x = 0; x < canvasWidth; x++) {
-          const cell = document.createElement('div');
-          cell.className = 'cell';
-          cell.dataset.x = x;
-          cell.dataset.y = y;
-          cell.dataset.value = array[y][x];
-          cell.style.width = `${cellSize}px`;
-          cell.style.height = `${cellSize}px`;
-          cell.style.background = colors[array[y][x]] || 'transparent';
+                // Grid overlay cell
+                const gridCell = document.createElement('div');
+                gridCell.className = 'grid-cell';
+                gridCell.style.width = `${cellSize}px`;
+                gridCell.style.height = `${cellSize}px`;
     
-          // Grid overlay
-          const gridCell = document.createElement('div');
-          gridCell.className = 'grid-cell';
-          gridCell.style.width = `${cellSize}px`;
-          gridCell.style.height = `${cellSize}px`;
+                // Event listeners
+                cell.addEventListener('mousedown', handleCellMouseDown);
+                cell.addEventListener('mouseenter', handleCellMouseEnter);
+                cell.addEventListener('mouseleave', handleCellMouseLeave);
+                cell.addEventListener('mouseup', handleCellMouseUp);
+                cell.addEventListener('contextmenu', e => e.preventDefault());
+                cell.addEventListener('touchstart', handleCellTouchStart);
+                cell.addEventListener('touchmove', handleCellTouchMove);
     
-          // Event listeners
-          cell.addEventListener('mousedown', handleCellMouseDown);
-          cell.addEventListener('mouseenter', handleCellMouseEnter);
-          cell.addEventListener('mouseleave', handleCellMouseLeave);
-          cell.addEventListener('mouseup', handleCellMouseUp);
-          cell.addEventListener('contextmenu', e => e.preventDefault());
-    
-          // Touch events
-          cell.addEventListener('touchstart', handleCellTouchStart);
-          cell.addEventListener('touchmove', handleCellTouchMove);
-    
-          canvas.appendChild(cell);
-          canvasGrid.appendChild(gridCell);
+                canvas.appendChild(cell);
+                canvasGrid.appendChild(gridCell);
+            }
         }
-      }
     
-      // Center wrapper if smaller than container
-      const wrapper = document.querySelector('.canvas-wrapper');
-      wrapper.style.width = `${totalWidth}px`;
-      wrapper.style.height = `${totalHeight}px`;
-      wrapper.style.margin = '0 auto';  // horizontal center
-      wrapper.style.overflow = 'auto';  // scroll if larger than container
-    
-      updateCanvasInfo();
-      updateZoomIndicator();
+        updateCanvasInfo();
+        updateZoomIndicator();
     }
+
 
 
     function renderPreview(tempArray) {
