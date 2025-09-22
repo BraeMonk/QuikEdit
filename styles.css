@@ -11,26 +11,25 @@ body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   background: #1a1a1a;
   color: #e0e0e0;
-  overflow: auto;
-  height: 100%;
-  width:100%;
+  overflow: hidden;
+  height: 100vh;
+  width: 100vw;
   user-select: none;
   -webkit-user-select: none;
   -webkit-touch-callout: none;
 }
 
 /* ============================= */
-/* Main Layout                   */
+/* Desktop Layout                */
 /* ============================= */
 .editor-container {
   display: grid;
   grid-template-areas: 
     "header header header"
-    "sidebar canvas panels"
     "sidebar canvas panels";
   grid-template-columns: 60px 1fr 280px;
   grid-template-rows: 50px 1fr;
-  height: 100%;
+  height: 100vh;
   gap: 1px;
   background: #2a2a2a;
 }
@@ -86,6 +85,7 @@ body {
   padding: 8px 0;
   gap: 4px;
   border-right: 1px solid #333;
+  overflow-y: auto;
 }
 
 .tool-btn {
@@ -103,6 +103,7 @@ body {
   transition: all 0.2s;
   position: relative;
   line-height: 1;
+  flex-shrink: 0;
 }
 
 .tool-btn:hover {
@@ -153,6 +154,7 @@ body {
   align-items: center;
   justify-content: center;
   position: relative;
+  overflow: auto;
 }
 
 .canvas-wrapper {
@@ -179,15 +181,15 @@ body {
 }
 
 .canvas-grid { 
-    display: grid;
-    position: absolute; 
-    top: 0; 
-    left: 0; 
-    width: 100%; 
-    height: 100%; 
-    box-sizing: border-box;
-    pointer-events: none;
-    opacity: 0.3; 
+  display: grid;
+  position: absolute; 
+  top: 0; 
+  left: 0; 
+  width: 100%; 
+  height: 100%; 
+  box-sizing: border-box;
+  pointer-events: none;
+  opacity: 0.3; 
 }
 
 .grid-cell {
@@ -451,7 +453,6 @@ select, input[type="number"] {
   line-height: 1.4;
 }
 
-/* Transform button styling */
 #rotateLeft, #rotate180, #rotateRight,
 #flipHorizontal, #flipVertical {
   font-size: 11px;
@@ -459,7 +460,7 @@ select, input[type="number"] {
 }
 
 /* ============================= */
-/* Canvas Info                   */
+/* Canvas Info & Zoom           */
 /* ============================= */
 .canvas-info {
   position: absolute;
@@ -471,6 +472,17 @@ select, input[type="number"] {
   border-radius: 4px;
   font-size: 11px;
   font-family: monospace;
+}
+
+.zoom-indicator {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: rgba(0,0,0,0.7);
+  color: #e0e0e0;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 11px;
 }
 
 /* ============================= */
@@ -494,45 +506,84 @@ select, input[type="number"] {
 }
 
 /* ============================= */
-/* Mobile Responsive             */
+/* MOBILE LAYOUT                 */
 /* ============================= */
-@media (max-width: 768px) {
+
+/* Mobile Portrait - Stack everything vertically */
+@media (max-width: 768px) and (orientation: portrait) {
   .editor-container {
     grid-template-areas: 
-      "header header header"
-      "sidebar canvas panels"
-      "sidebar canvas panels";
-    grid-template-columns: 1fr 1fr;
-    grid-template-rows: 50px 1fr 1fr;
+      "header"
+      "canvas"
+      "sidebar"
+      "panels";
+    grid-template-columns: 1fr;
+    grid-template-rows: 50px 1fr auto auto;
+    height: 100vh;
+    overflow: hidden;
   }
 
   .sidebar {
-    grid-area: mobile-tools;
     flex-direction: row;
     justify-content: flex-start;
     padding: 8px;
-    overflow-x: auto;
     gap: 6px;
-  }
-
-  .panels {
-    grid-area: mobile-panels;
-    max-height: 240px;
+    border-right: none;
+    border-top: 1px solid #333;
+    border-bottom: 1px solid #333;
+    overflow-x: auto;
+    overflow-y: visible;
+    min-height: 60px;
+    max-height: 60px;
   }
 
   .tool-btn {
-    width: 40px;
-    height: 40px;
+    width: 44px;
+    height: 44px;
     flex-shrink: 0;
+    font-size: 16px;
+  }
+
+  .tool-btn.symmetric-tool {
+    font-size: 13px;
+  }
+
+  .panels {
+    max-height: 40vh;
+    min-height: 200px;
+    border-left: none;
+    border-top: 1px solid #333;
+  }
+
+  .canvas-area {
+    padding: 8px;
+    min-height: 0;
+  }
+}
+
+/* Mobile Landscape - Keep desktop-like layout but smaller */
+@media (max-width: 1024px) and (orientation: landscape) {
+  .editor-container {
+    grid-template-columns: 50px 1fr 240px;
+    grid-template-rows: 45px 1fr;
+  }
+
+  .header {
+    padding: 0 12px;
+  }
+
+  .logo {
+    font-size: 16px;
+  }
+
+  .tool-btn {
+    width: 38px;
+    height: 38px;
     font-size: 14px;
   }
 
   .tool-btn.symmetric-tool {
     font-size: 12px;
-  }
-
-  .canvas-area {
-    padding: 8px;
   }
 
   .panel-content {
@@ -547,40 +598,35 @@ select, input[type="number"] {
     width: 20px;
     height: 20px;
   }
-
-  .btn-group .btn {
-    padding: 6px 8px;
-    font-size: 11px;
-  }
-
-  .symmetry-controls .btn {
-    min-width: 45px;
-    padding: 6px 4px;
-  }
 }
 
+/* Very Small Screens */
 @media (max-width: 480px) {
-  .editor-container {
-    grid-template-rows: 45px 1fr 220px;
-    grid-template-columns: 60px 1fr 220px;
+  .header {
+    padding: 0 8px;
   }
 
-  .header {
-    padding: 0 12px;
+  .header-btn {
+    padding: 4px 8px;
+    font-size: 11px;
   }
 
   .logo {
-    font-size: 16px;
-  }
-
-  .tool-btn {
-    width: 36px;
-    height: 36px;
     font-size: 14px;
   }
 
+  .tool-btn {
+    width: 40px;
+    height: 40px;
+    font-size: 15px;
+  }
+
   .tool-btn.symmetric-tool {
-    font-size: 11px;
+    font-size: 12px;
+  }
+
+  .panel-content {
+    padding: 10px;
   }
 
   .btn {
@@ -589,9 +635,46 @@ select, input[type="number"] {
   }
 
   .symmetry-controls .btn {
-    min-width: 40px;
-    padding: 4px 2px;
+    min-width: 45px;
+    padding: 6px 4px;
     font-size: 10px;
+  }
+
+  .panels {
+    max-height: 35vh;
+  }
+}
+
+/* Tablet specific adjustments */
+@media (min-width: 768px) and (max-width: 1024px) {
+  .editor-container {
+    grid-template-columns: 55px 1fr 260px;
+  }
+
+  .tool-btn {
+    width: 42px;
+    height: 42px;
+    font-size: 15px;
+  }
+
+  .tool-btn.symmetric-tool {
+    font-size: 13px;
+  }
+
+  .panel-content {
+    padding: 14px;
+  }
+}
+
+/* Fix for very tall mobile screens */
+@media (max-height: 600px) and (max-width: 768px) {
+  .panels {
+    max-height: 30vh;
+  }
+  
+  .sidebar {
+    min-height: 50px;
+    max-height: 50px;
   }
 }
 
@@ -619,15 +702,4 @@ select, input[type="number"] {
   z-index: 1000;
   opacity: 0;
   transition: opacity 0.2s;
-}
-
-.zoom-indicator {
-  position: absolute;
-  top: 8px;
-  right: 8px;
-  background: rgba(0,0,0,0.7);
-  color: #e0e0e0;
-  padding: 4px 8px;
-  border-radius: 4px;
-  font-size: 11px;
 }
