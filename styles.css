@@ -436,6 +436,33 @@ select, input[type="number"] {
   line-height: 1.4;
 }
 
+.layer-list {
+    max-height: 120px;
+    overflow-y: auto;
+    border: 1px solid #444;
+    margin-bottom: 8px;
+}
+
+.layer-item {
+    display: flex;
+    align-items: center;
+    padding: 4px 8px;
+    cursor: pointer;
+    border-bottom: 1px solid #333;
+}
+
+.layer-item.active {
+    background: #444;
+}
+
+.layer-item input[type="checkbox"] {
+    margin-right: 8px;
+}
+
+.layer-item span {
+    flex: 1;
+}
+
 /* ============================= */
 /* Transform Controls            */
 /* ============================= */
