@@ -23,6 +23,12 @@ let customPalette = ['#ffffff','#ff0000','#00ff00','#0000ff','#ffff00','#ff00ff'
 let activePalette = builtInPalette;
 let currentColorIndex = 0;
 
+// NEW: Sketch palettes
+let sketchBuiltInPalette = ['#000000','#555555','#AAAAAA','#FF5733','#FFC300','#DAF7A6','#33FF57','#3357FF'];
+let sketchCustomPalette = ['#000000','#111111','#222222','#333333','#444444','#555555','#666666','#777777'];
+let sketchActivePalette = sketchBuiltInPalette;
+let sketchColorIndex = 0;
+
 let pixelUndoStack = [];
 let pixelRedoStack = [];
 let sketchUndoStack = [];
@@ -623,16 +629,14 @@ function updateModeDisplay(){
     document.querySelectorAll('.pixel-tools').forEach(d=>d.style.display='flex');
     document.querySelectorAll('.sketch-tools').forEach(d=>d.style.display='none');
 
-    // Show palettes
     paletteContainer.style.display = 'flex';
     colorPickersContainer.style.display = (activePalette === customPalette ? 'flex' : 'none');
 
-    // Restore pixel color
     currentColorIndex = lastPixelColorIndex;
     primaryColor = activePalette[currentColorIndex] || builtInPalette[0];
 
     renderPalette();
-    updatePaletteSelector(); // refresh selector with current choice
+    updatePaletteSelector();
 
   } else {
     pixelCanvas.style.display='none';
@@ -640,10 +644,15 @@ function updateModeDisplay(){
     document.querySelectorAll('.pixel-tools').forEach(d=>d.style.display='none');
     document.querySelectorAll('.sketch-tools').forEach(d=>d.style.display='flex');
 
-    paletteContainer.style.display = 'none';
-    colorPickersContainer.style.display = 'none';
+    // Show sketch palettes now
+    paletteContainer.style.display = 'flex';
+    colorPickersContainer.style.display = (sketchActivePalette === sketchCustomPalette ? 'flex' : 'none');
 
-    // Save pixel color state
+    brushColor = sketchActivePalette[sketchColorIndex] || sketchBuiltInPalette[0];
+
+    renderPalette();
+    updatePaletteSelector();
+
     lastPixelColorIndex = currentColorIndex;
   }
 }
@@ -700,18 +709,26 @@ function renderPalette() {
 
   paletteContainer.innerHTML = '';
 
-  activePalette.forEach((color, i) => {
+  const palette = (currentMode === 'pixel') ? activePalette : sketchActivePalette;
+  const index = (currentMode === 'pixel') ? currentColorIndex : sketchColorIndex;
+
+  palette.forEach((color, i) => {
     const sw = document.createElement('div');
     sw.classList.add('swatch');
     sw.style.backgroundColor = color;
 
-    if (i === currentColorIndex) {
-      sw.classList.add('selected'); // highlight the current color
+    if (i === index) {
+      sw.classList.add('selected');
     }
 
     sw.addEventListener('click', () => {
-      primaryColor = color;
-      currentColorIndex = i;
+      if(currentMode === 'pixel'){
+        primaryColor = color;
+        currentColorIndex = i;
+      } else {
+        brushColor = color;
+        sketchColorIndex = i;
+      }
       updateCanvasInfo();
       renderPalette(); // re-render to update selected highlight
     });
@@ -719,6 +736,7 @@ function renderPalette() {
     paletteContainer.appendChild(sw);
   });
 }
+
 
 
 // =====================
@@ -741,8 +759,22 @@ function updatePaletteSelector(){
   customOption.textContent = 'Custom Palette';
   paletteSelector.appendChild(customOption);
 
-  paletteSelector.value = (activePalette === customPalette) ? 'custom' : 'built-in';
+  if(currentMode === 'pixel'){
+    paletteSelector.value = (activePalette === customPalette) ? 'custom' : 'built-in';
+  } else {
+    paletteSelector.value = (sketchActivePalette === sketchCustomPalette) ? 'custom' : 'built-in';
+  }
 }
+
+paletteSelector.addEventListener('change', e=>{
+  if(currentMode === 'pixel'){
+    activePalette = (e.target.value === 'built-in') ? builtInPalette : customPalette;
+  } else {
+    sketchActivePalette = (e.target.value === 'built-in') ? sketchBuiltInPalette : sketchCustomPalette;
+  }
+  renderPalette();
+});
+
 
 // Custom Palette UI
 function renderCustomPalette(){
