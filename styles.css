@@ -51,6 +51,36 @@ body {
   font-size: 18px;
   font-weight: 600;
   color: #4CAF50;
+  display: flex;
+  align-items: center;
+}
+
+.mode-toggle {
+  display: flex;
+  gap: 4px;
+  margin-left: 12px;
+}
+
+.mode-btn {
+  padding: 4px 8px;
+  background: #333;
+  border: 1px solid #555;
+  color: #e0e0e0;
+  font-size: 12px;
+  cursor: pointer;
+  border-radius: 3px;
+  transition: all 0.2s;
+}
+
+.mode-btn:hover {
+  background: #444;
+  border-color: #666;
+}
+
+.mode-btn.active {
+  background: #4CAF50;
+  border-color: #66BB6A;
+  color: #000;
 }
 
 .header-controls {
@@ -155,10 +185,15 @@ body {
   justify-content: center;
   position: relative;
   overflow: auto;
+  padding: 16px;
 }
 
 .canvas-wrapper {
   position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 400px;
   background: 
     linear-gradient(45deg, #2a2a2a 25%, transparent 25%), 
     linear-gradient(-45deg, #2a2a2a 25%, transparent 25%), 
@@ -166,7 +201,7 @@ body {
     linear-gradient(-45deg, transparent 75%, #2a2a2a 75%);
   background-size: 20px 20px;
   background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
-  padding: 0;
+  padding: 20px;
   border-radius: 8px;
 }
 
@@ -178,6 +213,15 @@ body {
   touch-action: none;
   position: relative;
   box-sizing: content-box;
+}
+
+#sketchCanvas {
+  background: white;
+  border: 2px solid #444;
+  border-radius: 4px;
+  cursor: crosshair;
+  touch-action: none;
+  display: none;
 }
 
 .canvas-grid { 
@@ -200,7 +244,7 @@ body {
 .cell {
   position: relative;
   border: none;
-  transition: opacity 0.1s;
+  transition: box-shadow 0.1s;
 }
 
 .cell::before {
@@ -311,9 +355,19 @@ body {
   position: relative;
 }
 
+.swatch:hover {
+  transform: scale(1.05);
+}
+
 .swatch.selected {
-  border-color: #4CAF50;
+  border: 2px solid #4CAF50;
+  box-shadow: 0 0 0 1px #000;
   transform: scale(1.1);
+}
+
+.swatch.secondary-selected {
+  border: 2px solid #ffff00;
+  border-style: dashed;
 }
 
 .swatch.primary {
@@ -322,6 +376,56 @@ body {
 
 .swatch.secondary {
   border-style: dashed;
+}
+
+/* ============================= */
+/* Brush Controls                */
+/* ============================= */
+.brush-preview {
+  width: 50px;
+  height: 50px;
+  border: 1px solid #555;
+  border-radius: 50%;
+  margin: 8px auto;
+  background: rgba(0,0,0,1);
+}
+
+/* ============================= */
+/* Layer Controls                */
+/* ============================= */
+.layer-list {
+  max-height: 120px;
+  overflow-y: auto;
+  border: 1px solid #444;
+  margin-bottom: 8px;
+  background: #2a2a2a;
+}
+
+.layer-item {
+  display: flex;
+  align-items: center;
+  padding: 6px 8px;
+  cursor: pointer;
+  border-bottom: 1px solid #333;
+  transition: background 0.2s;
+}
+
+.layer-item:hover {
+  background: #333;
+}
+
+.layer-item.active {
+  background: #4CAF50;
+  color: #000;
+}
+
+.layer-item input[type="checkbox"] {
+  margin-right: 8px;
+}
+
+.layer-item span {
+  flex: 1;
+  font-size: 12px;
 }
 
 /* ============================= */
@@ -345,7 +449,7 @@ body {
   margin-bottom: 8px;
 }
 
-select, input[type="number"] {
+select, input[type="number"], input[type="range"], input[type="color"] {
   background: #333;
   border: 1px solid #555;
   color: #e0e0e0;
@@ -353,6 +457,21 @@ select, input[type="number"] {
   border-radius: 4px;
   font-size: 12px;
   width: 100%;
+}
+
+input[type="color"] {
+  height: 32px;
+  padding: 2px;
+  cursor: pointer;
+}
+
+input[type="range"] {
+  padding: 4px 0;
+}
+
+input[type="checkbox"] {
+  width: auto;
+  margin-right: 6px;
 }
 
 .btn {
@@ -389,6 +508,11 @@ select, input[type="number"] {
 
 .btn-group .btn {
   flex: 1;
+}
+
+.btn.btn-sm {
+  padding: 4px 8px;
+  font-size: 11px;
 }
 
 /* ============================= */
@@ -434,33 +558,6 @@ select, input[type="number"] {
   color: #bbb;
   font-size: 11px;
   line-height: 1.4;
-}
-
-.layer-list {
-    max-height: 120px;
-    overflow-y: auto;
-    border: 1px solid #444;
-    margin-bottom: 8px;
-}
-
-.layer-item {
-    display: flex;
-    align-items: center;
-    padding: 4px 8px;
-    cursor: pointer;
-    border-bottom: 1px solid #333;
-}
-
-.layer-item.active {
-    background: #444;
-}
-
-.layer-item input[type="checkbox"] {
-    margin-right: 8px;
-}
-
-.layer-item span {
-    flex: 1;
 }
 
 /* ============================= */
@@ -532,6 +629,57 @@ select, input[type="number"] {
   resize: vertical;
 }
 
+.export-area input[type="file"] {
+  background: #333;
+  color: #e0e0e0;
+  padding: 4px;
+  border: 1px solid #555;
+  border-radius: 4px;
+  width: 100%;
+  font-size: 11px;
+}
+
+/* ============================= */
+/* Color Pickers                 */
+/* ============================= */
+.color-picker {
+  width: 24px !important;
+  height: 24px;
+  padding: 0 !important;
+  border: 1px solid #555 !important;
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+#colorPickers {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 4px;
+  margin-bottom: 8px;
+}
+
+/* ============================= */
+/* Visibility Controls           */
+/* ============================= */
+.sketch-controls {
+  display: none;
+}
+
+.pixel-controls {
+  display: block;
+}
+
+.sketch-tools {
+  display: none;
+}
+
+.pixel-tools {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
 /* ============================= */
 /* MOBILE LAYOUT                 */
 /* ============================= */
@@ -548,6 +696,16 @@ select, input[type="number"] {
     grid-template-rows: 50px 1fr auto auto;
     height: 100vh;
     overflow: hidden;
+  }
+
+  .canvas-area {
+    padding: 8px;
+    min-height: 0;
+  }
+
+  .canvas-wrapper {
+    min-height: 200px;
+    padding: 10px;
   }
 
   .sidebar {
@@ -575,6 +733,12 @@ select, input[type="number"] {
     font-size: 13px;
   }
 
+  .tool-separator {
+    width: 1px;
+    height: 80%;
+    margin: 0 4px;
+  }
+
   .panels {
     max-height: 40vh;
     min-height: 200px;
@@ -582,9 +746,25 @@ select, input[type="number"] {
     border-top: 1px solid #333;
   }
 
-  .canvas-area {
-    padding: 8px;
-    min-height: 0;
+  .panel-content {
+    padding: 12px;
+  }
+
+  .header {
+    padding: 0 8px;
+  }
+
+  .logo {
+    font-size: 16px;
+  }
+
+  .mode-toggle {
+    margin-left: 8px;
+  }
+
+  .header-btn {
+    padding: 4px 8px;
+    font-size: 11px;
   }
 }
 
@@ -593,6 +773,14 @@ select, input[type="number"] {
   .editor-container {
     grid-template-columns: 50px 1fr 240px;
     grid-template-rows: 45px 1fr;
+  }
+
+  .canvas-area {
+    padding: 8px;
+  }
+
+  .canvas-wrapper {
+    padding: 12px;
   }
 
   .header {
@@ -642,6 +830,11 @@ select, input[type="number"] {
     font-size: 14px;
   }
 
+  .mode-btn {
+    padding: 3px 6px;
+    font-size: 11px;
+  }
+
   .tool-btn {
     width: 40px;
     height: 40px;
@@ -669,6 +862,10 @@ select, input[type="number"] {
 
   .panels {
     max-height: 35vh;
+  }
+
+  .canvas-wrapper {
+    padding: 8px;
   }
 }
 
@@ -706,6 +903,27 @@ select, input[type="number"] {
 }
 
 /* ============================= */
+/* Touch & Interaction           */
+/* ============================= */
+@media (hover: none) {
+  .tool-btn:hover,
+  .btn:hover,
+  .swatch:hover {
+    transform: none;
+    background: inherit;
+  }
+
+  .tool-btn:active,
+  .btn:active {
+    transform: scale(0.95);
+  }
+
+  .swatch:active {
+    transform: scale(1.1);
+  }
+}
+
+/* ============================= */
 /* Animations & Effects          */
 /* ============================= */
 .fade-in {
@@ -729,4 +947,56 @@ select, input[type="number"] {
   z-index: 1000;
   opacity: 0;
   transition: opacity 0.2s;
+}
+
+/* ============================= */
+/* Accessibility                 */
+/* ============================= */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Focus indicators for keyboard navigation */
+.tool-btn:focus,
+.btn:focus,
+select:focus,
+input:focus {
+  outline: 2px solid #4CAF50;
+  outline-offset: 2px;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .cell::before {
+    border-color: #fff;
+  }
+  
+  .grid-cell {
+    border-color: #666;
+  }
+}
+
+/* ============================= */
+/* Print Styles                  */
+/* ============================= */
+@media print {
+  .editor-container {
+    display: block;
+  }
+  
+  .sidebar,
+  .panels,
+  .header {
+    display: none;
+  }
+  
+  .canvas-area {
+    width: 100%;
+    height: auto;
+    background: white;
+  }
 }
