@@ -67,6 +67,7 @@ class JerryEditor {
     init() {
         this.setupPalettes();
         this.setupDOM();
+        this.initPixelMode(); // Add this line
         this.setupEventListeners();
         this.loadFromLocalStorage();
         this.switchToPixelMode();
@@ -156,6 +157,9 @@ class JerryEditor {
         // Setup sketch canvas
         this.sketchState.canvas = this.elements.sketchCanvas;
         this.sketchState.ctx = this.sketchState.canvas.getContext('2d');
+
+        this.sketchState.ctx.fillStyle = 'white';
+        this.sketchState.ctx.fillRect(0, 0, this.sketchState.canvas.width, this.sketchState.canvas.height);
         
         // Initialize with one layer
         this.addSketchLayer();
@@ -775,7 +779,7 @@ class JerryEditor {
         } else {
             this.elements.sketchCanvas.style.cursor = 'crosshair';
         }
-        
+
         this.updateCanvasInfo();
     }
 
@@ -819,6 +823,8 @@ class JerryEditor {
             this.updateColorDisplay();
             this.updateCanvasColors();
         });
+
+        this.updateColorDisplay();
     }
 
     // Pixel Mode Tools (existing functionality)
