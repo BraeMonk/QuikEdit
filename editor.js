@@ -712,12 +712,18 @@
         saveState();
 
         if (currentTool === 'move') {
-          // record both cell + pixel start
+          // If no selection exists, treat whole canvas as selection (matches desktop)
+          if (!selectionBounds || !selectionArray) {
+            selectionBounds = { x0: 0, y0: 0, x1: canvasWidth - 1, y1: canvasHeight - 1 };
+            selectionArray = array.map(row => row.slice());
+          }
+
+          // Record both pixel + cell start for smooth dragging
           touchMoveStart = { clientX: touch.clientX, clientY: touch.clientY, x, y };
         }
 
         if (tools[currentTool].onStart) {
-          tools[currentTool].onStart(x, y);
+            tools[currentTool].onStart(x, y);
         }
       }
     }
@@ -735,11 +741,12 @@
         const dxCells = Math.round(dxPixels / cellSize);
         const dyCells = Math.round(dyPixels / cellSize);
 
+        // call move tool with dx/dy overrides
         tools.move.onDrag(touchMoveStart.x, touchMoveStart.y, dxCells, dyCells);
         return;
       }
 
-      // --- fallback for paint/shape tools (still cell-based) ---
+      // --- fallback for paint/shape tools (cell-based) ---
       const target = document.elementFromPoint(touch.clientX, touch.clientY);
       if (target && target.classList.contains('cell')) {
         const x = parseInt(target.dataset.x);
@@ -763,6 +770,7 @@
         const dxCells = Math.round(dxPixels / cellSize);
         const dyCells = Math.round(dyPixels / cellSize);
 
+        // call move tool onEnd with dx/dy overrides
         tools.move.onEnd(touchMoveStart.x, touchMoveStart.y, dxCells, dyCells);
         touchMoveStart = null;
         return;
