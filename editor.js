@@ -1370,6 +1370,8 @@ class JerryEditor {
         this.updateCanvasInfo();
         this.updateZoomIndicator();
         this.renderSymmetryGuides();
+        this.updateColorDisplay();
+        this.setupPalettes();
     }
 
     // Pixel Event Handlers
