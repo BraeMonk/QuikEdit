@@ -39,8 +39,8 @@ const colorPickersContainer = document.getElementById('colorPickers') || documen
 
 
 const previewCanvas = document.createElement('canvas');
-previewCanvas.width = canvasWidth;
-previewCanvas.height = canvasHeight;
+previewCanvas.width = canvasWidth * cellSize;
+previewCanvas.height = canvasHeight * cellSize;
 previewCanvas.style.position = 'absolute';
 previewCanvas.style.top = pixelCanvas.offsetTop + 'px';
 previewCanvas.style.left = pixelCanvas.offsetLeft + 'px';
@@ -239,7 +239,6 @@ function endSelection(x, y){
     let row = [];
     for(let xx=x0; xx<=x1; xx++){
       row.push(pixelData[yy][xx]);
-      pixelData[yy][xx] = 'transparent'; // clear original
     }
     selectionData.data.push(row);
   }
@@ -295,7 +294,7 @@ function finalizeSelection(){
 // =====================
 // MOUSE EVENTS FOR SELECTION
 // =====================
-canvas.addEventListener('mousedown', e=>{
+pixelCanvas.addEventListener('mousedown', e=>{
   const {x, y} = getCanvasCoords(e);
   if(currentTool==='select'){
     startSelection(x, y);
@@ -306,26 +305,40 @@ canvas.addEventListener('mousedown', e=>{
   }
 });
 
-canvas.addEventListener('mousemove', e=>{
+pixelCanvas.addEventListener('mousemove', e=>{
   if(isSelecting){
-    // Optional: draw selection overlay
-  } else if(isMovingSelection && currentTool==='select' && lastMousePos){
-    const dx = Math.round((e.clientX - lastMousePos.x)/cellSize);
-    const dy = Math.round((e.clientY - lastMousePos.y)/cellSize);
-    moveSelection(dx, dy);
-    lastMousePos = {x:e.clientX, y:e.clientY};
-  } else {
+    const rect = pixelCanvas.getBoundingClientRect();
+    const x = Math.floor((e.clientX - rect.left)/cellSize);
+    const y = Math.floor((e.clientY - rect.top)/cellSize);
+
+    const x0 = Math.min(selectionStart.x, x);
+    const y0 = Math.min(selectionStart.y, y);
+    const x1 = Math.max(selectionStart.x, x);
+    const y1 = Math.max(selectionStart.y, y);
+
+    previewCtx.clearRect(0,0,previewCanvas.width, previewCanvas.height);
+    previewCtx.strokeStyle = 'rgba(0,150,255,0.8)';
+    previewCtx.lineWidth = 2;
+    previewCtx.setLineDash([4,2]);
+    previewCtx.strokeRect(
+        x0*cellSize,
+        y0*cellSize,
+        (x1-x0+1)*cellSize,
+        (y1-y0+1)*cellSize
+    );
+} else {
     handlePixelPaint(e);
     renderPixelCanvas();
   }
 });
 
-canvas.addEventListener('mouseup', e=>{
+pixelCanvas.addEventListener('mouseup', e=>{
   if(isSelecting){
     const {x, y} = getCanvasCoords(e);
     endSelection(x, y);
+    previewCtx.clearRect(0,0,previewCanvas.width, previewCanvas.height); // <<< add this
     lastMousePos = null;
-  } else if(isMovingSelection){
+} else if(isMovingSelection){
     finalizeSelection();
     lastMousePos = null;
   }
@@ -472,7 +485,7 @@ function saveStateForUndo(){
 let drawingShape = false;
 let shapeStart = {x:0, y:0};
 
-canvas.addEventListener('mousedown', e => {
+pixelCanvas.addEventListener('mousedown', e => {
   const {x, y} = getCanvasCoords(e);
   if(['line','rect','circle'].includes(currentTool)){
     drawingShape = true;
@@ -484,7 +497,7 @@ canvas.addEventListener('mousedown', e => {
   }
 });
 
-canvas.addEventListener('mousemove', e => {
+pixelCanvas.addEventListener('mousemove', e => {
   const {x, y} = getCanvasCoords(e);
   if(drawingShape){
     drawPreviewShape(shapeStart.x, shapeStart.y, x, y, currentTool, primaryColor);
@@ -494,7 +507,7 @@ canvas.addEventListener('mousemove', e => {
   }
 });
 
-canvas.addEventListener('mouseup', e => {
+pixelCanvas.addEventListener('mouseup', e => {
   if(drawingShape){
     drawingShape = false;
     previewCtx.clearRect(0,0,previewCanvas.width, previewCanvas.height); // clear overlay
@@ -526,10 +539,10 @@ pixelCanvas.addEventListener('touchmove', e=>{
   e.preventDefault();
   const touchPos = getTouchPos(e, pixelCanvas);
   if(isMovingSelection && currentTool==='select' && lastTouchPos){
-    const dx = touchPos.x - lastTouchPos.x;
-    const dy = touchPos.y - lastTouchPos.y;
+    const dx = Math.round(touchPos.x - lastTouchPos.x);
+    const dy = Math.round(touchPos.y - lastTouchPos.y);
     moveSelection(dx, dy);
-  } else if(!isSelecting) {
+} else if(!isSelecting) {
     handlePixelPaint({clientX: e.touches[0].clientX, clientY: e.touches[0].clientY});
     renderPixelCanvas();
   }
@@ -605,52 +618,35 @@ function updateModeDisplay(){
   const paletteContainer = document.getElementById('swatches');
 
   if(currentMode==='pixel'){
-    // Show pixel canvas and pixel tools
     pixelCanvas.style.display='grid';
     sketchCanvas.style.display='none';
     document.querySelectorAll('.pixel-tools').forEach(d=>d.style.display='flex');
     document.querySelectorAll('.sketch-tools').forEach(d=>d.style.display='none');
 
-    // Show palette container
-    if (paletteContainer) {
-        paletteContainer.style.display = 'flex';
-        paletteContainer.classList.add('pixel-mode');
-        paletteContainer.classList.remove('sketch-mode');
+    // Show palettes
+    paletteContainer.style.display = 'flex';
+    colorPickersContainer.style.display = (activePalette === customPalette ? 'flex' : 'none');
 
-        // Restore last selected color
-        currentColorIndex = lastPixelColorIndex;
-        primaryColor = activePalette[currentColorIndex] || builtInPalette[0];
+    // Restore pixel color
+    currentColorIndex = lastPixelColorIndex;
+    primaryColor = activePalette[currentColorIndex] || builtInPalette[0];
 
-        // Render palette
-        renderPalette();
-    }
-
-    // Show custom palette inputs
-    colorPickersContainer.style.display = 'flex';
+    renderPalette();
+    updatePaletteSelector(); // refresh selector with current choice
 
   } else {
-    // Hide pixel canvas, show sketch canvas and sketch tools
     pixelCanvas.style.display='none';
     sketchCanvas.style.display='block';
     document.querySelectorAll('.pixel-tools').forEach(d=>d.style.display='none');
     document.querySelectorAll('.sketch-tools').forEach(d=>d.style.display='flex');
 
-    // Hide palette container
-    if (paletteContainer) {
-        paletteContainer.style.display = 'none';
-        paletteContainer.classList.remove('pixel-mode');
-        paletteContainer.classList.add('sketch-mode');
-
-        // Save last selected pixel color
-        lastPixelColorIndex = currentColorIndex;
-    }
-
-    // Hide custom palette inputs
+    paletteContainer.style.display = 'none';
     colorPickersContainer.style.display = 'none';
+
+    // Save pixel color state
+    lastPixelColorIndex = currentColorIndex;
   }
 }
-
-
 
 // Undo/Redo
 document.getElementById('undo').addEventListener('click', ()=>restorePixelState(pixelUndoStack,pixelRedoStack));
@@ -684,7 +680,12 @@ document.getElementById('resizeCanvas').addEventListener('click', ()=>{
       sketchCanvas.width = canvasWidth * cellSize;
       sketchCanvas.style.transform = `scale(${zoomLevel})`;
       sketchCanvas.height = canvasHeight * cellSize;
-      sketchCtx.putImageData(imgData, 0, 0);
+      const tmpCanvas = document.createElement('canvas');
+      tmpCanvas.width = imgData.width;
+      tmpCanvas.height = imgData.height;
+      tmpCanvas.getContext('2d').putImageData(imgData,0,0);
+      sketchCtx.clearRect(0,0,sketchCanvas.width, sketchCanvas.height);
+      sketchCtx.drawImage(tmpCanvas,0,0, sketchCanvas.width, sketchCanvas.height);
     }
 
     updateCanvasInfo();
@@ -725,11 +726,11 @@ function renderPalette() {
 // =====================
 
 const paletteSelector = document.getElementById('paletteSelector');
-const colorPickersContainer = document.getElementById('colorPickers');
 
 // Populate palette selector
 function updatePaletteSelector(){
   paletteSelector.innerHTML = '';
+
   const builtInOption = document.createElement('option');
   builtInOption.value = 'built-in';
   builtInOption.textContent = 'Built-in Palette';
@@ -740,13 +741,8 @@ function updatePaletteSelector(){
   customOption.textContent = 'Custom Palette';
   paletteSelector.appendChild(customOption);
 
-  paletteSelector.value = 'built-in';
+  paletteSelector.value = (activePalette === customPalette) ? 'custom' : 'built-in';
 }
-
-paletteSelector.addEventListener('change', e=>{
-  activePalette = e.target.value === 'built-in' ? builtInPalette : customPalette;
-  renderPalette();
-});
 
 // Custom Palette UI
 function renderCustomPalette(){
@@ -762,6 +758,17 @@ function renderCustomPalette(){
     colorPickersContainer.appendChild(input);
   }
 }
+
+paletteSelector.addEventListener('change', e=>{
+  if(e.target.value === 'built-in'){
+    activePalette = builtInPalette;
+    colorPickersContainer.style.display = 'none';
+  } else {
+    activePalette = customPalette;
+    colorPickersContainer.style.display = 'flex';
+  }
+  renderPalette();
+});
 
 document.getElementById('saveCustomPalette').addEventListener('click', ()=>{
   renderCustomPalette();
