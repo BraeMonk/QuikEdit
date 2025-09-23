@@ -1,363 +1,424 @@
-// ==========================
-// editor.js — Full Pixel & Sketch Editor
-// ==========================
+// =====================
+// JERRY EDITOR.JS COMPLETE
+// =====================
 
-// ------------------------
-// Canvas Setup
-// ------------------------
-const pixelCanvas = document.getElementById('pixelCanvas');
+// ---------------------
+// GLOBALS & STATE
+// ---------------------
+let currentMode = 'pixel'; // 'pixel' or 'sketch'
+let currentTool = 'pencil';
+let symmetryMode = 'none';
+let isPainting = false;
+let startX = 0, startY = 0;
+let zoomLevel = 1;
+
+// Pixel canvas
+const canvas = document.getElementById('canvas');
+const canvasGrid = document.getElementById('canvasGrid');
+let canvasWidth = 16;
+let canvasHeight = 16;
+let pixelData = [];
+let undoStack = [];
+let redoStack = [];
+
+// Sketch canvas
 const sketchCanvas = document.getElementById('sketchCanvas');
-const pixelCtx = pixelCanvas.getContext('2d');
 const sketchCtx = sketchCanvas.getContext('2d');
+let sketchLayers = [];
+let activeLayer = 0;
 
-const state = {
-    width: 32,
-    height: 32,
-    cellSize: 20,
-    mode: 'pixel', // 'pixel' or 'sketch'
-    currentTool: 'pencil',
-    primaryColor: '#000000',
-    secondaryColor: '#ffffff',
-    symmetry: 'none',
-    grid: true,
-    isDrawing: false,
-    startX: 0,
-    startY: 0,
-    selection: null,
-    selectionData: null,
-    undoStack: [],
-    redoStack: [],
-    layers: [],
-    activeLayer: 0
-};
+// Colors
+let primaryColor = '#000000';
+let secondaryColor = '#ffffff';
+let palette = ['#000000','#ffffff','#ff0000','#00ff00','#0000ff','#ffff00','#ff00ff','#00ffff'];
 
-// ------------------------
-// Layer Management
-// ------------------------
-function createLayer(name) {
-    const canvas = document.createElement('canvas');
-    canvas.width = state.width * state.cellSize;
-    canvas.height = state.height * state.cellSize;
-    canvas.style.position = 'absolute';
-    canvas.style.top = pixelCanvas.offsetTop + 'px';
-    canvas.style.left = pixelCanvas.offsetLeft + 'px';
-    document.body.appendChild(canvas);
-    const ctx = canvas.getContext('2d');
-    state.layers.push({ name, canvas, ctx, visible: true });
-    updateLayerVisibility();
-    return state.layers.length - 1;
+// Brush settings (Sketch)
+let brushSize = 10;
+let brushOpacity = 1;
+let brushFlow = 1;
+let brushHardness = 1;
+let brushColor = '#000000';
+
+// Selection (pixel)
+let selection = null;
+
+// Sprites
+let spriteList = [];
+let activeSprite = null;
+
+// ---------------------
+// INIT
+// ---------------------
+function init() {
+    initPixelCanvas();
+    initSketchCanvas();
+    initUI();
+    drawCanvas();
+    drawSketch();
 }
 
-function getActiveLayer() { return state.layers[state.activeLayer]; }
+// ---------------------
+// PIXEL CANVAS
+// ---------------------
+function initPixelCanvas() {
+    canvasWidth = parseInt(document.getElementById('canvasWidth').value) || 16;
+    canvasHeight = parseInt(document.getElementById('canvasHeight').value) || 16;
+    pixelData = Array.from({ length: canvasHeight }, () => Array(canvasWidth).fill('#ffffff'));
+    canvas.innerHTML = '';
+    canvas.style.gridTemplateColumns = `repeat(${canvasWidth}, 1fr)`;
+    canvas.style.gridTemplateRows = `repeat(${canvasHeight}, 1fr)`;
 
-function updateLayerVisibility() {
-    state.layers.forEach((layer, i) => layer.canvas.style.display = layer.visible && i === state.activeLayer ? 'block' : 'none');
-}
-
-// ------------------------
-// Palette Setup
-// ------------------------
-const colors = ['#000000','#FF0000','#00FF00','#0000FF','#FFFF00','#FF00FF','#00FFFF','#FFFFFF'];
-const paletteEl = document.getElementById('palette');
-colors.forEach(color => {
-    const c = document.createElement('div');
-    c.className = 'color';
-    c.style.background = color;
-    c.addEventListener('click', () => state.primaryColor = color);
-    paletteEl.appendChild(c);
-});
-
-// ------------------------
-// Canvas Initialization
-// ------------------------
-function initCanvas() {
-    pixelCanvas.width = state.width * state.cellSize;
-    pixelCanvas.height = state.height * state.cellSize;
-    sketchCanvas.width = pixelCanvas.width;
-    sketchCanvas.height = pixelCanvas.height;
-    createLayer('Layer 1'); // initial layer
-    drawGrid();
-    sketchCanvas.style.display = 'none';
-}
-
-// ------------------------
-// Grid
-// ------------------------
-function drawGrid() {
-    const ctx = pixelCtx;
-    ctx.clearRect(0, 0, pixelCanvas.width, pixelCanvas.height);
-    if (!state.grid) return;
-    ctx.strokeStyle = '#ccc';
-    for (let x = 0; x <= state.width; x++) {
-        ctx.beginPath();
-        ctx.moveTo(x * state.cellSize, 0);
-        ctx.lineTo(x * state.cellSize, state.height * state.cellSize);
-        ctx.stroke();
-    }
-    for (let y = 0; y <= state.height; y++) {
-        ctx.beginPath();
-        ctx.moveTo(0, y * state.cellSize);
-        ctx.lineTo(state.width * state.cellSize, y * state.cellSize);
-        ctx.stroke();
-    }
-}
-
-// ------------------------
-// Undo / Redo
-// ------------------------
-function saveUndo() {
-    const ctx = getCtx();
-    state.undoStack.push(ctx.getImageData(0, 0, ctx.canvas.width, ctx.canvas.height));
-    state.redoStack = [];
-}
-
-function undo() {
-    const ctx = getCtx();
-    if (!state.undoStack.length) return;
-    const data = state.undoStack.pop();
-    state.redoStack.push(ctx.getImageData(0, 0, ctx.canvas.width, ctx.canvas.height));
-    ctx.putImageData(data, 0, 0);
-}
-
-function redo() {
-    const ctx = getCtx();
-    if (!state.redoStack.length) return;
-    const data = state.redoStack.pop();
-    state.undoStack.push(ctx.getImageData(0, 0, ctx.canvas.width, ctx.canvas.height));
-    ctx.putImageData(data, 0, 0);
-}
-
-// ------------------------
-// Helpers
-// ------------------------
-function getCanvas() { return state.mode === 'pixel' ? pixelCanvas : sketchCanvas; }
-function getCtx() { return getActiveLayer().ctx; }
-
-function getCell(e, canvas) {
-    const rect = canvas.getBoundingClientRect();
-    const x = Math.floor((e.clientX - rect.left) / state.cellSize);
-    const y = Math.floor((e.clientY - rect.top) / state.cellSize);
-    return { x, y };
-}
-
-// ------------------------
-// Pixel Drawing
-// ------------------------
-function drawPixel(ctx, x, y, color) {
-    ctx.fillStyle = color;
-    ctx.fillRect(x * state.cellSize, y * state.cellSize, state.cellSize, state.cellSize);
-    applySymmetry(ctx, x, y, color);
-}
-
-function applySymmetry(ctx, x, y, color) {
-    const w = state.width;
-    const h = state.height;
-    if (state.symmetry === 'horizontal' || state.symmetry === 'both') drawPixelSingle(ctx, w - 1 - x, y, color);
-    if (state.symmetry === 'vertical' || state.symmetry === 'both') drawPixelSingle(ctx, x, h - 1 - y, color);
-    if (state.symmetry === 'both') drawPixelSingle(ctx, w - 1 - x, h - 1 - y, color);
-}
-
-function drawPixelSingle(ctx, x, y, color) {
-    ctx.fillStyle = color;
-    ctx.fillRect(x * state.cellSize, y * state.cellSize, state.cellSize, state.cellSize);
-}
-
-// ------------------------
-// Tools
-// ------------------------
-function startDraw(e) {
-    state.isDrawing = true;
-    const canvas = getCanvas();
-    const ctx = getCtx();
-    const { x, y } = getCell(e, canvas);
-    state.startX = x;
-    state.startY = y;
-    saveUndo();
-
-    if (['fill', 'select'].includes(state.currentTool)) {
-        if (state.currentTool === 'fill') floodFill(ctx, x, y, state.primaryColor);
-    }
-}
-
-function draw(e) {
-    if (!state.isDrawing) return;
-    const canvas = getCanvas();
-    const ctx = getCtx();
-    const { x, y } = getCell(e, canvas);
-
-    switch (state.currentTool) {
-        case 'pencil': case 'eraser':
-            drawToolPixel(ctx, x, y);
-            break;
-        case 'line': case 'rectangle': case 'circle':
-            renderTempShape(ctx, x, y);
-            break;
-        case 'select':
-            drawSelection(ctx, x, y);
-            break;
-    }
-}
-
-function endDraw(e) {
-    if (!state.isDrawing) return;
-    const canvas = getCanvas();
-    const ctx = getCtx();
-    const { x, y } = getCell(e, canvas);
-
-    if (state.currentTool === 'line') drawLine(ctx, state.startX, state.startY, x, y, state.primaryColor);
-    if (state.currentTool === 'rectangle') drawRect(ctx, state.startX, state.startY, x, y, state.primaryColor);
-    if (state.currentTool === 'circle') drawCircle(ctx, state.startX, state.startY, x, y, state.primaryColor);
-
-    state.isDrawing = false;
-    clearTempCanvas();
-}
-
-// Pencil/Eraser
-function drawToolPixel(ctx, x, y) {
-    const color = state.currentTool === 'pencil' ? state.primaryColor : '#ffffff';
-    drawPixel(ctx, x, y, color);
-}
-
-// ------------------------
-// Flood Fill
-// ------------------------
-function floodFill(ctx, x, y, fillColor) {
-    const imgData = ctx.getImageData(0,0,ctx.canvas.width,ctx.canvas.height);
-    const width = imgData.width, height = imgData.height;
-    const data = imgData.data;
-    const index = (y * width + x) * 4;
-    const targetColor = [data[index], data[index+1], data[index+2], data[index+3]];
-    const fillRGB = hexToRgb(fillColor);
-    if(colorsMatch(targetColor, fillRGB)) return;
-
-    const stack = [{x,y}];
-    while(stack.length){
-        const {x,y} = stack.pop();
-        const i = (y*width + x)*4;
-        if(x>=0 && y>=0 && x<width && y<height && colorsMatch([data[i],data[i+1],data[i+2],data[i+3]], targetColor)){
-            data[i]=fillRGB[0]; data[i+1]=fillRGB[1]; data[i+2]=fillRGB[2]; data[i+3]=255;
-            stack.push({x:x+1,y}); stack.push({x:x-1,y}); stack.push({x,y:y+1}); stack.push({x,y:y-1});
+    for(let y=0; y<canvasHeight; y++){
+        for(let x=0; x<canvasWidth; x++){
+            const cell = document.createElement('div');
+            cell.classList.add('pixel-cell');
+            cell.dataset.x = x;
+            cell.dataset.y = y;
+            cell.style.background = pixelData[y][x];
+            cell.addEventListener('mousedown', pixelStart);
+            cell.addEventListener('mouseenter', pixelDraw);
+            cell.addEventListener('mouseup', pixelEnd);
+            canvas.appendChild(cell);
         }
     }
-    ctx.putImageData(imgData,0,0);
 }
 
-function hexToRgb(hex){
-    const bigint = parseInt(hex.slice(1),16);
-    return [(bigint>>16)&255, (bigint>>8)&255, bigint&255];
+function drawCanvas(){
+    for(let y=0; y<canvasHeight; y++){
+        for(let x=0; x<canvasWidth; x++){
+            const cell = canvas.querySelector(`.pixel-cell[data-x='${x}'][data-y='${y}']`);
+            if(cell) cell.style.background = pixelData[y][x];
+        }
+    }
 }
-function colorsMatch(a,b){ return a[0]===b[0] && a[1]===b[1] && a[2]===b[2]; }
 
-// ------------------------
-// Shapes: Line, Rect, Circle
-// ------------------------
-function drawLine(ctx, x0, y0, x1, y1, color) {
-    const dx = Math.abs(x1-x0), sx = x0<x1?1:-1;
-    const dy = Math.abs(y1-y0), sy = y0<y1?1:-1;
-    let err = dx-dy;
+// ---------------------
+// PIXEL TOOLS
+// ---------------------
+function pixelStart(e){
+    if(currentMode !== 'pixel') return;
+    isPainting = true;
+    const x = parseInt(e.target.dataset.x);
+    const y = parseInt(e.target.dataset.y);
+    startX = x;
+    startY = y;
+    saveUndo();
+    handlePixelTool(x,y);
+}
+
+function pixelDraw(e){
+    if(!isPainting || currentMode !== 'pixel') return;
+    const x = parseInt(e.target.dataset.x);
+    const y = parseInt(e.target.dataset.y);
+    handlePixelTool(x,y);
+}
+
+function pixelEnd(e){
+    if(!isPainting || currentMode !== 'pixel') return;
+    isPainting = false;
+    drawCanvas();
+}
+
+function handlePixelTool(x,y){
+    let color = currentTool === 'eraser' ? '#ffffff' : primaryColor;
+    switch(currentTool){
+        case 'pencil': setPixelSymmetric(x,y,color); break;
+        case 'eraser': setPixelSymmetric(x,y,'#ffffff'); break;
+        case 'eyedropper':
+            primaryColor = pixelData[y][x];
+            document.getElementById('primaryColor').style.background = primaryColor;
+            break;
+        case 'fill': floodFillSymmetric(x,y,color); break;
+        case 'line': drawLineSymmetric(startX,startY,x,y,color); break;
+        case 'rect': drawRectSymmetric(startX,startY,x,y,color); break;
+        case 'circle': drawCircleSymmetric(startX,startY,x,y,color); break;
+        case 'select': selection = getSelection(startX,startY,x,y); break;
+        case 'move': if(selection) moveSelection(x-startX,y-startY); break;
+    }
+}
+
+function setPixel(x,y,color){
+    if(x<0||y<0||x>=canvasWidth||y>=canvasHeight) return;
+    pixelData[y][x] = color;
+    const cell = canvas.querySelector(`.pixel-cell[data-x='${x}'][data-y='${y}']`);
+    if(cell) cell.style.background = color;
+}
+
+// ---------------------
+// SYMMETRY
+// ---------------------
+function setPixelSymmetric(x, y, color){
+    const positions = [[x, y]];
+    if(symmetryMode==='horizontal'||symmetryMode==='both') positions.push([canvasWidth-1-x,y]);
+    if(symmetryMode==='vertical'||symmetryMode==='both') positions.push([x,canvasHeight-1-y]);
+    if(symmetryMode==='both') positions.push([canvasWidth-1-x,canvasHeight-1-y]);
+    positions.forEach(([px,py])=>{
+        if(px>=0&&py>=0&&px<canvasWidth&&py<canvasHeight){
+            pixelData[py][px]=color;
+            const cell = canvas.querySelector(`.pixel-cell[data-x='${px}'][data-y='${py}']`);
+            if(cell) cell.style.background=color;
+        }
+    });
+}
+
+function floodFill(x,y,color){
+    const target=pixelData[y][x];
+    if(target===color) return;
+    const stack=[[x,y]];
+    while(stack.length){
+        const [cx,cy]=stack.pop();
+        if(cx<0||cy<0||cx>=canvasWidth||cy>=canvasHeight) continue;
+        if(pixelData[cy][cx]!==target) continue;
+        setPixel(cx,cy,color);
+        stack.push([cx+1,cy],[cx-1,cy],[cx,cy+1],[cx,cy-1]);
+    }
+}
+function floodFillSymmetric(x,y,color){
+    const target=pixelData[y][x];
+    if(target===color) return;
+    const stack=[[x,y]];
+    while(stack.length){
+        const [cx,cy]=stack.pop();
+        if(cx<0||cy<0||cx>=canvasWidth||cy>=canvasHeight) continue;
+        if(pixelData[cy][cx]!==target) continue;
+        setPixelSymmetric(cx,cy,color);
+        stack.push([cx+1,cy],[cx-1,cy],[cx,cy+1],[cx,cy-1]);
+    }
+}
+
+// ---------------------
+// SHAPES
+// ---------------------
+function drawLineSymmetric(x0,y0,x1,y1,color){ drawLine(x0,y0,x1,y1,color); }
+function drawRectSymmetric(x0,y0,x1,y1,color){ drawRect(x0,y0,x1,y1,color); }
+function drawCircleSymmetric(x0,y0,x1,y1,color){ drawCircle(x0,y0,x1,y1,color); }
+
+function drawLine(x0,y0,x1,y1,color){
+    let dx=Math.abs(x1-x0), dy=Math.abs(y1-y0);
+    let sx=x0<x1?1:-1, sy=y0<y1?1:-1, err=dx-dy;
     while(true){
-        drawPixel(ctx, x0, y0, color);
+        setPixelSymmetric(x0,y0,color);
         if(x0===x1 && y0===y1) break;
-        let e2 = 2*err;
-        if(e2 > -dy){ err -= dy; x0 += sx; }
-        if(e2 < dx){ err += dx; y0 += sy; }
+        let e2=2*err;
+        if(e2>-dy){err-=dy;x0+=sx;}
+        if(e2<dx){err+=dx;y0+=sy;}
     }
 }
 
-function drawRect(ctx, x0, y0, x1, y1, color) {
-    const [sx, ex] = [Math.min(x0, x1), Math.max(x0, x1)];
-    const [sy, ey] = [Math.min(y0, y1), Math.max(y0, y1)];
-    for(let x=sx;x<=ex;x++){ drawPixel(ctx,x,sy,color); drawPixel(ctx,x,ey,color);}
-    for(let y=sy;y<=ey;y++){ drawPixel(ctx,sx,y,color); drawPixel(ctx,ex,y,color);}
+function drawRect(x0,y0,x1,y1,color){
+    const minX=Math.min(x0,x1), maxX=Math.max(x0,x1);
+    const minY=Math.min(y0,y1), maxY=Math.max(y0,y1);
+    for(let x=minX;x<=maxX;x++){setPixelSymmetric(x,minY,color); setPixelSymmetric(x,maxY,color);}
+    for(let y=minY;y<=maxY;y++){setPixelSymmetric(minX,y,color); setPixelSymmetric(maxX,y,color);}
 }
 
-function drawCircle(ctx, x0, y0, x1, y1, color) {
-    const radius = Math.round(Math.hypot(x1-x0, y1-y0));
-    let f=1-radius, dx=0, dy=-2*radius, x=0, y=radius;
-    drawPixel(ctx,x0,y0+radius,color); drawPixel(ctx,x0,y0-radius,color);
-    drawPixel(ctx,x0+radius,y0,color); drawPixel(ctx,x0-radius,y0,color);
-    while(x<y){
-        if(f>=0){ y--; dy+=2; f+=dy;}
-        x++; dx+=2; f+=dx+1;
-        [[x,y],[-x,y],[x,-y],[-x,-y],[y,x],[-y,x],[y,-x],[-y,-x]].forEach(([dx,dy])=>drawPixel(ctx,x0+dx,y0+dy,color));
+function drawCircle(x0,y0,x1,y1,color){
+    const r=Math.floor(Math.sqrt(Math.pow(x1-x0,2)+Math.pow(y1-y0,2)));
+    let x=r, y=0, err=0;
+    while(x>=y){
+        const pts=[[x0+x,y0+y],[x0+y,y0+x],[x0-y,y0+x],[x0-x,y0+y],[x0-x,y0-y],[x0-y,y0-x],[x0+y,y0-x],[x0+x,y0-y]];
+        pts.forEach(([px,py])=>setPixelSymmetric(px,py,color));
+        y++; if(err<=0) err+=2*y+1;
+        if(err>0) {x--; err-=2*x+1;}
     }
 }
 
-// ------------------------
-// Temp Canvas for Shape Preview
-// ------------------------
-let tempCanvas = document.createElement('canvas');
-tempCanvas.width = pixelCanvas.width;
-tempCanvas.height = pixelCanvas.height;
-let tempCtx = tempCanvas.getContext('2d');
-document.body.appendChild(tempCanvas);
-tempCanvas.style.position='absolute';
-tempCanvas.style.pointerEvents='none';
-tempCanvas.style.top=pixelCanvas.offsetTop+'px';
-tempCanvas.style.left=pixelCanvas.offsetLeft+'px';
-tempCanvas.style.display='none';
-
-function renderTempShape(ctx, x, y) {
-    tempCtx.clearRect(0,0,tempCanvas.width,tempCanvas.height);
-    tempCanvas.style.display='block';
-    if(state.currentTool==='line') drawLine(tempCtx,state.startX,state.startY,x,y,state.primaryColor);
-    if(state.currentTool==='rectangle') drawRect(tempCtx,state.startX,state.startY,x,y,state.primaryColor);
-    if(state.currentTool==='circle') drawCircle(tempCtx,state.startX,state.startY,x,y,state.primaryColor);
+// ---------------------
+// SELECTION / MOVE
+// ---------------------
+function getSelection(x0,y0,x1,y1){
+    const minX=Math.min(x0,x1), maxX=Math.max(x0,x1);
+    const minY=Math.min(y0,y1), maxY=Math.max(y0,y1);
+    const data=[];
+    for(let y=minY;y<=maxY;y++){
+        const row=[];
+        for(let x=minX;x<=maxX;x++){ row.push(pixelData[y][x]); }
+        data.push(row);
+    }
+    return {x:minX,y:minY,w:maxX-minX+1,h:maxY-minY+1,data};
 }
 
-function clearTempCanvas(){ tempCtx.clearRect(0,0,tempCanvas.width,tempCanvas.height); tempCanvas.style.display='none'; }
-
-// ------------------------
-// Selection / Move Tool
-// ------------------------
-function drawSelection(ctx, x, y) {
-    if(!state.selection){
-        state.selection = { startX: state.startX, startY: state.startY, endX: x, endY: y };
-        tempCtx.clearRect(0,0,tempCanvas.width,tempCanvas.height);
-        tempCtx.strokeStyle='red';
-        tempCtx.strokeRect(state.selection.startX*state.cellSize,state.selection.startY*state.cellSize,(x-state.selection.startX)*state.cellSize,(y-state.selection.startY)*state.cellSize);
+function moveSelection(dx, dy){
+    if(!selection) return;
+    saveUndo();
+    for(let y=0;y<selection.h;y++){
+        for(let x=0;x<selection.w;x++){
+            const px=selection.x+x, py=selection.y+y;
+            if(px>=0 && py>=0 && px<canvasWidth && py<canvasHeight) setPixel(px,py,'#ffffff');
+        }
+    }
+    selection.x+=dx; selection.y+=dy;
+    for(let y=0;y<selection.h;y++){
+        for(let x=0;x<selection.w;x++){
+            const px=selection.x+x, py=selection.y+y;
+            if(px>=0 && py>=0 && px<canvasWidth && py<canvasHeight) setPixel(px,py,selection.data[y][x]);
+        }
     }
 }
 
-// ------------------------
-// Mouse / Touch Events
-// ------------------------
-[pixelCanvas, sketchCanvas].forEach(canvas=>{
-    canvas.addEventListener('mousedown',startDraw);
-    canvas.addEventListener('mousemove',draw);
-    canvas.addEventListener('mouseup',endDraw);
-    canvas.addEventListener('mouseleave',endDraw);
-    canvas.addEventListener('touchstart',e=>{e.preventDefault(); startDraw(e.touches[0]);});
-    canvas.addEventListener('touchmove',e=>{e.preventDefault(); draw(e.touches[0]);});
-    canvas.addEventListener('touchend',e=>{e.preventDefault(); endDraw(e.changedTouches[0]);});
+// ---------------------
+// SKETCH CANVAS
+// ---------------------
+function initSketchCanvas(){
+    sketchCanvas.width=800; sketchCanvas.height=600;
+    sketchCtx.fillStyle='#ffffff';
+    sketchCtx.fillRect(0,0,sketchCanvas.width,sketchCanvas.height);
+    sketchLayers=[{canvas:sketchCanvas,ctx:sketchCtx,opacity:1,blend:'source-over'}];
+    activeLayer=0;
+}
+
+function drawSketch(){
+    sketchCtx.clearRect(0,0,sketchCanvas.width,sketchCanvas.height);
+    sketchLayers.forEach(layer=>{
+        sketchCtx.globalAlpha=layer.opacity;
+        sketchCtx.globalCompositeOperation=layer.blend;
+        sketchCtx.drawImage(layer.canvas,0,0);
+    });
+    sketchCtx.globalAlpha=1;
+    sketchCtx.globalCompositeOperation='source-over';
+}
+
+function applyBrush(x,y){
+    if(!sketchLayers[activeLayer]) return;
+    const ctx = sketchLayers[activeLayer].ctx;
+    ctx.fillStyle = brushColor;
+    ctx.globalAlpha = brushOpacity*brushFlow;
+    ctx.beginPath();
+    ctx.arc(x,y,brushSize/2,0,Math.PI*2);
+    ctx.fill();
+    ctx.globalAlpha = 1;
+    drawSketch();
+}
+
+// ---------------------
+// UNDO / REDO
+// ---------------------
+function saveUndo(){
+    if(currentMode==='pixel') undoStack.push(JSON.parse(JSON.stringify(pixelData)));
+    else undoStack.push(sketchCanvas.toDataURL());
+    redoStack=[];
+}
+function undo(){
+    if(!undoStack.length) return;
+    redoStack.push(currentMode==='pixel'?JSON.parse(JSON.stringify(pixelData)):sketchCanvas.toDataURL());
+    if(currentMode==='pixel'){ pixelData = undoStack.pop(); drawCanvas(); }
+    else{
+        const img=new Image(); img.src=undoStack.pop();
+        img.onload=()=>{sketchCtx.clearRect(0,0,sketchCanvas.width,sketchCanvas.height); sketchCtx.drawImage(img,0,0);}
+    }
+}
+function redo(){
+    if(!redoStack.length) return;
+    undoStack.push(currentMode==='pixel'?JSON.parse(JSON.stringify(pixelData)):sketchCanvas.toDataURL());
+    if(currentMode==='pixel'){ pixelData = redoStack.pop(); drawCanvas(); }
+    else{
+        const img=new Image(); img.src=redoStack.pop();
+        img.onload=()=>{sketchCtx.clearRect(0,0,sketchCanvas.width,sketchCanvas.height); sketchCtx.drawImage(img,0,0);}
+    }
+}
+
+// ---------------------
+// ZOOM
+// ---------------------
+function setZoom(z){
+    zoomLevel=z;
+    canvas.style.transform=`scale(${zoomLevel})`;
+    sketchCanvas.style.transform=`scale(${zoomLevel})`;
+    document.getElementById('zoomIndicator').innerText=Math.round(zoomLevel*100)+'%';
+}
+
+// ---------------------
+// UI / MODE SWITCH
+// ---------------------
+function initUI(){
+    document.querySelectorAll('.mode-btn').forEach(btn=>{
+        btn.addEventListener('click',()=>{
+            currentMode=btn.dataset.mode;
+            updateModeUI();
+        });
+    });
+    document.querySelectorAll('.tool-btn').forEach(btn=>{
+        btn.addEventListener('click',()=>{
+            document.querySelectorAll('.tool-btn').forEach(b=>b.classList.remove('active'));
+            btn.classList.add('active');
+            currentTool = btn.dataset.tool;
+        });
+    });
+    document.querySelectorAll('.symmetry-btn').forEach(btn=>{
+        btn.addEventListener('click',()=>{
+            document.querySelectorAll('.symmetry-btn').forEach(b=>b.classList.remove('active'));
+            btn.classList.add('active');
+            symmetryMode = btn.dataset.symmetry;
+        });
+    });
+    document.getElementById('zoomIn').addEventListener('click',()=>setZoom(zoomLevel*1.25));
+    document.getElementById('zoomOut').addEventListener('click',()=>setZoom(zoomLevel/1.25));
+    document.getElementById('zoomReset').addEventListener('click',()=>setZoom(1));
+    document.getElementById('undo').addEventListener('click',undo);
+    document.getElementById('redo').addEventListener('click',redo);
+    document.getElementById('primaryColor').addEventListener('click',()=>pickColor('primary'));
+    document.getElementById('secondaryColor').addEventListener('click',()=>pickColor('secondary'));
+    document.getElementById('resizeCanvas').addEventListener('click',()=>{
+        canvasWidth=parseInt(document.getElementById('canvasWidth').value);
+        canvasHeight=parseInt(document.getElementById('canvasHeight').value);
+        initPixelCanvas();
+    });
+}
+
+function updateModeUI(){
+    document.querySelectorAll('.mode-btn').forEach(btn=>btn.classList.remove('active'));
+    document.querySelector(`.mode-btn[data-mode='${currentMode}']`).classList.add('active');
+    document.querySelector('.pixel-tools').style.display = currentMode==='pixel'?'block':'none';
+    document.querySelector('.sketch-tools').style.display = currentMode==='sketch'?'block':'none';
+}
+
+// ---------------------
+// COLOR PICKER
+// ---------------------
+function pickColor(type){
+    const input=document.createElement('input');
+    input.type='color'; input.click();
+    input.addEventListener('input',()=>{
+        if(type==='primary'){ primaryColor=input.value; document.getElementById('primaryColor').style.background=primaryColor; }
+        else{ secondaryColor=input.value; document.getElementById('secondaryColor').style.background=secondaryColor; brushColor=secondaryColor;}
+    });
+}
+
+// ---------------------
+// EXPORT
+// ---------------------
+document.getElementById('exportJSON').addEventListener('click',()=>{
+    const data={pixelData,palette};
+    document.getElementById('output').value=JSON.stringify(data,null,2);
+});
+document.getElementById('exportPNG2').addEventListener('click',()=>{
+    const exportCanvas=document.createElement('canvas');
+    exportCanvas.width=currentMode==='pixel'?canvasWidth:sketchCanvas.width;
+    exportCanvas.height=currentMode==='pixel'?canvasHeight:sketchCanvas.height;
+    const ctx=exportCanvas.getContext('2d');
+    if(currentMode==='pixel'){
+        for(let y=0;y<canvasHeight;y++){
+            for(let x=0;x<canvasWidth;x++){
+                ctx.fillStyle=pixelData[y][x]; ctx.fillRect(x,y,1,1);
+            }
+        }
+    } else ctx.drawImage(sketchCanvas,0,0);
+    const link=document.createElement('a');
+    link.download='export.png';
+    link.href=exportCanvas.toDataURL();
+    link.click();
 });
 
-// ------------------------
-// Tool Buttons
-// ------------------------
-document.querySelectorAll('[data-tool]').forEach(btn=>{
-    btn.addEventListener('click',()=>state.currentTool=btn.dataset.tool);
-});
+// ---------------------
+// SERVICE WORKER
+// ---------------------
+if('serviceWorker' in navigator){
+    navigator.serviceWorker.register('/sw.js')
+    .then(()=>console.log('Service Worker registered'))
+    .catch(err=>console.error(err));
+}
 
-// Undo/Redo
-document.getElementById('undoBtn').addEventListener('click',undo);
-document.getElementById('redoBtn').addEventListener('click',redo);
-
-// Grid Toggle
-document.getElementById('gridBtn').addEventListener('click',()=>{
-    state.grid = !state.grid;
-    drawGrid();
-});
-
-// Symmetry
-document.getElementById('symmetrySelect').addEventListener('change',e=>state.symmetry=e.target.value);
-
-// Mode Switch
-document.getElementById('modeSelect').addEventListener('change',e=>{
-    state.mode = e.target.value;
-    pixelCanvas.style.display = state.mode==='pixel'?'block':'none';
-    sketchCanvas.style.display = state.mode==='sketch'?'block':'none';
-});
-
-// Initialize Editor
-initCanvas();
+// ---------------------
+// INIT
+// ---------------------
+init();
