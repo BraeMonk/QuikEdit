@@ -588,8 +588,9 @@
                 cell.addEventListener('mouseleave', handleCellMouseLeave);
                 cell.addEventListener('mouseup', handleCellMouseUp);
                 cell.addEventListener('contextmenu', e => e.preventDefault());
-                cell.addEventListener('touchstart', handleCellTouchStart);
-                cell.addEventListener('touchmove', handleCellTouchMove);
+                cell.addEventListener('touchstart', handleCellTouchStart, { passive: false });
+                cell.addEventListener('touchmove', handleCellTouchMove, { passive: false });
+                cell.addEventListener('touchend', handleCellTouchEnd, { passive: false });
     
                 canvas.appendChild(cell);
             }
@@ -715,6 +716,62 @@
         
         if (tools[currentTool].onDrag) {
           tools[currentTool].onDrag(x, y);
+        }
+      }
+    }
+
+    // =============================
+    // Extra Touch Handlers
+    // =============================
+
+    function handleCellTouchStart(e) {
+      e.preventDefault();
+      const touch = e.touches[0];
+      const target = document.elementFromPoint(touch.clientX, touch.clientY);
+
+      if (target && target.classList.contains('cell')) {
+        const x = parseInt(target.dataset.x);
+        const y = parseInt(target.dataset.y);
+
+        isPainting = true;
+        saveState();
+
+        if (tools[currentTool].onStart) {
+          tools[currentTool].onStart(x, y);
+        }
+      }
+    }
+
+    function handleCellTouchMove(e) {
+      e.preventDefault();
+      if (!isPainting) return;
+
+      const touch = e.touches[0];
+      const target = document.elementFromPoint(touch.clientX, touch.clientY);
+
+      if (target && target.classList.contains('cell')) {
+        const x = parseInt(target.dataset.x);
+        const y = parseInt(target.dataset.y);
+
+        if (tools[currentTool].onDrag) {
+          tools[currentTool].onDrag(x, y);
+        }
+      }
+    }
+
+    function handleCellTouchEnd(e) {
+      e.preventDefault();
+      isPainting = false;
+
+      const touch = e.changedTouches[0];
+      const target = document.elementFromPoint(touch.clientX, touch.clientY);
+
+      if (target && target.classList.contains('cell')) {
+        const x = parseInt(target.dataset.x);
+        const y = parseInt(target.dataset.y);
+
+        if (tools[currentTool].onEnd) {
+          tools[currentTool].onEnd(x, y);
         }
       }
     }
