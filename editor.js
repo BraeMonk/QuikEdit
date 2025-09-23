@@ -288,11 +288,11 @@
             renderCanvas();
         },
     
-        onDrag: (x, y) => {
+        onDrag: (x, y, dxOverride = null, dyOverride = null) => {
             if (!moveStart || !selectionBounds || !selectionArray) return;
     
-            const dx = x - moveStart.x;
-            const dy = y - moveStart.y;
+            const dx = dxOverride !== null ? dxOverride : (x - moveStart.x);
+            const dy = dyOverride !== null ? dyOverride : (y - moveStart.y);
             
             // Update move offset
             moveOffset = { dx, dy };
@@ -325,11 +325,11 @@
             renderPreview(previewArray);
         },
     
-        onEnd: (x, y) => {
+        onEnd: (x, y, dxOverride = null, dyOverride = null) => {
             if (!moveStart || !selectionBounds || !selectionArray) return;
     
-            const dx = x - moveStart.x;
-            const dy = y - moveStart.y;
+            const dx = dxOverride !== null ? dxOverride : (x - moveStart.x);
+            const dy = dyOverride !== null ? dyOverride : (y - moveStart.y);
     
             // Apply the move to the actual array
             // First clear the original selection area
