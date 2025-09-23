@@ -74,6 +74,7 @@
     let shapeStart = null;
     let previewArray = null;
     let moveStart = null;
+    let touchMoveStart = null;
     let moveOffset = { dx: 0, dy: 0 };
     let symmetryMode = 'none'; // 'none', 'horizontal', 'vertical', 'both'
     let symmetryAxis = { x: 8, y: 8 };
@@ -694,32 +695,6 @@
       isRightClick = false;
     }
 
-    function handleCellTouchStart(e) {
-      e.preventDefault();
-      const x = parseInt(e.target.dataset.x);
-      const y = parseInt(e.target.dataset.y);
-      
-      saveState();
-      if (tools[currentTool].onStart) {
-        tools[currentTool].onStart(x, y);
-      }
-    }
-
-    function handleCellTouchMove(e) {
-      e.preventDefault();
-      const touch = e.touches[0];
-      const target = document.elementFromPoint(touch.clientX, touch.clientY);
-      
-      if (target && target.classList.contains('cell')) {
-        const x = parseInt(target.dataset.x);
-        const y = parseInt(target.dataset.y);
-        
-        if (tools[currentTool].onDrag) {
-          tools[currentTool].onDrag(x, y);
-        }
-      }
-    }
-
     // =============================
     // Extra Touch Handlers
     // =============================
@@ -736,6 +711,11 @@
         isPainting = true;
         saveState();
 
+        if (currentTool === 'move') {
+          // record both cell + pixel start
+          touchMoveStart = { clientX: touch.clientX, clientY: touch.clientY, x, y };
+        }
+
         if (tools[currentTool].onStart) {
           tools[currentTool].onStart(x, y);
         }
@@ -747,8 +727,20 @@
       if (!isPainting) return;
 
       const touch = e.touches[0];
-      const target = document.elementFromPoint(touch.clientX, touch.clientY);
 
+      if (currentTool === 'move' && touchMoveStart) {
+        // compute pixel deltas → convert to cell deltas
+        const dxPixels = touch.clientX - touchMoveStart.clientX;
+        const dyPixels = touch.clientY - touchMoveStart.clientY;
+        const dxCells = Math.round(dxPixels / cellSize);
+        const dyCells = Math.round(dyPixels / cellSize);
+
+        tools.move.onDrag(touchMoveStart.x, touchMoveStart.y, dxCells, dyCells);
+        return;
+      }
+
+      // --- fallback for paint/shape tools (still cell-based) ---
+      const target = document.elementFromPoint(touch.clientX, touch.clientY);
       if (target && target.classList.contains('cell')) {
         const x = parseInt(target.dataset.x);
         const y = parseInt(target.dataset.y);
@@ -764,8 +756,20 @@
       isPainting = false;
 
       const touch = e.changedTouches[0];
-      const target = document.elementFromPoint(touch.clientX, touch.clientY);
 
+      if (currentTool === 'move' && touchMoveStart) {
+        const dxPixels = touch.clientX - touchMoveStart.clientX;
+        const dyPixels = touch.clientY - touchMoveStart.clientY;
+        const dxCells = Math.round(dxPixels / cellSize);
+        const dyCells = Math.round(dyPixels / cellSize);
+
+        tools.move.onEnd(touchMoveStart.x, touchMoveStart.y, dxCells, dyCells);
+        touchMoveStart = null;
+        return;
+      }
+
+      // --- fallback for paint/shape tools ---
+      const target = document.elementFromPoint(touch.clientX, touch.clientY);
       if (target && target.classList.contains('cell')) {
         const x = parseInt(target.dataset.x);
         const y = parseInt(target.dataset.y);
