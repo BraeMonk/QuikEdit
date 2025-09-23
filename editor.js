@@ -743,6 +743,9 @@
 
         // call move tool with dx/dy overrides
         tools.move.onDrag(touchMoveStart.x, touchMoveStart.y, dxCells, dyCells);
+
+        if (previewArray) renderPreview(previewArray);
+    
         return;
       }
 
