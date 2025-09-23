@@ -12,7 +12,13 @@
   <div class="editor-container">
     <!-- Header -->
     <div class="header">
-      <div class="logo">Jerry Editor</div>
+      <div class="logo">
+        Jerry Editor
+        <div class="mode-toggle">
+          <button class="mode-btn active" data-mode="pixel">Pixel</button>
+          <button class="mode-btn" data-mode="sketch">Sketch</button>
+        </div>
+      </div>
       <div class="header-controls">
         <button class="header-btn" id="newProject">New</button>
         <button class="header-btn" id="saveProject">Save</button>
@@ -22,37 +28,59 @@
 
     <!-- Tools Sidebar -->
     <div class="sidebar">
-      <!-- Regular Drawing Tools -->
-      <div class="tool-btn active" data-tool="pencil" title="Pencil (B)">✏️</div>
-      <div class="tool-btn" data-tool="eraser" title="Eraser (E)">🧹</div>
-      <div class="tool-btn" data-tool="eyedropper" title="Eyedropper (I)">💧</div>
-      <div class="tool-btn" data-tool="fill" title="Fill Bucket (G)">🪣</div>
-      
-      <div class="tool-separator"></div>
-      
-      <!-- Symmetric Drawing Tools -->
-      <div class="tool-btn symmetric-tool" data-tool="symmetricPencil" title="Symmetric Pencil (Shift+B)">✏️⚌</div>
-      <div class="tool-btn symmetric-tool" data-tool="symmetricEraser" title="Symmetric Eraser (Shift+E)">🧹⚌</div>
-      <div class="tool-btn symmetric-tool" data-tool="symmetricFill" title="Symmetric Fill (Shift+G)">🪣⚌</div>
-      
-      <div class="tool-separator"></div>
-      
-      <!-- Selection and Movement Tools -->
-      <div class="tool-btn" data-tool="select" title="Select (M)">⬚</div>
-      <div class="tool-btn" data-tool="move" title="Move (V)">✋</div>
-      
-      <div class="tool-separator"></div>
-      
-      <!-- Shape Tools -->
-      <div class="tool-btn" data-tool="line" title="Line (L)">📏</div>
-      <div class="tool-btn" data-tool="rect" title="Rectangle (R)">▭</div>
-      <div class="tool-btn" data-tool="circle" title="Circle (O)">○</div>
+      <!-- Pixel Mode Tools -->
+      <div class="pixel-tools">
+        <div class="tool-btn active" data-tool="pencil" title="Pencil (B)">✏️</div>
+        <div class="tool-btn" data-tool="eraser" title="Eraser (E)">🧹</div>
+        <div class="tool-btn" data-tool="eyedropper" title="Eyedropper (I)">💧</div>
+        <div class="tool-btn" data-tool="fill" title="Fill Bucket (G)">🪣</div>
+        
+        <div class="tool-separator"></div>
+        
+        <div class="tool-btn symmetric-tool" data-tool="symmetricPencil" title="Symmetric Pencil (Shift+B)">✏️⚌</div>
+        <div class="tool-btn symmetric-tool" data-tool="symmetricEraser" title="Symmetric Eraser (Shift+E)">🧹⚌</div>
+        <div class="tool-btn symmetric-tool" data-tool="symmetricFill" title="Symmetric Fill (Shift+G)">🪣⚌</div>
+        
+        <div class="tool-separator"></div>
+        
+        <div class="tool-btn" data-tool="select" title="Select (M)">⬚</div>
+        <div class="tool-btn" data-tool="move" title="Move (V)">✋</div>
+        
+        <div class="tool-separator"></div>
+        
+        <div class="tool-btn" data-tool="line" title="Line (L)">📏</div>
+        <div class="tool-btn" data-tool="rect" title="Rectangle (R)">▭</div>
+        <div class="tool-btn" data-tool="circle" title="Circle (O)">○</div>
+      </div>
+
+      <!-- Sketch Mode Tools -->
+      <div class="sketch-tools" style="display: none;">
+        <div class="tool-btn active" data-tool="brush" title="Brush (B)">🖌️</div>
+        <div class="tool-btn" data-tool="pen" title="Pen (P)">✒️</div>
+        <div class="tool-btn" data-tool="marker" title="Marker (M)">🖍️</div>
+        <div class="tool-btn" data-tool="pencilSketch" title="Pencil (C)">✏️</div>
+        <div class="tool-btn" data-tool="charcoal" title="Charcoal (H)">⬛</div>
+        
+        <div class="tool-separator"></div>
+        
+        <div class="tool-btn" data-tool="eraser" title="Eraser (E)">🧹</div>
+        <div class="tool-btn" data-tool="smudge" title="Smudge (S)">👆</div>
+        <div class="tool-btn" data-tool="blur" title="Blur (U)">🌫️</div>
+        
+        <div class="tool-separator"></div>
+        
+        <div class="tool-btn" data-tool="lineSketch" title="Line (L)">📏</div>
+        <div class="tool-btn" data-tool="rectSketch" title="Rectangle (R)">▭</div>
+        <div class="tool-btn" data-tool="circleSketch" title="Circle (O)">○</div>
+        <div class="tool-btn" data-tool="sprayPaint" title="Spray Paint (Y)">🎨</div>
+      </div>
     </div>
 
     <!-- Canvas Area -->
     <div class="canvas-area">
       <div class="canvas-wrapper">
         <div id="canvas"></div>
+        <canvas id="sketchCanvas" width="800" height="600"></canvas>
         <div class="canvas-grid" id="canvasGrid"></div>
       </div>
       <div class="canvas-info" id="canvasInfo">16×16 | Pencil | #000000</div>
@@ -90,6 +118,36 @@
         </div>
       </div>
 
+      <!-- Brush Panel (Sketch Mode Only) -->
+      <div class="panel sketch-controls">
+        <div class="panel-header">
+          Brush <span>▼</span>
+        </div>
+        <div class="panel-content">
+          <div class="control-group">
+            <label>Size: <span id="brushSizeLabel">10</span>px</label>
+            <input type="range" id="brushSize" min="1" max="100" value="10">
+          </div>
+          
+          <div class="control-group">
+            <label>Opacity: <span id="opacityLabel">100</span>%</label>
+            <input type="range" id="brushOpacity" min="1" max="100" value="100">
+          </div>
+          
+          <div class="control-group">
+            <label>Hardness: <span id="hardnessLabel">100</span>%</label>
+            <input type="range" id="brushHardness" min="0" max="100" value="100">
+          </div>
+          
+          <div class="control-group">
+            <label>Flow: <span id="flowLabel">100</span>%</label>
+            <input type="range" id="brushFlow" min="1" max="100" value="100">
+          </div>
+          
+          <div class="brush-preview" id="brushPreview"></div>
+        </div>
+      </div>
+
       <!-- Symmetry Panel -->
       <div class="panel">
         <div class="panel-header">
@@ -108,7 +166,7 @@
             </div>
           </div>
           <div class="symmetry-info">
-            <small>Use symmetric tools (⚌) to draw with active symmetry mode</small>
+            <small id="symmetryInfo">Use symmetric tools (⚌) to draw with active symmetry mode</small>
           </div>
         </div>
       </div>
@@ -158,6 +216,15 @@
             </div>
           </div>
           
+          <div class="control-group sketch-controls">
+            <label>Canvas Size (Sketch)</label>
+            <div class="btn-group">
+              <button class="btn" data-size="800x600">800×600</button>
+              <button class="btn" data-size="1024x768">1024×768</button>
+              <button class="btn" data-size="1200x800">1200×800</button>
+            </div>
+          </div>
+          
           <div class="control-group">
             <label>Zoom</label>
             <div class="btn-group">
@@ -182,8 +249,8 @@
         </div>
       </div>
 
-      <!-- Sprites Panel -->
-      <div class="panel">
+      <!-- Sprites Panel (Pixel Mode Only) -->
+      <div class="panel pixel-controls">
         <div class="panel-header">
           Sprites <span>▼</span>
         </div>
@@ -198,6 +265,39 @@
             <button class="btn" id="duplicateSprite">Duplicate</button>
             <button class="btn" id="deleteSprite">Delete</button>
           </div>
+        </div>
+      </div>
+
+      <!-- Layers Panel (Sketch Mode Only) -->
+      <div class="panel sketch-controls">
+        <div class="panel-header">
+          Layers <span>▼</span>
+        </div>
+        <div class="panel-content">
+          <div class="control-group">
+            <label>Layer Opacity: <span id="layerOpacityLabel">100</span>%</label>
+            <input type="range" id="layerOpacity" min="0" max="100" value="100">
+          </div>
+          
+          <div class="control-group">
+            <label>Blend Mode</label>
+            <select id="blendMode">
+              <option value="source-over">Normal</option>
+              <option value="multiply">Multiply</option>
+              <option value="screen">Screen</option>
+              <option value="overlay">Overlay</option>
+              <option value="darken">Darken</option>
+              <option value="lighten">Lighten</option>
+              <option value="color-dodge">Color Dodge</option>
+              <option value="color-burn">Color Burn</option>
+              <option value="hard-light">Hard Light</option>
+              <option value="soft-light">Soft Light</option>
+              <option value="difference">Difference</option>
+              <option value="exclusion">Exclusion</option>
+            </select>
+          </div>
+          
+          <button class="btn" id="addLayer" style="width: 100%; margin-top: 8px;">Add Layer</button>
         </div>
       </div>
 
