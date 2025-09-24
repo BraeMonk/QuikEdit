@@ -96,39 +96,51 @@ function setPaletteByName(name) {
     let palette;
     let isUserPalette = false;
     
-    if(palettes[name]) {
+    // 1. Pixel & sketch built-ins
+    if (currentMode === 'pixel' && palettes[name]) {
         palette = palettes[name];
-    } else if(userPalettes.find(p => p.name === name)) {
-        palette = userPalettes.find(p => p.name === name).colors;
-        isUserPalette = true;
-    } else if(name === 'custom') {
-        palette = currentMode === 'pixel' ? customPalette : sketchCustomPalette;
-    } else if(name === 'built-in') {
-        palette = currentMode === 'pixel' ? palettes.default : sketchBuiltInPalette;
-    } else {
-        return;
+    } else if (currentMode === 'sketch' && sketchBuiltInPalette[name]) {
+        palette = sketchBuiltInPalette[name];
+    }
+    // 2. User-saved palettes
+    else {
+        const userPalette = userPalettes.find(p => p.name === name);
+        if (userPalette) {
+            palette = userPalette.colors;
+            isUserPalette = true;
+        }
+        // 3. Custom palettes
+        else if (name === 'custom') {
+            palette = currentMode === 'pixel' ? customPalette : sketchCustomPalette;
+        } else {
+            console.warn(`Palette not found: ${name}`);
+            return;
+        }
     }
 
-    if(currentMode === 'pixel') {
+    // Apply palette depending on mode
+    if (currentMode === 'pixel') {
         activePalette = palette;
-        currentPalette = palette; // sync properly
+        currentPalette = palette; // keep in sync
         currentPaletteName = name;
         currentColorIndex = Math.min(currentColorIndex, palette.length - 1);
         primaryColor = activePalette[currentColorIndex];
-        currentColor = primaryColor; // Keep currentColor in sync
+        currentColor = primaryColor;
     } else {
         sketchActivePalette = palette;
+        sketchPaletteName = name;
         sketchColorIndex = Math.min(sketchColorIndex, palette.length - 1);
         brushColor = sketchActivePalette[sketchColorIndex];
     }
 
     renderPalette();
     
-    // Show/hide color pickers for custom palettes
-    if(colorPickersContainer) {
+    // Show/hide color pickers for custom/user
+    if (colorPickersContainer) {
         colorPickersContainer.style.display = (name === 'custom' || isUserPalette) ? 'flex' : 'none';
     }
 }
+
 
 // Add a single color to current palette (user only)
 function addCustomColor(color) {
@@ -560,6 +572,7 @@ function endSelection(x, y) {
     renderPixelCanvas();
     isMovingSelection = true;
     moveOffset = {x: 0, y: 0};
+    lastMouse = { x: x, y: y};
     updateTransformInfo();
 }
 
@@ -603,6 +616,68 @@ function finalizeSelection() {
     renderPixelCanvas();
     updateTransformInfo();
 }
+
+function drawSelectionOverlay() {
+    const overlay = document.getElementById('selectionOverlay');
+    if (!overlay) return;
+
+    overlay.width = canvasWidth * cellSize;
+    overlay.height = canvasHeight * cellSize;
+    const ctx = overlay.getContext('2d');
+    ctx.clearRect(0, 0, overlay.width, overlay.height);
+
+    if (isSelecting && selectionStart) {
+        ctx.strokeStyle = '#4CAF50';
+        ctx.lineWidth = 1;
+        ctx.setLineDash([4, 2]);
+        const x = Math.min(selectionStart.x, mouseX) * cellSize;
+        const y = Math.min(selectionStart.y, mouseY) * cellSize;
+        const w = (Math.abs(selectionStart.x - mouseX) + 1) * cellSize;
+        const h = (Math.abs(selectionStart.y - mouseY) + 1) * cellSize;
+        ctx.strokeRect(x, y, w, h);
+    }
+
+    if (isMovingSelection && selectionData) {
+        const {x0, y0, data} = selectionData;
+        ctx.fillStyle = 'rgba(76,175,80,0.3)';
+        for (let yy = 0; yy < data.length; yy++) {
+            for (let xx = 0; xx < data[0].length; xx++) {
+                const px = (x0 + xx + moveOffset.x) * cellSize;
+                const py = (y0 + yy + moveOffset.y) * cellSize;
+                if (data[yy][xx] !== 'transparent') {
+                    ctx.fillRect(px, py, cellSize, cellSize);
+                }
+            }
+        }
+    }
+}
+
+let mouseX = 0;
+let mouseY = 0;
+
+pixelCanvas.addEventListener('mousedown', e => {
+    const rect = pixelCanvas.getBoundingClientRect();
+    const x = Math.floor((e.clientX - rect.left) / cellSize);
+    const y = Math.floor((e.clientY - rect.top) / cellSize);
+
+    if (currentTool === 'select') startSelection(x, y);
+});
+
+pixelCanvas.addEventListener('mousemove', e => {
+    const rect = pixelCanvas.getBoundingClientRect();
+    mouseX = Math.floor((e.clientX - rect.left) / cellSize);
+    mouseY = Math.floor((e.clientY - rect.top) / cellSize);
+
+    if (isSelecting) drawSelectionOverlay();
+    if (isMovingSelection) moveSelection(mouseX - selectionStart.x, mouseY - selectionStart.y);
+});
+
+pixelCanvas.addEventListener('mouseup', e => {
+    if (isSelecting) endSelection(mouseX, mouseY);
+    if (isMovingSelection) finalizeSelection();
+});
+
+
 
 // =====================
 // PIXEL TOOL HANDLERS
@@ -1529,33 +1604,44 @@ if(secondarySwatch) {
 // =====================
 // SYMMETRY CONTROLS
 // =====================
-document.querySelectorAll('.symmetry-btn').forEach(btn => {
+const symmetryButtons = document.querySelectorAll('.symmetry-btn');
+const symmetryInfo = document.getElementById('symmetryInfo');
+
+symmetryButtons.forEach(btn => {
     btn.addEventListener('click', () => {
-        document.querySelectorAll('.symmetry-btn').forEach(b => b.classList.remove('active'));
+        // Remove active from all buttons
+        symmetryButtons.forEach(b => b.classList.remove('active'));
+        // Activate clicked button
         btn.classList.add('active');
+
+        // Update symmetry mode
         symmetryMode = btn.dataset.symmetry;
         updateSymmetryInfo();
     });
 });
 
 function updateSymmetryInfo() {
-    const symmetryInfo = document.getElementById('symmetryInfo');
-    if (symmetryInfo) {
-        const isSymmetricTool = currentTool.includes('symmetric');
-        const hasSymmetry = symmetryMode !== 'none';
-        
-        if (isSymmetricTool && hasSymmetry) {
-            symmetryInfo.textContent = `Active: ${currentTool} with ${symmetryMode} symmetry`;
-            symmetryInfo.style.color = '#4CAF50';
-        } else if (isSymmetricTool && !hasSymmetry) {
-            symmetryInfo.textContent = 'Select a symmetry mode to use symmetric tools';
-            symmetryInfo.style.color = '#FF9800';
-        } else {
-            symmetryInfo.textContent = 'Use symmetric tools (⚌) to draw with active symmetry mode';
-            symmetryInfo.style.color = '#666';
-        }
+    if (!symmetryInfo) return;
+
+    // Determine if current tool supports symmetry
+    const symmetricTools = ['pencil', 'brush', 'eraser']; // Replace with your symmetric-capable tools
+    const isSymmetricTool = symmetricTools.includes(currentTool);
+    const hasSymmetry = symmetryMode && symmetryMode !== 'none';
+
+    if (isSymmetricTool && hasSymmetry) {
+        symmetryInfo.textContent = `Active: ${currentTool} with ${symmetryMode} symmetry`;
+        symmetryInfo.style.color = '#4CAF50';
+    } else if (isSymmetricTool && !hasSymmetry) {
+        symmetryInfo.textContent = 'Select a symmetry mode to use symmetric tools';
+        symmetryInfo.style.color = '#FF9800';
+    } else {
+        symmetryInfo.textContent = 'Use symmetric tools (⚌) to draw with active symmetry mode';
+        symmetryInfo.style.color = '#666';
     }
 }
+
+// Initialize UI on page load
+document.addEventListener('DOMContentLoaded', updateSymmetryInfo);
 
 // =====================
 // CANVAS CONTROLS
@@ -1563,106 +1649,100 @@ function updateSymmetryInfo() {
 const undoBtn = document.getElementById('undo');
 const redoBtn = document.getElementById('redo');
 const clearBtn = document.getElementById('clear');
-
-if(undoBtn) {
-    undoBtn.addEventListener('click', () => {
-        if(currentMode === 'pixel') {
-            restorePixelState(pixelUndoStack, pixelRedoStack);
-        } else {
-            restoreSketchState(sketchUndoStack, sketchRedoStack);
-        }
-    });
-}
-
-if(redoBtn) {
-    redoBtn.addEventListener('click', () => {
-        if(currentMode === 'pixel') {
-            restorePixelState(pixelRedoStack, pixelUndoStack);
-        } else {
-            restoreSketchState(sketchRedoStack, sketchUndoStack);
-        }
-    });
-}
-
-if(clearBtn) {
-    clearBtn.addEventListener('click', () => {
-        if(currentMode === 'pixel') {
-            savePixelState();
-            createPixelGrid(canvasWidth, canvasHeight);
-        } else {
-            saveSketchState();
-            sketchCtx.clearRect(0, 0, sketchCanvas.width, sketchCanvas.height);
-        }
-    });
-}
-
 const resizeBtn = document.getElementById('resizeCanvas');
-if (resizeBtn) {
-    resizeBtn.removeEventListener('click', handleResize); // Remove existing if present
-    
+const gridToggle = document.getElementById('gridToggle');
+
+// --- Undo / Redo ---
+undoBtn?.addEventListener('click', () => {
+    if(currentMode === 'pixel') {
+        restorePixelState(pixelUndoStack, pixelRedoStack);
+    } else {
+        restoreSketchState(sketchUndoStack, sketchRedoStack);
+    }
+});
+
+redoBtn?.addEventListener('click', () => {
+    if(currentMode === 'pixel') {
+        restorePixelState(pixelRedoStack, pixelUndoStack);
+    } else {
+        restoreSketchState(sketchRedoStack, sketchUndoStack);
+    }
+});
+
+// --- Clear Canvas ---
+clearBtn?.addEventListener('click', () => {
+    if(currentMode === 'pixel') {
+        savePixelState();
+        createPixelGrid(canvasWidth, canvasHeight);
+    } else {
+        saveSketchState();
+        sketchCtx.clearRect(0, 0, sketchCanvas.width, sketchCanvas.height);
+    }
+});
+
+// --- Resize Canvas ---
+if(resizeBtn) {
+    resizeBtn.removeEventListener('click', handleResize); // Remove any existing handler
+
     resizeBtn.addEventListener('click', () => {
         const widthInput = document.getElementById('canvasWidth');
         const heightInput = document.getElementById('canvasHeight');
+        if(!widthInput || !heightInput) return;
 
-        if (widthInput && heightInput) {
-            const w = Math.max(1, Math.min(512, parseInt(widthInput.value) || 16));
-            const h = Math.max(1, Math.min(512, parseInt(heightInput.value) || 16));
+        const w = Math.max(1, Math.min(512, parseInt(widthInput.value) || 16));
+        const h = Math.max(1, Math.min(512, parseInt(heightInput.value) || 16));
 
-            // Update input values to clamped values
-            widthInput.value = w;
-            heightInput.value = h;
+        widthInput.value = w;
+        heightInput.value = h;
 
-            if (w !== canvasWidth || h !== canvasHeight) {
-                canvasWidth = w;
-                canvasHeight = h;
+        if(w === canvasWidth && h === canvasHeight) return;
 
-                if (currentMode === 'pixel') {
-                    savePixelState();
-                    createPixelGrid(canvasWidth, canvasHeight);
-                    updatePixelCanvasTransform();
-                } else {
-                    saveSketchState();
-                    sketchCanvas.width = canvasWidth * cellSize;
-                    sketchCanvas.height = canvasHeight * cellSize;
-                    updateSketchCanvasTransform();
-                }
+        canvasWidth = w;
+        canvasHeight = h;
 
-                updateCanvasInfo();
-            }
+        if(currentMode === 'pixel') {
+            savePixelState();
+            createPixelGrid(canvasWidth, canvasHeight);
+            updatePixelCanvasTransform();
+        } else {
+            saveSketchState();
+            sketchCanvas.width = canvasWidth * cellSize;
+            sketchCanvas.height = canvasHeight * cellSize;
+            updateSketchCanvasTransform();
         }
+
+        updateCanvasInfo();
     });
 }
 
-console.log("Critical fixes applied to editor.js");
-
-  // Canvas size buttons for sketch mode
+// --- Quick Canvas Size Buttons (Sketch Mode) ---
 document.querySelectorAll('[data-size]').forEach(btn => {
     btn.addEventListener('click', (e) => {
         if(currentMode !== 'sketch') return;
-        
-        const [width, height] = e.target.dataset.size.split('x').map(Number);
-        sketchCanvas.width = width;
-        sketchCanvas.height = height;
+
+        const [w, h] = e.target.dataset.size.split('x').map(Number);
+        sketchCanvas.width = w;
+        sketchCanvas.height = h;
         updateSketchCanvasTransform();
         updateCanvasInfo();
     });
 });
 
-// Grid toggle
-const gridToggle = document.getElementById('gridToggle');
-if (gridToggle) {
+// --- Grid Toggle ---
+if(gridToggle) {
     gridToggle.checked = showGrid;
-    gridToggle.addEventListener('change', (e) => {
+    gridToggle.addEventListener('change', e => {
         showGrid = e.target.checked;
-        
-        const cells = document.querySelectorAll('#canvas .cell');
-        cells.forEach(cell => {
+        document.querySelectorAll('#canvas .cell').forEach(cell => {
             cell.style.border = showGrid ? 
                 '1px solid rgba(128,128,128,0.3)' : 
                 '1px solid transparent';
         });
     });
 }
+
+console.log("Canvas controls initialized successfully.");
+
 
 // =====================
 // BRUSH CONTROLS (SKETCH)
@@ -1680,56 +1760,96 @@ const sketchColorPicker = document.getElementById('sketchColor');
 if (brushSizeSlider) {
     brushSizeSlider.addEventListener('input', (e) => {
         brushSize = parseInt(e.target.value);
-        const label = document.getElementById('brushSizeLabel');
-        if (label) label.textContent = brushSize;
-        console.log('Brush size changed to:', brushSize); // Debug
+        if (brushSizeLabel) brushSizeLabel.textContent = brushSize;
+        updateBrushPreview();
     });
 }
 
 if (brushOpacitySlider) {
     brushOpacitySlider.addEventListener('input', (e) => {
         brushOpacity = parseInt(e.target.value) / 100;
-        const label = document.getElementById('opacityLabel');
-        if (label) label.textContent = e.target.value;
-        console.log('Brush opacity changed to:', brushOpacity); // Debug
-    });
-}
-
-if(brushHardnessSlider && hardnessLabel) {
-    brushHardnessSlider.addEventListener('input', e => {
-        brushHardness = parseInt(e.target.value);
-        hardnessLabel.textContent = e.target.value;
+        if (opacityLabel) opacityLabel.textContent = e.target.value;
         updateBrushPreview();
     });
 }
 
-if(brushFlowSlider && flowLabel) {
+if (brushHardnessSlider && hardnessLabel) {
+    brushHardnessSlider.addEventListener('input', e => {
+        brushHardness = parseInt(e.target.value);
+        hardnessLabel.textContent = brushHardness;
+        updateBrushPreview();
+    });
+}
+
+if (brushFlowSlider && flowLabel) {
     brushFlowSlider.addEventListener('input', e => {
         brushFlow = parseInt(e.target.value) / 100;
         flowLabel.textContent = e.target.value;
     });
 }
 
-const sketchColorPicker = document.getElementById('sketchColor');
-if(sketchColorPicker) {
-    // Remove existing listener if present
-    sketchColorPicker.removeEventListener('input', existingHandler);
-    
+if (sketchColorPicker) {
     sketchColorPicker.addEventListener('input', e => {
         brushColor = e.target.value;
-        
-        // Update sketch palette if using custom
+
+        // Update custom palette if active
         if (currentPaletteName === 'custom' || sketchActivePalette === sketchCustomPalette) {
             sketchActivePalette[sketchColorIndex] = brushColor;
             renderPalette();
         }
-        
+
         updateCanvasInfo();
         updateBrushPreview();
         updateColorSwatches();
     });
 }
 
+// --- Tool-specific textures ---
+function applyBrushTexture(ctx, tool) {
+    ctx.save();
+    if(tool === 'pencil') {
+        ctx.globalAlpha = brushOpacity;
+        ctx.strokeStyle = brushColor;
+        ctx.lineWidth = brushSize;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+    } else if(tool === 'eraser') {
+        ctx.globalAlpha = 1;
+        ctx.globalCompositeOperation = 'destination-out';
+        ctx.lineWidth = brushSize;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+    } else if(tool === 'spray') {
+        for(let i=0; i<200; i++){
+            const angle = Math.random()*2*Math.PI;
+            const radius = Math.random()*(brushSize/2);
+            const x = 25 + radius*Math.cos(angle);
+            const y = 25 + radius*Math.sin(angle);
+            ctx.fillStyle = brushColor;
+            ctx.globalAlpha = brushOpacity;
+            ctx.fillRect(x, y, 1, 1);
+        }
+    } else if(tool === 'marker') {
+        ctx.globalAlpha = brushOpacity*0.7;
+        ctx.strokeStyle = brushColor;
+        ctx.lineWidth = brushSize;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+    } else if(tool === 'airbrush') {
+        for(let i=0; i<200; i++){
+            const angle = Math.random()*2*Math.PI;
+            const radius = Math.random()*(brushSize/2);
+            const x = 25 + radius*Math.cos(angle);
+            const y = 25 + radius*Math.sin(angle);
+            ctx.fillStyle = brushColor;
+            ctx.globalAlpha = brushOpacity*0.1;
+            ctx.fillRect(x, y, 1, 1);
+        }
+    }
+    ctx.restore();
+}
+
+// --- Brush Preview ---
 function updateBrushPreview() {
     const preview = document.getElementById('brushPreview');
     if(!preview) return;
@@ -1747,26 +1867,155 @@ function updateBrushPreview() {
     const centerY = 25;
     const previewSize = Math.min(brushSize, 40);
 
-    ctx.save();
-    ctx.globalAlpha = brushOpacity;
+    const points = [{x:centerX, y:centerY}];
+    if(symmetryMode === 'vertical' || symmetryMode === 'both') points.push({x:50-centerX, y:centerY});
+    if(symmetryMode === 'horizontal' || symmetryMode === 'both') points.push({x:centerX, y:50-centerY});
+    if(symmetryMode === 'both') points.push({x:50-centerX, y:50-centerY});
 
-    if(brushHardness < 100) {
-        const gradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, previewSize / 2);
-        gradient.addColorStop(0, brushColor);
-        gradient.addColorStop(brushHardness / 100, brushColor);
-        gradient.addColorStop(1, brushColor + '00');
-        ctx.fillStyle = gradient;
-    } else {
-        ctx.fillStyle = brushColor;
-    }
+    points.forEach(pt => {
+        ctx.save();
+        ctx.globalAlpha = brushOpacity;
+        if(currentTool === 'eraser') {
+            ctx.globalCompositeOperation = 'destination-out';
+            ctx.fillStyle = 'rgba(0,0,0,1)';
+        } else {
+            ctx.fillStyle = brushColor;
+        }
 
-    ctx.beginPath();
-    ctx.arc(centerX, centerY, previewSize / 2, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.restore();
+        if(currentTool === 'spray' || currentTool === 'airbrush') {
+            applyBrushTexture(ctx, currentTool, pt.x, pt.y);
+        } else {
+            if(brushHardness < 100) {
+                const gradient = ctx.createRadialGradient(pt.x, pt.y, 0, pt.x, pt.y, previewSize / 2);
+                gradient.addColorStop(0, brushColor);
+                gradient.addColorStop(brushHardness/100, brushColor);
+                gradient.addColorStop(1, brushColor+'00');
+                ctx.fillStyle = gradient;
+            }
+            ctx.beginPath();
+            ctx.arc(pt.x, pt.y, previewSize/2, 0, Math.PI*2);
+            ctx.fill();
+        }
+
+        ctx.restore();
+    });
 
     preview.appendChild(canvas);
 }
+
+// =====================
+// SYMMETRIC BRUSH DRAWING (SKETCH)
+// =====================
+let lastX = null, lastY = null;
+
+function drawSymmetricStroke(x, y, prevX, prevY) {
+    if (!sketchCtx) return;
+
+    const points = [{x, y}];
+
+    if(symmetryMode === 'vertical' || symmetryMode === 'both') {
+        points.push({x: sketchCanvas.width - x, y});
+        if(prevX !== null) prevX = sketchCanvas.width - prevX;
+    }
+    if(symmetryMode === 'horizontal' || symmetryMode === 'both') {
+        points.push({x, y: sketchCanvas.height - y});
+        if(prevY !== null) prevY = sketchCanvas.height - prevY;
+    }
+    if(symmetryMode === 'both') {
+        points.push({x: sketchCanvas.width - x, y: sketchCanvas.height - y});
+    }
+
+    points.forEach(pt => {
+        if(currentTool === 'spray' || currentTool === 'airbrush') {
+            applyBrushTexture(sketchCtx, currentTool, pt.x, pt.y);
+        } else {
+            sketchCtx.save();
+            sketchCtx.globalAlpha = brushOpacity;
+
+            if(currentTool === 'eraser') {
+                sketchCtx.globalCompositeOperation = 'destination-out';
+                sketchCtx.strokeStyle = 'rgba(0,0,0,1)';
+            } else {
+                sketchCtx.strokeStyle = brushColor;
+            }
+
+            sketchCtx.lineWidth = brushSize;
+            sketchCtx.lineCap = 'round';
+            sketchCtx.lineJoin = 'round';
+
+            if(prevX !== null && prevY !== null) {
+                sketchCtx.beginPath();
+                sketchCtx.moveTo(prevX, prevY);
+                sketchCtx.lineTo(pt.x, pt.y);
+                sketchCtx.stroke();
+            } else {
+                sketchCtx.beginPath();
+                sketchCtx.arc(pt.x, pt.y, brushSize/2, 0, Math.PI*2);
+                sketchCtx.fillStyle = brushColor;
+                sketchCtx.fill();
+            }
+            sketchCtx.restore();
+        }
+    });
+}
+
+function applyBrushTexture(ctx, tool, centerX, centerY) {
+    ctx.save();
+    if(tool === 'spray') {
+        for(let i=0;i<200;i++){
+            const angle=Math.random()*2*Math.PI;
+            const radius=Math.random()*(brushSize/2);
+            const x=centerX+radius*Math.cos(angle);
+            const y=centerY+radius*Math.sin(angle);
+            ctx.fillStyle=brushColor;
+            ctx.globalAlpha=brushOpacity;
+            ctx.fillRect(x,y,1,1);
+        }
+    } else if(tool === 'airbrush') {
+        for(let i=0;i<200;i++){
+            const angle=Math.random()*2*Math.PI;
+            const radius=Math.random()*(brushSize/2);
+            const x=centerX+radius*Math.cos(angle);
+            const y=centerY+radius*Math.sin(angle);
+            ctx.fillStyle=brushColor;
+            ctx.globalAlpha=brushOpacity*0.1;
+            ctx.fillRect(x,y,1,1);
+        }
+    }
+    ctx.restore();
+}
+
+// =====================
+// MOUSE EVENTS FOR SKETCH CANVAS
+// =====================
+sketchCanvas.addEventListener('mousedown', e => {
+    isPainting = true;
+    const rect = sketchCanvas.getBoundingClientRect();
+    lastX = e.clientX - rect.left;
+    lastY = e.clientY - rect.top;
+    drawSymmetricStroke(lastX, lastY, null, null);
+});
+
+sketchCanvas.addEventListener('mousemove', e => {
+    if(!isPainting) return;
+    const rect = sketchCanvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    drawSymmetricStroke(x, y, lastX, lastY);
+    lastX = x;
+    lastY = y;
+});
+
+sketchCanvas.addEventListener('mouseup', () => {
+    isPainting = false;
+    lastX = lastY = null;
+    saveSketchState();
+});
+
+sketchCanvas.addEventListener('mouseleave', () => {
+    isPainting = false;
+    lastX = lastY = null;
+});
 
 // =====================
 // ZOOM CONTROLS
@@ -1990,6 +2239,67 @@ function updateTransformInfo() {
 // =====================
 // LAYERS HANDLING (SKETCH)
 // =====================
+
+function renderLayersToCanvas() {
+    if (currentMode !== 'sketch' || !sketchCtx) return;
+    
+    // Clear canvas
+    sketchCtx.clearRect(0, 0, sketchCanvas.width, sketchCanvas.height);
+    
+    // Render all visible layers
+    sketchLayers.forEach((layer, index) => {
+        if (!layer.visible || !layer.data) return;
+        
+        const img = new Image();
+        img.onload = () => {
+            sketchCtx.save();
+            sketchCtx.globalAlpha = layer.opacity;
+            sketchCtx.drawImage(img, 0, 0);
+            sketchCtx.restore();
+        };
+        img.src = layer.data;
+    });
+}
+
+// Update layer switching
+if(document.getElementById('layerList')) {
+    document.addEventListener('click', (e) => {
+        if(e.target.classList.contains('layer-visibility')) {
+            const layerIndex = parseInt(e.target.dataset.layer);
+            if(sketchLayers[layerIndex]) {
+                sketchLayers[layerIndex].visible = !sketchLayers[layerIndex].visible;
+                updateLayerList();
+                renderLayersToCanvas();
+            }
+        } else if(e.target.closest('.layer-item')) {
+            // Save current layer data before switching
+            if (activeLayer >= 0 && sketchLayers[activeLayer]) {
+                sketchLayers[activeLayer].data = sketchCanvas.toDataURL();
+            }
+            
+            const layerItem = e.target.closest('.layer-item');
+            const newLayerIndex = Array.from(layerItem.parentNode.children).indexOf(layerItem);
+            
+            if (newLayerIndex !== activeLayer) {
+                activeLayer = newLayerIndex;
+                updateLayerList();
+                
+                // Load new layer data
+                if (sketchLayers[activeLayer] && sketchLayers[activeLayer].data) {
+                    const img = new Image();
+                    img.onload = () => {
+                        sketchCtx.clearRect(0, 0, sketchCanvas.width, sketchCanvas.height);
+                        sketchCtx.drawImage(img, 0, 0);
+                    };
+                    img.src = sketchLayers[activeLayer].data;
+                } else {
+                    sketchCtx.clearRect(0, 0, sketchCanvas.width, sketchCanvas.height);
+                }
+            }
+        }
+    });
+}
+
 function updateLayerList() {
     const layerList = document.getElementById('layerList');
     if(!layerList) return;
@@ -2378,63 +2688,3 @@ document.body.addEventListener('touchmove', e => {
 
 // Initialize the app
 document.addEventListener('DOMContentLoaded', initialize);
-
-function renderLayersToCanvas() {
-    if (currentMode !== 'sketch' || !sketchCtx) return;
-    
-    // Clear canvas
-    sketchCtx.clearRect(0, 0, sketchCanvas.width, sketchCanvas.height);
-    
-    // Render all visible layers
-    sketchLayers.forEach((layer, index) => {
-        if (!layer.visible || !layer.data) return;
-        
-        const img = new Image();
-        img.onload = () => {
-            sketchCtx.save();
-            sketchCtx.globalAlpha = layer.opacity;
-            sketchCtx.drawImage(img, 0, 0);
-            sketchCtx.restore();
-        };
-        img.src = layer.data;
-    });
-}
-
-// Update layer switching
-if(document.getElementById('layerList')) {
-    document.addEventListener('click', (e) => {
-        if(e.target.classList.contains('layer-visibility')) {
-            const layerIndex = parseInt(e.target.dataset.layer);
-            if(sketchLayers[layerIndex]) {
-                sketchLayers[layerIndex].visible = !sketchLayers[layerIndex].visible;
-                updateLayerList();
-                renderLayersToCanvas();
-            }
-        } else if(e.target.closest('.layer-item')) {
-            // Save current layer data before switching
-            if (activeLayer >= 0 && sketchLayers[activeLayer]) {
-                sketchLayers[activeLayer].data = sketchCanvas.toDataURL();
-            }
-            
-            const layerItem = e.target.closest('.layer-item');
-            const newLayerIndex = Array.from(layerItem.parentNode.children).indexOf(layerItem);
-            
-            if (newLayerIndex !== activeLayer) {
-                activeLayer = newLayerIndex;
-                updateLayerList();
-                
-                // Load new layer data
-                if (sketchLayers[activeLayer] && sketchLayers[activeLayer].data) {
-                    const img = new Image();
-                    img.onload = () => {
-                        sketchCtx.clearRect(0, 0, sketchCanvas.width, sketchCanvas.height);
-                        sketchCtx.drawImage(img, 0, 0);
-                    };
-                    img.src = sketchLayers[activeLayer].data;
-                } else {
-                    sketchCtx.clearRect(0, 0, sketchCanvas.width, sketchCanvas.height);
-                }
-            }
-        }
-    });
-}
