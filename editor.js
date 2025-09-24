@@ -401,154 +401,187 @@ class DrawingTools {
     this.canvas.drawPixelCanvas();
   }
   
-  handleSketchDraw(x, y) {
-    const { activeLayer, layers, activeTool } = this.state.sketch;
-    const layer = layers[activeLayer];
-    if (!layer) return;
-    
-    if (!this.state.isDrawing) {
-      // Start new stroke
-      this.drawWithBrush(layer.ctx, x, y, activeTool, true);
-    } else {
-      // Continue stroke
-      this.drawWithBrush(layer.ctx, x, y, activeTool, false);
-    }
-    
-    this.canvas.drawSketchCanvas();
+  // =======================
+// Sketch Drawing Handlers
+// =======================
+handleSketchStart(x, y) {
+  const { activeLayer, layers } = this.state.sketch;
+  const layer = layers[activeLayer];
+  if (!layer) return;
+
+  this.state.isDrawing = true;
+  this.state.sketch.prevX = x;
+  this.state.sketch.prevY = y;
+
+  // For tools that need immediate start
+  switch (this.state.sketch.activeTool) {
+    case 'sprayPaint':
+    case 'smudge':
+      this.drawWithBrush(layer.ctx, x, y, x, y, this.state.sketch.activeTool);
+      break;
+    default:
+      break;
   }
 
-  drawWithBrush(ctx, x, y, tool) {
-    const { size, opacity, flow, color } = this.state.sketch;
+  this.canvas.drawSketchCanvas();
+}
 
-    ctx.globalAlpha = (opacity / 100) * (flow / 100);
-    ctx.lineCap = 'round';
-    ctx.lineJoin = 'round';
-    ctx.shadowBlur = 0;
-    ctx.shadowColor = 'transparent';
+handleSketchMove(x, y) {
+  if (!this.state.isDrawing) return;
 
-    switch (tool) {
-      case 'brush':
-        ctx.lineWidth = size;
-        ctx.strokeStyle = color;
-        ctx.globalCompositeOperation = 'source-over';
-        break;
+  const { activeLayer, layers, activeTool, prevX, prevY } = this.state.sketch;
+  const layer = layers[activeLayer];
+  if (!layer) return;
 
-      case 'pen':
-        ctx.lineWidth = Math.max(1, size * 0.7);
-        ctx.strokeStyle = color;
-        ctx.globalCompositeOperation = 'source-over';
-        ctx.lineCap = 'square';
-        break;
+  this.drawWithBrush(layer.ctx, prevX, prevY, x, y, activeTool);
 
-      case 'marker':
-        ctx.lineWidth = size * 2;
-        ctx.strokeStyle = color;
-        ctx.globalCompositeOperation = 'multiply';
-        ctx.globalAlpha = 0.2; // semi-transparent, layers up
-        break;
+  this.state.sketch.prevX = x;
+  this.state.sketch.prevY = y;
 
-      case 'pencilSketch':
-        ctx.lineWidth = Math.max(1, size * 0.6);
-        ctx.strokeStyle = color;
-        ctx.globalCompositeOperation = 'source-over';
-        ctx.globalAlpha = 0.5;
+  this.canvas.drawSketchCanvas();
+}
 
-        // scratchy jitter
-        if (this.state.isDrawing) {
-          const jitterX = x + (Math.random() - 0.5) * 1.5;
-          const jitterY = y + (Math.random() - 0.5) * 1.5;
-          ctx.lineTo(jitterX, jitterY);
-        } else {
-          ctx.beginPath();
-          ctx.moveTo(x, y);
-        }
-        ctx.stroke();
-        return;
+handleSketchEnd() {
+  this.state.isDrawing = false;
+  this.state.sketch.prevX = null;
+  this.state.sketch.prevY = null;
+}
 
-      case 'charcoal':
-        ctx.lineWidth = size * 1.5;
-        ctx.strokeStyle = '#222';
-        ctx.globalCompositeOperation = 'multiply';
-        ctx.globalAlpha = 0.25;
-        ctx.shadowBlur = 6;
-        ctx.shadowColor = '#000';
-        break;
+// =======================
+// Draw per-tool brush
+// =======================
+drawWithBrush(ctx, startX, startY, endX, endY, tool) {
+  const { size, opacity, flow, color } = this.state.sketch;
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  ctx.shadowBlur = 0;
+  ctx.shadowColor = 'transparent';
 
-      case 'sprayPaint':
-        this.drawSprayPaint(ctx, x, y);
-        return;
-
-      case 'smudge':
-        this.drawSmudge(ctx, x, y);
-        return;
-
-      case 'blur':
-        this.drawBlur(ctx, x, y);
-        return;
-    }
-
-    // Default stroke path
-    if (!this.state.isDrawing) {
+  switch (tool) {
+    case 'brush':
       ctx.beginPath();
-      ctx.moveTo(x, y);
-    } else {
-      ctx.lineTo(x, y);
+      ctx.moveTo(startX, startY);
+      ctx.lineTo(endX, endY);
+      ctx.lineWidth = size;
+      ctx.strokeStyle = color;
+      ctx.globalAlpha = (opacity / 100) * (flow / 100);
+      ctx.globalCompositeOperation = 'source-over';
       ctx.stroke();
-    }
-  }
+      break;
 
-  drawSprayPaint(ctx, x, y) {
-    const { size, opacity, color } = this.state.sketch;
-    const density = 25;
-
-    ctx.globalAlpha = (opacity / 100) * 0.15;
-    ctx.fillStyle = color;
-    ctx.globalCompositeOperation = 'source-over';
-
-    for (let i = 0; i < density; i++) {
-      const angle = Math.random() * Math.PI * 2;
-      const distance = Math.random() * (size / 2);
-      const sprayX = x + Math.cos(angle) * distance;
-      const sprayY = y + Math.sin(angle) * distance;
-
+    case 'pen':
       ctx.beginPath();
-      ctx.arc(sprayX, sprayY, Math.random() * 2 + 0.5, 0, Math.PI * 2);
-      ctx.fill();
-    }
-  }
-
-  drawSmudge(ctx, x, y) {
-    const size = this.state.sketch.size * 2;
-    const imgData = ctx.getImageData(x - size / 2, y - size / 2, size, size);
-
-    // quick averaging smear
-    for (let i = 0; i < imgData.data.length; i += 4) {
-      const avg = (imgData.data[i] + imgData.data[i + 1] + imgData.data[i + 2]) / 3;
-      imgData.data[i] = avg;
-      imgData.data[i + 1] = avg;
-      imgData.data[i + 2] = avg;
-    }
-
-    ctx.putImageData(imgData, x - size / 2, y - size / 2);
-  }
-
-  drawBlur(ctx, x, y) {
-    ctx.save();
-    ctx.filter = 'blur(3px)';
-    ctx.globalAlpha = this.state.sketch.opacity / 100;
-    ctx.strokeStyle = this.state.sketch.color;
-    ctx.lineWidth = this.state.sketch.size;
-    ctx.lineCap = 'round';
-
-    if (!this.state.isDrawing) {
-      ctx.beginPath();
-      ctx.moveTo(x, y);
-    } else {
-      ctx.lineTo(x, y);
+      ctx.moveTo(startX, startY);
+      ctx.lineTo(endX, endY);
+      ctx.lineWidth = Math.max(1, size * 0.7);
+      ctx.strokeStyle = color;
+      ctx.globalAlpha = (opacity / 100) * (flow / 100);
+      ctx.globalCompositeOperation = 'source-over';
+      ctx.lineCap = 'square';
       ctx.stroke();
-    }
-    ctx.restore();
+      break;
+
+    case 'marker':
+      ctx.beginPath();
+      ctx.moveTo(startX, startY);
+      ctx.lineTo(endX, endY);
+      ctx.lineWidth = size * 2;
+      ctx.strokeStyle = color;
+      ctx.globalAlpha = 0.2; // semi-transparent
+      ctx.globalCompositeOperation = 'multiply';
+      ctx.stroke();
+      break;
+
+    case 'pencilSketch':
+      ctx.beginPath();
+      const jitterStartX = startX + (Math.random() - 0.5) * 1.5;
+      const jitterStartY = startY + (Math.random() - 0.5) * 1.5;
+      const jitterEndX = endX + (Math.random() - 0.5) * 1.5;
+      const jitterEndY = endY + (Math.random() - 0.5) * 1.5;
+      ctx.moveTo(jitterStartX, jitterStartY);
+      ctx.lineTo(jitterEndX, jitterEndY);
+      ctx.lineWidth = Math.max(1, size * 0.6);
+      ctx.strokeStyle = color;
+      ctx.globalAlpha = 0.5;
+      ctx.globalCompositeOperation = 'source-over';
+      ctx.stroke();
+      break;
+
+    case 'charcoal':
+      ctx.beginPath();
+      ctx.moveTo(startX, startY);
+      ctx.lineTo(endX, endY);
+      ctx.lineWidth = size * 1.5;
+      ctx.strokeStyle = '#222';
+      ctx.globalAlpha = 0.25;
+      ctx.globalCompositeOperation = 'multiply';
+      ctx.shadowBlur = 6;
+      ctx.shadowColor = '#000';
+      ctx.stroke();
+      break;
+
+    case 'sprayPaint':
+      this.drawSprayPaint(ctx, endX, endY);
+      break;
+
+    case 'smudge':
+      this.drawSmudge(ctx, endX, endY);
+      break;
+
+    case 'blur':
+      ctx.save();
+      ctx.filter = 'blur(3px)';
+      ctx.globalAlpha = opacity / 100;
+      ctx.strokeStyle = color;
+      ctx.lineWidth = size;
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      ctx.moveTo(startX, startY);
+      ctx.lineTo(endX, endY);
+      ctx.stroke();
+      ctx.restore();
+      break;
   }
+}
+
+// =======================
+// Spray Paint
+// =======================
+drawSprayPaint(ctx, x, y) {
+  const { size, opacity, color } = this.state.sketch;
+  const density = 25;
+  ctx.globalAlpha = (opacity / 100) * 0.15;
+  ctx.fillStyle = color;
+  ctx.globalCompositeOperation = 'source-over';
+
+  for (let i = 0; i < density; i++) {
+    const angle = Math.random() * Math.PI * 2;
+    const distance = Math.random() * (size / 2);
+    const sprayX = x + Math.cos(angle) * distance;
+    const sprayY = y + Math.sin(angle) * distance;
+
+    ctx.beginPath();
+    ctx.arc(sprayX, sprayY, Math.random() * 2 + 0.5, 0, Math.PI * 2);
+    ctx.fill();
+  }
+}
+
+// =======================
+// Smudge
+// =======================
+drawSmudge(ctx, x, y) {
+  const size = this.state.sketch.size * 2;
+  const imgData = ctx.getImageData(x - size / 2, y - size / 2, size, size);
+
+  for (let i = 0; i < imgData.data.length; i += 4) {
+    const avg = (imgData.data[i] + imgData.data[i + 1] + imgData.data[i + 2]) / 3;
+    imgData.data[i] = avg;
+    imgData.data[i + 1] = avg;
+    imgData.data[i + 2] = avg;
+  }
+
+  ctx.putImageData(imgData, x - size / 2, y - size / 2);
+}
 
   // Drawing tools for pixel mode
   drawPixelLine(startX, startY, endX, endY, color) {
