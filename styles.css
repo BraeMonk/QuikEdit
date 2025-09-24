@@ -1000,3 +1000,13 @@ input:focus {
     background: white;
   }
 }
+
+@media (max-width: 768px) and (orientation: portrait) {
+  .pixel-tools {
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    align-items: center;
+    width: 100%;
+  }
+}
