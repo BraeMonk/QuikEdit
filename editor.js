@@ -728,30 +728,36 @@ function handlePixelPaint(e) {
     }
 }
 
+// =====================
+// PIXEL CANVAS MOUSE HANDLERS (LIVE PAINT)
+// =====================
+
 function handleMouseDown(e) {
     if(currentMode !== 'pixel') return;
     e.preventDefault();
+
     const {x, y} = getCellFromEvent(e);
 
     if(currentTool === 'select') {
         startSelection(x, y);
+        lastMousePos = {x: e.clientX, y: e.clientY}; // only for selection moves
     } else if(['line', 'rect', 'circle'].includes(currentTool)) {
         drawingShape = true;
         shapeStart = {x, y};
         savePixelState();
     } else if(isMovingSelection) {
-        finalizeSelection();
+        lastMousePos = {x: e.clientX, y: e.clientY};
     } else {
         savePixelState();
         isPainting = true;
         handlePixelPaint(e);
     }
-    if(isMovingSelection) lastMousePos = {x: e.clientX, y: e.clientY};
 }
 
 function handleMouseMove(e) {
     if(currentMode !== 'pixel') return;
     e.preventDefault();
+
     const {x, y} = getCellFromEvent(e);
 
     if(isSelecting && previewCtx) {
@@ -773,8 +779,9 @@ function handleMouseMove(e) {
     } else if(drawingShape) {
         drawPreviewShape(shapeStart.x, shapeStart.y, x, y, currentTool, primaryColor);
     } else if(isMovingSelection && lastMousePos) {
-        const dx = Math.floor((e.clientX - lastMousePos.x) / cellSize);
-        const dy = Math.floor((e.clientY - lastMousePos.y) / cellSize);
+        const dx = Math.floor((e.clientX - lastMousePos.x) / (cellSize * zoomLevel));
+        const dy = Math.floor((e.clientY - lastMousePos.y) / (cellSize * zoomLevel));
+
         if(dx !== 0 || dy !== 0) {
             moveSelection(dx, dy);
             lastMousePos = {x: e.clientX, y: e.clientY};
@@ -787,6 +794,7 @@ function handleMouseMove(e) {
 function handleMouseUp(e) {
     if(currentMode !== 'pixel') return;
     e.preventDefault();
+
     const {x, y} = getCellFromEvent(e);
 
     if(isSelecting && previewCtx) {
@@ -811,7 +819,7 @@ function handleMouseUp(e) {
     }
 
     isPainting = false;
-    lastMousePos = null;
+    lastMousePos = null; // reset after any action
 }
 
 // =====================
@@ -1060,138 +1068,101 @@ function blurAt(x, y, settings) {
 }
 
 // =====================
-// MOUSE EVENTS FOR PIXEL CANVAS
+// PIXEL CANVAS TOUCH HANDLERS
 // =====================
-if (pixelCanvas) {
-    // Remove any existing listeners first
-    pixelCanvas.removeEventListener('mousedown', handleMouseDown);
-    pixelCanvas.removeEventListener('mousemove', handleMouseMove);
-    pixelCanvas.removeEventListener('mouseup', handleMouseUp);
-    
-    // Add working event listeners
-    if (pixelCanvas) {
-    pixelCanvas.addEventListener('mousedown', (e) => {
-        if(currentMode !== 'pixel') return;
-        e.preventDefault();
-        const {x, y} = getCellFromEvent(e);
+function handleTouchStart(e) {
+    if(currentMode !== 'pixel') return;
+    e.preventDefault();
+    const touch = e.touches[0];
+    const rect = pixelCanvas.getBoundingClientRect();
+    const x = Math.floor((touch.clientX - rect.left) / (cellSize * zoomLevel));
+    const y = Math.floor((touch.clientY - rect.top) / (cellSize * zoomLevel));
 
-        if(currentTool === 'select') {
-            startSelection(x, y);
-        } else if(['line', 'rect', 'circle'].includes(currentTool)) {
-            drawingShape = true;
-            shapeStart = {x, y};
-            savePixelState();
-        } else if(isMovingSelection) {
-            finalizeSelection();
-        } else {
-            savePixelState();
-            isPainting = true;
-            handlePixelPaint(e);
-        }
-        lastMousePos = {x: e.clientX, y: e.clientY};
-    });
-
-    pixelCanvas.addEventListener('mousemove', (e) => {
-        if(currentMode !== 'pixel') return;
-        e.preventDefault();
-        const {x, y} = getCellFromEvent(e);
-        
-        if(isSelecting && previewCtx) {
-            const x0 = Math.min(selectionStart.x, x);
-            const y0 = Math.min(selectionStart.y, y);
-            const x1 = Math.max(selectionStart.x, x);
-            const y1 = Math.max(selectionStart.y, y);
-
-            previewCtx.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
-            previewCtx.strokeStyle = 'rgba(0,150,255,0.8)';
-            previewCtx.lineWidth = 2;
-            previewCtx.setLineDash([4, 2]);
-            previewCtx.strokeRect(
-                x0 * cellSize, y0 * cellSize,
-                (x1 - x0 + 1) * cellSize, (y1 - y0 + 1) * cellSize
-            );
-        } else if(drawingShape) {
-            drawPreviewShape(shapeStart.x, shapeStart.y, x, y, currentTool, primaryColor);
-        } else if(isMovingSelection && lastMousePos) {
-            const dx = Math.floor((e.clientX - lastMousePos.x) / (cellSize * zoomLevel));
-            const dy = Math.floor((e.clientY - lastMousePos.y) / (cellSize * zoomLevel));
-            if(dx !== 0 || dy !== 0) {
-                moveSelection(dx, dy);
-                lastMousePos = {x: e.clientX, y: e.clientY};
-            }
-        } else if(isPainting) {
-            handlePixelPaint(e);
-        }
-    });
-
-    pixelCanvas.addEventListener('mouseup', (e) => {
-        if(currentMode !== 'pixel') return;
-        e.preventDefault();
-        const {x, y} = getCellFromEvent(e);
-        
-        if(isSelecting && previewCtx) {
-            endSelection(x, y);
-            previewCtx.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
-        } else if(drawingShape) {
-            drawingShape = false;
-            if(previewCtx) previewCtx.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
-            
-            switch(currentTool) {
-                case 'line':
-                    drawLine(shapeStart.x, shapeStart.y, x, y, primaryColor);
-                    break;
-                case 'rect':
-                    drawRect(shapeStart.x, shapeStart.y, x, y, primaryColor, false);
-                    break;
-                case 'circle':
-                    const radius = Math.round(Math.hypot(x - shapeStart.x, y - shapeStart.y));
-                    drawCircle(shapeStart.x, shapeStart.y, radius, primaryColor, false);
-                    break;
-            }
-        }
-        
-        isPainting = false;
-        lastMousePos = null;
-    });
+    if(currentTool === 'select') {
+        startSelection(x, y);
+        lastMousePos = {x: touch.clientX, y: touch.clientY};
+    } else if(['line', 'rect', 'circle'].includes(currentTool)) {
+        drawingShape = true;
+        shapeStart = {x, y};
+        savePixelState();
+    } else if(isMovingSelection) {
+        lastMousePos = {x: touch.clientX, y: touch.clientY};
+    } else {
+        savePixelState();
+        isPainting = true;
+        handlePixelPaint({clientX: touch.clientX, clientY: touch.clientY, button: 0});
+    }
 }
 
-  if (pixelCanvas) {
-    pixelCanvas.addEventListener('touchstart', e => {
-        if(currentMode !== 'pixel') return;
-        e.preventDefault();
-        const touch = e.touches[0];
-        const mouseEvent = new MouseEvent('mousedown', {
-            clientX: touch.clientX,
-            clientY: touch.clientY,
-            button: 0
-        });
-        pixelCanvas.dispatchEvent(mouseEvent);
-    });
+function handleTouchMove(e) {
+    if(currentMode !== 'pixel') return;
+    e.preventDefault();
+    const touch = e.touches[0];
+    const rect = pixelCanvas.getBoundingClientRect();
+    const x = Math.floor((touch.clientX - rect.left) / (cellSize * zoomLevel));
+    const y = Math.floor((touch.clientY - rect.top) / (cellSize * zoomLevel));
 
-    pixelCanvas.addEventListener('touchmove', e => {
-        if(currentMode !== 'pixel') return;
-        e.preventDefault();
-        const touch = e.touches[0];
-        const mouseEvent = new MouseEvent('mousemove', {
-            clientX: touch.clientX,
-            clientY: touch.clientY
-        });
-        pixelCanvas.dispatchEvent(mouseEvent);
-    });
+    if(isSelecting && previewCtx) {
+        const x0 = Math.min(selectionStart.x, x);
+        const y0 = Math.min(selectionStart.y, y);
+        const x1 = Math.max(selectionStart.x, x);
+        const y1 = Math.max(selectionStart.y, y);
 
-    pixelCanvas.addEventListener('touchend', e => {
-        if(currentMode !== 'pixel') return;
-        e.preventDefault();
-        const mouseEvent = new MouseEvent('mouseup', {
-            button: 0
-        });
-        pixelCanvas.dispatchEvent(mouseEvent);
-    });
+        previewCtx.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
+        previewCtx.strokeStyle = 'rgba(0,150,255,0.8)';
+        previewCtx.lineWidth = 2;
+        previewCtx.setLineDash([4, 2]);
+        previewCtx.strokeRect(
+            x0 * cellSize,
+            y0 * cellSize,
+            (x1 - x0 + 1) * cellSize,
+            (y1 - y0 + 1) * cellSize
+        );
+    } else if(drawingShape) {
+        drawPreviewShape(shapeStart.x, shapeStart.y, x, y, currentTool, primaryColor);
+    } else if(isMovingSelection && lastMousePos) {
+        const dx = Math.floor((touch.clientX - lastMousePos.x) / (cellSize * zoomLevel));
+        const dy = Math.floor((touch.clientY - lastMousePos.y) / (cellSize * zoomLevel));
+        if(dx !== 0 || dy !== 0) {
+            moveSelection(dx, dy);
+            lastMousePos = {x: touch.clientX, y: touch.clientY};
+        }
+    } else if(isPainting) {
+        handlePixelPaint({clientX: touch.clientX, clientY: touch.clientY, button: 0});
+    }
 }
-  
-// Prevent context menu on canvas
-pixelCanvas?.addEventListener('contextmenu', e => e.preventDefault());
-sketchCanvas?.addEventListener('contextmenu', e => e.preventDefault());
+
+function handleTouchEnd(e) {
+    if(currentMode !== 'pixel') return;
+    e.preventDefault();
+
+    if(isSelecting && previewCtx) {
+        endSelection(mouseX, mouseY);
+        previewCtx.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
+    } else if(drawingShape && previewCtx) {
+        drawingShape = false;
+        previewCtx.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
+        const {x, y} = getCellFromEvent(e.changedTouches[0]);
+        switch(currentTool) {
+            case 'line': drawLine(shapeStart.x, shapeStart.y, x, y, primaryColor); break;
+            case 'rect': drawRect(shapeStart.x, shapeStart.y, x, y, primaryColor, false); break;
+            case 'circle':
+                const radius = Math.round(Math.hypot(x - shapeStart.x, y - shapeStart.y));
+                drawCircle(shapeStart.x, shapeStart.y, radius, primaryColor, false);
+                break;
+        }
+    }
+
+    isPainting = false;
+    lastMousePos = null;
+}
+
+// =====================
+// BIND TOUCH EVENTS
+// =====================
+pixelCanvas.addEventListener('touchstart', handleTouchStart, {passive: false});
+pixelCanvas.addEventListener('touchmove', handleTouchMove, {passive: false});
+pixelCanvas.addEventListener('touchend', handleTouchEnd, {passive: false});
 
 
 // =====================
