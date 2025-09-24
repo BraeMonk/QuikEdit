@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale:5, user-scalable:yes">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5, user-scalable=yes">
   <title>Jerry Editor</title>
   <link rel="manifest" href="./manifest.json">
   <link rel="stylesheet" href="./styles.css">
@@ -10,7 +10,6 @@
 </head>
 <body>
   <div class="editor-container">
-    <!-- Header -->
     <div class="header">
       <div class="logo">
         Jerry Editor
@@ -20,16 +19,14 @@
         </div>
       </div>
       <div class="header-controls">
-        <button class="header-btn" id="newProject">New</button>
-        <button class="header-btn" id="saveProject">Save</button>
-        <button class="header-btn" id="exportPNG">Export</button>
+        <button class="header-btn" id="newProject" title="New Project (Ctrl+N)">New</button>
+        <button class="header-btn" id="saveProject" title="Save Project (Ctrl+S)">Save</button>
+        <button class="header-btn" id="exportPNG" title="Export PNG (Ctrl+E)">Export</button>
       </div>
     </div>
 
-    <!-- Tools Sidebar -->
     <div class="sidebar">
-      <!-- Pixel Mode Tools -->
-      <div class="pixel-tools">
+      <div class="tool-group pixel-tools">
         <div class="tool-btn active" data-tool="pencil" title="Pencil (B)">✏️</div>
         <div class="tool-btn" data-tool="eraser" title="Eraser (E)">🧹</div>
         <div class="tool-btn" data-tool="eyedropper" title="Eyedropper (I)">💧</div>
@@ -49,12 +46,11 @@
         <div class="tool-separator"></div>
         
         <div class="tool-btn" data-tool="line" title="Line (L)">📏</div>
-        <div class="tool-btn" data-tool="rect" title="Rectangle (R)">▭</div>
-        <div class="tool-btn" data-tool="circle" title="Circle (O)">○</div>
+        <div class="tool-btn" data-tool="rect" data-tool-filled="rectFilled" title="Rectangle (R/Shift+R)">▭</div>
+        <div class="tool-btn" data-tool="circle" data-tool-filled="circleFilled" title="Circle (O/Shift+O)">○</div>
       </div>
 
-      <!-- Sketch Mode Tools -->
-      <div class="sketch-tools" style="display: none;">
+      <div class="tool-group sketch-tools" style="display: none;">
         <div class="tool-btn active" data-tool="brush" title="Brush (B)">🖌️</div>
         <div class="tool-btn" data-tool="pen" title="Pen (P)">✒️</div>
         <div class="tool-btn" data-tool="marker" title="Marker (M)">🖍️</div>
@@ -70,27 +66,24 @@
         <div class="tool-separator"></div>
         
         <div class="tool-btn" data-tool="lineSketch" title="Line (L)">📏</div>
-        <div class="tool-btn" data-tool="rectSketch" title="Rectangle (R)">▭</div>
-        <div class="tool-btn" data-tool="circleSketch" title="Circle (O)">○</div>
+        <div class="tool-btn" data-tool="rectSketch" title="Rectangle (R/Shift+R)">▭</div>
+        <div class="tool-btn" data-tool="circleSketch" title="Circle (O/Shift+O)">○</div>
         <div class="tool-btn" data-tool="sprayPaint" title="Spray Paint (Y)">🎨</div>
       </div>
     </div>
 
-    <!-- Canvas Area -->
     <div class="canvas-area">
       <div class="canvas-wrapper">
-        <div id="canvas"></div>
-        <canvas id="sketchCanvas" width="800" height="600"></canvas>
-        <canvas id="selectionOverlay" style="position: absolute; top: 0; left: 0; pointer-events: none;"></canvas>
+        <div id="canvas" style="display: grid;"></div> 
+        <canvas id="sketchCanvas" width="800" height="600" style="display: none;"></canvas>
+        <canvas id="selectionOverlay" width="800" height="600" style="position: absolute; top: 0; left: 0; pointer-events: none; display: none;"></canvas>
         <div class="canvas-grid" id="canvasGrid"></div>
       </div>
       <div class="canvas-info" id="canvasInfo">16×16 | Pencil | #000000</div>
       <div class="zoom-indicator" id="zoomIndicator">100%</div>
     </div>
 
-    <!-- Right Panels -->
     <div class="panels">
-      <!-- Colors Panel -->
       <div class="panel">
         <div class="panel-header">
           Colors <span>▼</span>
@@ -99,8 +92,8 @@
           <div class="control-group">
             <label>Primary/Secondary Colors</label>
             <div class="control-row">
-              <div class="swatch primary selected" id="primaryColor" style="background: #000000"></div>
-              <div class="swatch secondary" id="secondaryColor" style="background: #ffffff"></div>
+              <div class="swatch primary" id="primaryColor" style="background: #000000" title="Primary Color (Left Click)"></div>
+              <div class="swatch secondary" id="secondaryColor" style="background: #ffffff" title="Secondary Color (Right Click)"></div>
             </div>
           </div>
           
@@ -114,13 +107,12 @@
           <div class="control-group">
             <label>Custom Colors</label>
             <div id="colorPickers" class="palette-grid"></div>
-            <button class="btn btn-sm" id="saveCustomPalette">Save Palette</button>
+            <button class="btn btn-sm" id="saveCustomPalette">Save Custom Palette</button>
           </div>
         </div>
       </div>
 
-      <!-- Brush Panel (Sketch Mode Only) -->
-      <div class="panel sketch-controls">
+      <div class="panel sketch-controls" style="display: none;">
         <div class="panel-header">
           Brush <span>▼</span>
         </div>
@@ -155,8 +147,7 @@
         </div>
       </div>
 
-      <!-- Symmetry Panel -->
-      <div class="panel">
+      <div class="panel pixel-controls">
         <div class="panel-header">
           Symmetry <span>▼</span>
         </div>
@@ -178,14 +169,13 @@
         </div>
       </div>
 
-      <!-- Transform Panel -->
-      <div class="panel">
+      <div class="panel pixel-controls">
         <div class="panel-header">
           Transform <span>▼</span>
         </div>
         <div class="panel-content">
           <div class="control-group">
-            <label>Rotate Selection</label>
+            <label>Rotate</label>
             <div class="btn-group">
               <button class="btn" id="rotateLeft" title="Rotate 90° Left ([)">↶ 90°</button>
               <button class="btn" id="rotate180" title="Rotate 180°">↻ 180°</button>
@@ -194,7 +184,7 @@
           </div>
           
           <div class="control-group">
-            <label>Flip Selection</label>
+            <label>Flip</label>
             <div class="btn-group">
               <button class="btn" id="flipHorizontal" title="Flip Horizontal (Ctrl+H)">↔ Flip H</button>
               <button class="btn" id="flipVertical" title="Flip Vertical (Ctrl+J)">↕ Flip V</button>
@@ -202,19 +192,18 @@
           </div>
           
           <div class="transform-info">
-            <small>Select an area first to use transform tools</small>
+            <small>Transforms apply to the current sprite/frame.</small>
           </div>
         </div>
       </div>
 
-      <!-- Canvas Panel -->
       <div class="panel">
         <div class="panel-header">
           Canvas <span>▼</span>
         </div>
         <div class="panel-content">
-          <div class="control-group">
-            <label>Size</label>
+          <div class="control-group pixel-controls">
+            <label>Size (Pixel)</label>
             <div class="control-row">
               <input type="number" id="canvasWidth" value="16" min="1" max="128">
               <span>×</span>
@@ -223,7 +212,7 @@
             </div>
           </div>
           
-          <div class="control-group sketch-controls">
+          <div class="control-group sketch-controls" style="display: none;">
             <label>Canvas Size (Sketch)</label>
             <div class="btn-group">
               <button class="btn" data-size="800x600">800×600</button>
@@ -244,19 +233,18 @@
           <div class="control-group">
             <label>Actions</label>
             <div class="btn-group">
-              <button class="btn" id="undo">Undo</button>
-              <button class="btn" id="redo">Redo</button>
+              <button class="btn" id="undo" title="Undo (Ctrl+Z)">Undo</button>
+              <button class="btn" id="redo" title="Redo (Ctrl+Y/Ctrl+Shift+Z)">Redo</button>
             </div>
             <button class="btn" id="clear" style="margin-top: 8px; width: 100%;">Clear Canvas</button>
           </div>
-          <label style="margin-left: 10px; user-select: none;">
+          <label style="margin-left: 10px; user-select: none;" class="pixel-controls">
             <input type="checkbox" id="gridToggle" checked>
             Grid
           </label>
         </div>
       </div>
 
-      <!-- Sprites Panel (Pixel Mode Only) -->
       <div class="panel pixel-controls">
         <div class="panel-header">
           Sprites <span>▼</span>
@@ -275,8 +263,7 @@
         </div>
       </div>
 
-      <!-- Layers Panel (Sketch Mode Only) -->
-      <div class="panel sketch-controls">
+      <div class="panel sketch-controls" style="display: none;">
         <div class="panel-header">
           Layers <span>▼</span>
         </div>
@@ -284,8 +271,7 @@
           <div class="control-group">
             <label>Layers</label>
             <div id="layerList" class="layer-list">
-              <!-- Layers will be populated here -->
-            </div>
+              </div>
           </div>
           <div class="control-group">
             <label>Layer Opacity: <span id="layerOpacityLabel">100</span>%</label>
@@ -314,19 +300,20 @@
         </div>
       </div>
 
-      <!-- Export Panel -->
       <div class="panel">
         <div class="panel-header">
-          Export <span>▼</span>
+          Export/Import <span>▼</span>
         </div>
         <div class="panel-content">
+          <label>Export Project</label>
           <div class="btn-group">
-            <button class="btn primary" id="exportJSON">JSON</button>
-            <button class="btn" id="exportPNG2">PNG</button>
+            <button class="btn primary" id="exportJSON">JSON (Project)</button>
+            <button class="btn" id="exportPNG2">PNG (Image)</button>
           </div>
           
           <div class="export-area">
-            <textarea id="output" placeholder="Export data appears here..."></textarea>
+            <textarea id="output" placeholder="Export data appears here..." style="display: none;"></textarea>
+            <label for="importFile" style="margin-top: 15px; display: block;">Import Project (.json)</label>
             <input type="file" id="importFile" accept=".json" style="margin-top: 8px;">
           </div>
         </div>
@@ -334,7 +321,6 @@
     </div>
   </div>
 
-  <!-- JS -->
   <script src="./editor.js"></script>
 
 </body>
