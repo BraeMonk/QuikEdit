@@ -1432,13 +1432,13 @@ class JerryEditor {
     document.querySelectorAll('.mode-btn').forEach(btn => {
       btn.onclick = () => this.setMode(btn.dataset.mode);
     });
-    
+  
     // Tool selection
     document.querySelectorAll('.tool-btn').forEach(btn => {
       btn.onclick = () => {
         const tool = btn.dataset.tool;
         if (this.state.mode === 'pixel') {
-          this.state.pixel.activeTool = tool;
+          this.state.pixel.currentTool = tool;
         } else {
           this.state.sketch.activeTool = tool;
         }
@@ -1446,57 +1446,92 @@ class JerryEditor {
         this.ui.updateCanvasInfo();
       };
     });
-    
-    // Canvas interaction - Desktop
-    const canvases = [this.canvas.elements.canvas, this.canvas.elements.sketchCanvas, this.canvas.elements.selectionOverlay];
-    canvases.forEach(canvas => {
-      if (canvas) {
-        canvas.onpointerdown = (e) => this.handlePointerDown(e);
-        canvas.oncontextmenu = (e) => e.preventDefault();
-        
-        // Touch events for mobile
-        canvas.ontouchstart = (e) => this.handleTouchStart(e);
-        canvas.ontouchmove = (e) => this.handleTouchMove(e);
-        canvas.ontouchend = (e) => this.handleTouchEnd(e);
+  
+    // ----------------------------
+    // Canvas input handlers
+    // ----------------------------
+    const canvases = [
+      this.canvas.elements.canvas,
+      this.canvas.elements.sketchCanvas,
+      this.canvas.elements.selectionOverlay
+    ];
+  
+    canvases.forEach(canvasEl => {
+      if (!canvasEl) return;
+  
+      // Create a drawing manager instance if you haven't yet
+      if (!this.drawingManager) {
+        this.drawingManager = new DrawingManager(this.state, this.canvas);
       }
+  
+      // Pointer events (desktop + stylus)
+      canvasEl.onpointerdown = (e) => {
+        const { offsetX, offsetY } = e;
+        this.drawingManager.start(offsetX, offsetY);
+      };
+      canvasEl.onpointermove = (e) => {
+        const { offsetX, offsetY } = e;
+        this.drawingManager.move(offsetX, offsetY);
+      };
+      canvasEl.onpointerup = (e) => {
+        this.drawingManager.end();
+      };
+  
+      canvasEl.oncontextmenu = (e) => e.preventDefault();
+  
+      // Touch events (mobile)
+      canvasEl.ontouchstart = (e) => {
+        e.preventDefault();
+        const touch = e.touches[0];
+        const rect = canvasEl.getBoundingClientRect();
+        const x = touch.clientX - rect.left;
+        const y = touch.clientY - rect.top;
+        this.drawingManager.start(x, y);
+      };
+      canvasEl.ontouchmove = (e) => {
+        e.preventDefault();
+        const touch = e.touches[0];
+        const rect = canvasEl.getBoundingClientRect();
+        const x = touch.clientX - rect.left;
+        const y = touch.clientY - rect.top;
+        this.drawingManager.move(x, y);
+      };
+      canvasEl.ontouchend = (e) => {
+        e.preventDefault();
+        this.drawingManager.end();
+      };
     });
-    
-    document.onpointermove = (e) => this.handlePointerMove(e);
-    document.onpointerup = (e) => this.handlePointerUp(e);
-    
-    // Header controls
-    if (this.canvas.elements.newProject) this.canvas.elements.newProject.onclick = () => this.newProject();
-    if (this.canvas.elements.exportPNG) this.canvas.elements.exportPNG.onclick = () => this.exportPNG();
-    
-    // Canvas controls
+  
+    // ----------------------------
+    // Global pointerup (outside canvas)
+    // ----------------------------
+    document.onpointerup = () => this.drawingManager?.end();
+  
+    // ----------------------------
+    // Your existing controls here (undo, redo, resize, zoom, grid, palette, sprite, symmetry, transform, sketch color)
+    // ----------------------------
     if (this.canvas.elements.undo) this.canvas.elements.undo.onclick = () => this.history.undo();
     if (this.canvas.elements.redo) this.canvas.elements.redo.onclick = () => this.history.redo();
     if (this.canvas.elements.clear) this.canvas.elements.clear.onclick = () => this.clearCanvas();
     if (this.canvas.elements.resizeCanvas) this.canvas.elements.resizeCanvas.onclick = () => this.resizeCanvas();
-    
-    // Zoom controls
+  
     if (this.canvas.elements.zoomIn) this.canvas.elements.zoomIn.onclick = () => this.adjustZoom(25);
     if (this.canvas.elements.zoomOut) this.canvas.elements.zoomOut.onclick = () => this.adjustZoom(-25);
     if (this.canvas.elements.zoomReset) this.canvas.elements.zoomReset.onclick = () => this.adjustZoom('reset');
-    
-    // Grid toggle
+  
     if (this.canvas.elements.gridToggle) {
       this.canvas.elements.gridToggle.onchange = () => {
         this.state.pixel.showGrid = this.canvas.elements.gridToggle.checked;
-        this.canvas.elements.canvasGrid.style.display = 
+        this.canvas.elements.canvasGrid.style.display =
           (this.state.mode === 'pixel' && this.state.pixel.showGrid) ? 'grid' : 'none';
       };
     }
-    
-    // Color controls
-    if (this.canvas.elements.primaryColor) {
-      this.canvas.elements.primaryColor.onclick = () => {
-        const temp = this.state.pixel.primaryColor;
-        this.state.pixel.primaryColor = this.state.pixel.secondaryColor;
-        this.state.pixel.secondaryColor = temp;
-        this.canvas.elements.primaryColor.style.backgroundColor = this.state.pixel.primaryColor;
-        this.canvas.elements.secondaryColor.style.backgroundColor = this.state.pixel.secondaryColor;
+  
+    if (this.canvas.elements.sketchColor) {
+      this.canvas.elements.sketchColor.oninput = () => {
+        this.state.sketch.color = this.canvas.elements.sketchColor.value;
         this.ui.updateCanvasInfo();
+        this.ui.updateSketchControls();
       };
     }
     
