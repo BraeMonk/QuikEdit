@@ -1,2424 +1,2074 @@
-// =================================================================================================
-// Jerry Editor - Optimized Complete Version
-// Pixel Art & Sketch Editor with Symmetry, Sprites, Layers, Palettes, and Export/Import
-// =================================================================================================
-
-// =================================================================================================
-// CONSTANTS
-// =================================================================================================
-const CANVAS_LIMITS = {
-  MIN_SIZE: 1,
-  MAX_SIZE: 128,
-  MIN_ZOOM: 25,
-  MAX_ZOOM: 800,
-  DEFAULT_CELL_SIZE: 30
-};
-
-const HISTORY_LIMITS = {
-  MAX_ENTRIES: 50
-};
-
-const SKETCH_LIMITS = {
-  MIN_BRUSH_SIZE: 1,
-  MAX_BRUSH_SIZE: 100,
-  DEFAULT_WIDTH: 800,
-  DEFAULT_HEIGHT: 600
-};
-
-// Theme detection for palette defaults
-const isLightMode = window.matchMedia('(prefers-color-scheme: light)').matches;
-
-// =====================
-// PALETTE DEFINITIONS
-// =====================
-const BUILT_IN_PALETTES = {
-  default: isLightMode
-    ? ['transparent','#FFFFFF','#C0C0C0','#808080','#404040','#000000','#FF0000','#00FF00','#0000FF','#FFFF00','#FF00FF']
-    : ['transparent','#F8F8F8','#D0D0D0','#808080','#404040','#000000','#FF4444','#44FF44','#4444FF','#FFFF44','#FF44FF'],
-  retro8bit: ['transparent','#F4F4F4','#E8E8E8','#BCBCBC','#7C7C7C','#A00000','#FF6A00','#FFD500','#00A844','#0047AB','#000000'],
-  gameboyClassic: ['transparent','#E0F8D0','#88C070','#346856','#081820','#9BBB0F','#8BAC0F','#306230','#0F380F'],
-  synthwave: ['transparent','#FF00FF','#FF0080','#FF4080','#FF8000','#FFFF00','#80FF00','#00FFFF','#0080FF','#8000FF','#2D1B69'],
-  earthTones: ['transparent','#FFF8DC','#D2B48C','#CD853F','#A0522D','#8B4513','#654321','#556B2F','#8FBC8F','#2F4F4F']
-};
-
-const DEFAULT_CUSTOM_PALETTE = ['#000000', '#FFFFFF', '#FF0000', '#00FF00', '#0000FF', '#FFFF00', '#00FFFF', '#FF00FF', '#C0C0C0', '#808080'];
-const CUSTOM_PALETTE_KEY = 'jerryEditorCustomPalette';
-
-// =====================
-// APPLICATION STATE
-// =====================
-class EditorState {
-  constructor() {
-    this.mode = 'pixel';
-    this.isDrawing = false;
-    this.lastPos = { x: 0, y: 0 };
-    this.toolStartPos = { x: 0, y: 0 };
-    this.customPalette = this.loadCustomPalette();
-    this.isShiftPressed = false;
-    this.isCtrlPressed = false;
-    
-    // Pixel Mode State
-    this.pixel = {
-      width: 16,
-      height: 16,
-      cellSize: 30,
-      zoom: 100,
-      sprites: [{ id: 1, name: 'Sprite 1', data: new Array(16 * 16).fill('transparent') }],
-      currentFrame: 0,
-      primaryColor: '#000000',
-      secondaryColor: '#ffffff',
-      activeTool: 'pencil',
-      symmetry: 'none',
-      history: [],
-      historyIndex: -1,
-      selection: null,
-      showGrid: true
-    };
-    
-    // Sketch Mode State  
-    this.sketch = {
-      width: 800,
-      height: 600,
-      layers: [],
-      activeLayer: 0,
-      color: '#000000',
-      size: 10,
-      opacity: 100,
-      hardness: 100,
-      flow: 100,
-      activeTool: 'brush',
-      history: [],
-      historyIndex: -1,
-      zoom: 100
-    };
-  }
-  
-  loadCustomPalette() {
-    try {
-      const stored = localStorage.getItem(CUSTOM_PALETTE_KEY);
-      const palette = stored ? JSON.parse(stored) : DEFAULT_CUSTOM_PALETTE;
-      
-      // Validate palette
-      if (!Array.isArray(palette) || palette.length !== 10) {
-        console.warn('Invalid custom palette, using default');
-        return DEFAULT_CUSTOM_PALETTE;
-      }
-      
-      return palette;
-    } catch (error) {
-      console.error('Failed to load custom palette:', error);
-      return DEFAULT_CUSTOM_PALETTE;
-    }
-  }
-
-  saveCustomPalette() {
-    try {
-      if (!Array.isArray(this.customPalette)) {
-        throw new Error('Invalid palette data');
-      }
-      localStorage.setItem(CUSTOM_PALETTE_KEY, JSON.stringify(this.customPalette));
-    } catch (error) {
-      console.error('Failed to save custom palette:', error);
-      alert('Failed to save palette. Storage may be full.');
-    }
-  }
-}
-
-// =====================
-// CANVAS MANAGEMENT
-// =====================
-class CanvasManager {
-  constructor(state) {
-    this.state = state;
-    this.elements = {};
-    this.initializeElements();
-    this.initializeCanvases();
-    
-    // Temporary canvas for pixel shape previews
-    this.tempPixelCanvas = document.createElement('canvas');
-    this.tempPixelCtx = this.tempPixelCanvas.getContext('2d');
-  }
-
-  initializeElements() {
-    const requiredIds = [
-      'canvas', 'sketchCanvas', 'selectionOverlay', 'canvasGrid', 'canvasInfo', 'zoomIndicator',
-      'primaryColor', 'secondaryColor', 'paletteSelector', 'swatches'
-    ];
-    
-    const optionalIds = [
-      'colorPickers', 'saveCustomPalette', 'brushSizeLabel', 'brushSize', 'brushOpacity', 
-      'opacityLabel', 'brushHardness', 'hardnessLabel', 'brushFlow', 'flowLabel', 'brushPreview', 
-      'sketchColor', 'symmetryInfo', 'rotateLeft', 'rotate180', 'rotateRight', 'flipHorizontal', 
-      'flipVertical', 'canvasWidth', 'canvasHeight', 'resizeCanvas', 'zoomOut', 'zoomReset', 
-      'zoomIn', 'undo', 'redo', 'clear', 'gridToggle', 'spriteSelector', 'newSprite', 
-      'duplicateSprite', 'deleteSprite', 'layerList', 'layerOpacity', 'layerOpacityLabel', 
-      'blendMode', 'addLayer', 'exportJSON', 'exportPNG2', 'output', 'importFile', 'newProject', 
-      'exportPNG', 'saveProject'
-    ];
-
-    // Check required elements
-    requiredIds.forEach(id => {
-      const element = document.getElementById(id);
-      if (!element) {
-        throw new Error(`Required element not found: ${id}`);
-      }
-      this.elements[id] = element;
-    });
-
-    // Get optional elements
-    optionalIds.forEach(id => {
-      this.elements[id] = document.getElementById(id);
-    });
-
-    // Create pixel drawing canvas
-    this.elements.pixelCanvas = document.createElement('canvas');
-    this.elements.pixelCanvas.style.imageRendering = 'pixelated';
-    this.elements.canvas.appendChild(this.elements.pixelCanvas);
-
-    this.elements.pixelCtx = this.elements.pixelCanvas.getContext('2d');
-    this.elements.sketchCtx = this.elements.sketchCanvas.getContext('2d');
-    this.elements.overlayCtx = this.elements.selectionOverlay.getContext('2d');
-  }
-
-  initializeCanvases() {
-    this.updatePixelCanvasSize();
-    this.renderPixelGrid();
-
-    this.elements.sketchCanvas.width = this.state.sketch.width;
-    this.elements.sketchCanvas.height = this.state.sketch.height;
-    this.elements.selectionOverlay.width = this.state.sketch.width;
-    this.elements.selectionOverlay.height = this.state.sketch.height;
-
-    // Initialize sketch layers
-    if (this.state.sketch.layers.length === 0) {
-      this.state.sketch.layers = [this.createSketchLayer('Layer 1')];
-    }
-    
-    // Initialize temporary pixel canvas size
-    this.tempPixelCanvas.width = this.state.pixel.width;
-    this.tempPixelCanvas.height = this.state.pixel.height;
-  }
-
-  updatePixelCanvasSize() {
-    const { width, height, cellSize } = this.state.pixel;
-
-    this.elements.pixelCanvas.width = width;
-    this.elements.pixelCanvas.height = height;
-    
-    this.tempPixelCanvas.width = width;
-    this.tempPixelCanvas.height = height;
-
-    const displayWidth = width * cellSize;
-    const displayHeight = height * cellSize;
-
-    this.elements.canvas.style.gridTemplateColumns = `repeat(${width}, 1fr)`;
-    this.elements.canvas.style.gridTemplateRows = `repeat(${height}, 1fr)`;
-    this.elements.canvas.style.width = `${displayWidth}px`;
-    this.elements.canvas.style.height = `${displayHeight}px`;
-
-    this.elements.pixelCanvas.style.width = `${displayWidth}px`;
-    this.elements.pixelCanvas.style.height = `${displayHeight}px`;
-  }
-
-  renderPixelGrid() {
-    const { width, height, cellSize } = this.state.pixel;
-    this.elements.canvasGrid.innerHTML = '';
-    
-    // Update grid container size
-    this.elements.canvasGrid.style.width = `${width * cellSize}px`;
-    this.elements.canvasGrid.style.height = `${height * cellSize}px`;
-    this.elements.canvasGrid.style.gridTemplateColumns = `repeat(${width}, 1fr)`;
-    this.elements.canvasGrid.style.gridTemplateRows = `repeat(${height}, 1fr)`;
-
-    // Only render grid lines if the grid is toggled on and zoom is appropriate
-    if (this.state.pixel.showGrid && cellSize >= 10) {
-      for (let i = 0; i < width * height; i++) {
-        const cell = document.createElement('div');
-        cell.classList.add('grid-cell');
-        this.elements.canvasGrid.appendChild(cell);
-      }
-    }
-    
-    this.elements.canvasGrid.style.display = 
-      (this.state.mode === 'pixel' && this.state.pixel.showGrid) ? 'grid' : 'none';
-  }
-
-  drawPixelCanvas() {
-    const { width, height, sprites, currentFrame } = this.state.pixel;
-    const ctx = this.elements.pixelCtx;
-    const spriteData = sprites[currentFrame]?.data || [];
-
-    ctx.clearRect(0, 0, width, height);
-    ctx.imageSmoothingEnabled = false;
-
-    for (let y = 0; y < height; y++) {
-      for (let x = 0; x < width; x++) {
-        const index = y * width + x;
-        const color = spriteData[index];
-        if (color && color !== 'transparent') {
-          ctx.fillStyle = color;
-          ctx.fillRect(x, y, 1, 1);
-        }
-      }
-    }
-  }
-
-  createSketchLayer(name) {
-    const canvas = document.createElement('canvas');
-    canvas.width = this.state.sketch.width;
-    canvas.height = this.state.sketch.height;
-
-    return {
-      id: Date.now() + Math.random(),
-      name: name,
-      canvas: canvas,
-      ctx: canvas.getContext('2d'),
-      opacity: 100,
-      blendMode: 'source-over',
-      visible: true
-    };
-  }
-
-  drawSketchCanvas() {
-    const ctx = this.elements.sketchCtx;
-    const { width, height, layers } = this.state.sketch;
-
-    ctx.clearRect(0, 0, width, height);
-
-    // Draw checkerboard background if no layers are visible or active layer is empty
-    if (layers.every(l => !l.visible) || layers.length === 0) {
-      this.drawCheckerboard(ctx, width, height, 10);
-    }
-    
-    layers.forEach(layer => {
-      if (layer.visible) {
-        ctx.globalAlpha = layer.opacity / 100;
-        ctx.globalCompositeOperation = layer.blendMode;
-        ctx.drawImage(layer.canvas, 0, 0);
-      }
-    });
-
-    ctx.globalAlpha = 1;
-    ctx.globalCompositeOperation = 'source-over';
-  }
-  
-  drawCheckerboard(ctx, width, height, size) {
-    ctx.save();
-    ctx.fillStyle = '#ccc';
-    ctx.fillRect(0, 0, width, height);
-    ctx.fillStyle = '#eee';
-    for (let x = 0; x < width; x += size) {
-      for (let y = 0; y < height; y += size) {
-        if ((x / size) % 2 === (y / size) % 2) {
-          ctx.fillRect(x, y, size, size);
-        }
-      }
-    }
-    ctx.restore();
-  }
-}
-
-// ===============================
-// Unified Drawing Manager
-// ===============================
-class DrawingManager {
-  constructor(state, canvas) {
-    this.state = state;
-    this.canvas = canvas;
-
-    this.prevX = null;
-    this.prevY = null;
-    this.isDrawing = false;
-  }
-
-  // -------------------------------
-  // General Input Handlers
-  // -------------------------------
-  start(x, y, button) {
-    this.state.isDrawing = true;
-    this.prevX = x;
-    this.prevY = y;
-    this.state.toolStartPos = { x, y };
-    this.state.lastPos = { x, y };
-
-    if (this.state.mode === 'sketch') this.handleSketchStart(x, y);
-    else if (this.state.mode === 'pixel') this.handlePixelStart(x, y, button);
-  }
-
-  move(x, y) {
-    if (!this.state.isDrawing) return;
-
-    if (this.state.mode === 'sketch') this.handleSketchMove(x, y);
-    else if (this.state.mode === 'pixel') this.handlePixelMove(x, y);
-
-    this.prevX = x;
-    this.prevY = y;
-  }
-
-  end() {
-    if (!this.state.isDrawing) return;
-    
-    if (this.state.mode === 'pixel') this.commitPixelTempLayer(this.prevX, this.prevY);
-    
-    this.state.isDrawing = false;
-    this.prevX = null;
-    this.prevY = null;
-    this.state.lastPos = { x: 0, y: 0 };
-    this.state.toolStartPos = { x: 0, y: 0 };
-  }
-
-  // ===============================
-  // Sketch Mode
-  // ===============================
-  handleSketchStart(x, y) {
-    const { activeLayer, layers, activeTool } = this.state.sketch;
-    const layer = layers[activeLayer];
-    if (!layer) return;
-    
-    this.state.history.pushHistory('Sketch Stroke Start');
-
-    // For tools that draw immediately (dots, spray, smudge)
-    if (['brush', 'pen', 'marker', 'pencilSketch', 'charcoal', 'eraser', 'sprayPaint', 'smudge'].includes(activeTool)) {
-      this.drawSketchStroke(layer.ctx, x, y, x, y, activeTool);
-    }
-    
-    // Shape tools (rectSketch, circleSketch) will use the start point for reference
-    if (['rectSketch', 'circleSketch', 'lineSketch'].includes(activeTool)) {
-        // Clear selection overlay for new shape
-        this.canvas.elements.overlayCtx.clearRect(0, 0, this.state.sketch.width, this.state.sketch.height);
-    }
-  }
-
-  handleSketchMove(x, y) {
-    const { activeLayer, layers, activeTool } = this.state.sketch;
-    const layer = layers[activeLayer];
-    if (!layer) return;
-
-    if (['brush', 'pen', 'marker', 'pencilSketch', 'charcoal', 'eraser', 'sprayPaint', 'smudge'].includes(activeTool)) {
-      this.drawSketchStroke(layer.ctx, this.prevX, this.prevY, x, y, activeTool);
-      this.canvas.drawSketchCanvas();
-    } else if (['rectSketch', 'circleSketch', 'lineSketch'].includes(activeTool)) {
-      // Draw preview on overlay
-      this.canvas.elements.overlayCtx.clearRect(0, 0, this.state.sketch.width, this.state.sketch.height);
-      this.drawSketchShapePreview(this.canvas.elements.overlayCtx, this.state.toolStartPos.x, this.state.toolStartPos.y, x, y, activeTool);
-    }
-  }
-  
-  drawSketchShapePreview(ctx, startX, startY, endX, endY, tool) {
-    const { color } = this.state.sketch;
-    ctx.strokeStyle = color;
-    ctx.lineWidth = 1;
-    ctx.setLineDash([5, 5]);
-    ctx.lineCap = 'butt';
-    ctx.globalAlpha = 1;
-    ctx.beginPath();
-    
-    const minX = Math.min(startX, endX);
-    const maxX = Math.max(startX, endX);
-    const minY = Math.min(startY, endY);
-    const maxY = Math.max(startY, endY);
-    const width = maxX - minX;
-    const height = maxY - minY;
-
-    switch (tool) {
-      case 'lineSketch':
-        ctx.moveTo(startX, startY);
-        ctx.lineTo(endX, endY);
-        break;
-      case 'rectSketch':
-        ctx.rect(minX, minY, width, height);
-        break;
-      case 'circleSketch':
-        const radius = Math.sqrt(width * width + height * height) / 2;
-        const centerX = startX + (endX - startX) / 2;
-        const centerY = startY + (endY - startY) / 2;
-        ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
-        break;
-    }
-    
-    ctx.stroke();
-    ctx.setLineDash([]); // Reset line dash
-  }
-
-  commitSketchShape(endX, endY) {
-    const { activeLayer, layers, activeTool, size, color } = this.state.sketch;
-    const layer = layers[activeLayer];
-    if (!layer) return;
-    
-    // Clear overlay
-    this.canvas.elements.overlayCtx.clearRect(0, 0, this.state.sketch.width, this.state.sketch.height);
-    
-    // Draw final shape to layer
-    const ctx = layer.ctx;
-    ctx.strokeStyle = color;
-    ctx.lineWidth = size;
-    ctx.lineCap = 'butt';
-    ctx.globalAlpha = 1;
-    ctx.globalCompositeOperation = 'source-over';
-    ctx.beginPath();
-    
-    const startX = this.state.toolStartPos.x;
-    const startY = this.state.toolStartPos.y;
-    const minX = Math.min(startX, endX);
-    const maxX = Math.max(startX, endX);
-    const minY = Math.min(startY, endY);
-    const maxY = Math.max(startY, endY);
-    const width = maxX - minX;
-    const height = maxY - minY;
-
-    switch (activeTool) {
-      case 'lineSketch':
-        ctx.moveTo(startX, startY);
-        ctx.lineTo(endX, endY);
-        ctx.stroke();
-        break;
-      case 'rectSketch':
-        // Outline or Filled (Shift key for filled)
-        if (this.state.isShiftPressed) {
-          ctx.fillStyle = color;
-          ctx.fillRect(minX, minY, width, height);
-        } else {
-          ctx.strokeRect(minX, minY, width, height);
-        }
-        break;
-      case 'circleSketch':
-        const radius = Math.sqrt(width * width + height * height) / 2;
-        const centerX = startX + (endX - startX) / 2;
-        const centerY = startY + (endY - startY) / 2;
-        ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
-        // Outline or Filled
-        if (this.state.isShiftPressed) {
-          ctx.fillStyle = color;
-          ctx.fill();
-        } else {
-          ctx.stroke();
-        }
-        break;
-    }
-    
-    this.canvas.drawSketchCanvas();
-    this.state.history.pushHistory(`Draw ${activeTool}`);
-  }
-
-  drawSketchStroke(ctx, startX, startY, endX, endY, tool) {
-    const { size, opacity, flow, color } = this.state.sketch;
-    ctx.lineCap = 'round';
-    ctx.lineJoin = 'round';
-    ctx.shadowBlur = 0;
-    ctx.shadowColor = 'transparent';
-
-    switch (tool) {
-      case 'brush':
-        ctx.beginPath();
-        ctx.moveTo(startX, startY);
-        ctx.lineTo(endX, endY);
-        ctx.lineWidth = size;
-        ctx.strokeStyle = color;
-        ctx.globalAlpha = (opacity / 100) * (flow / 100);
-        ctx.globalCompositeOperation = 'source-over';
-        ctx.stroke();
-        break;
-        
-      case 'eraser':
-        ctx.beginPath();
-        ctx.moveTo(startX, startY);
-        ctx.lineTo(endX, endY);
-        ctx.lineWidth = size;
-        ctx.globalAlpha = 1.0;
-        ctx.globalCompositeOperation = 'destination-out'; // Erase effect
-        ctx.stroke();
-        break;
-
-      case 'pen':
-        ctx.beginPath();
-        ctx.moveTo(startX, startY);
-        ctx.lineTo(endX, endY);
-        ctx.lineWidth = Math.max(1, size * 0.7);
-        ctx.strokeStyle = color;
-        ctx.globalAlpha = (opacity / 100) * (flow / 100);
-        ctx.lineCap = 'square';
-        ctx.globalCompositeOperation = 'source-over';
-        ctx.stroke();
-        break;
-
-      case 'marker':
-        ctx.beginPath();
-        ctx.moveTo(startX, startY);
-        ctx.lineTo(endX, endY);
-        ctx.lineWidth = size * 2;
-        ctx.strokeStyle = color;
-        ctx.globalAlpha = 0.2;
-        ctx.globalCompositeOperation = 'multiply';
-        ctx.stroke();
-        break;
-
-      case 'pencilSketch':
-        const jitterStartX = startX + (Math.random() - 0.5) * 1.5;
-        const jitterStartY = startY + (Math.random() - 0.5) * 1.5;
-        const jitterEndX = endX + (Math.random() - 0.5) * 1.5;
-        const jitterEndY = endY + (Math.random() - 0.5) * 1.5;
-        ctx.beginPath();
-        ctx.moveTo(jitterStartX, jitterStartY);
-        ctx.lineTo(jitterEndX, jitterEndY);
-        ctx.lineWidth = Math.max(1, size * 0.6);
-        ctx.strokeStyle = color;
-        ctx.globalAlpha = 0.5;
-        ctx.globalCompositeOperation = 'source-over';
-        ctx.stroke();
-        break;
-
-      case 'charcoal':
-        ctx.beginPath();
-        ctx.moveTo(startX, startY);
-        ctx.lineTo(endX, endY);
-        ctx.lineWidth = size * 1.5;
-        ctx.strokeStyle = '#222';
-        ctx.globalAlpha = 0.25;
-        ctx.shadowBlur = 6;
-        ctx.shadowColor = '#000';
-        ctx.globalCompositeOperation = 'multiply';
-        ctx.stroke();
-        break;
-
-      case 'sprayPaint':
-        this.drawSprayPaint(ctx, endX, endY);
-        break;
-
-      case 'smudge':
-        this.drawSmudge(ctx, endX, endY);
-        break;
-
-      case 'blur':
-        // Blur is complex to implement on a single layer context effectively during draw, 
-        // A simple pass-through to show stroke is used, real blur would require image data manipulation/filters.
-        ctx.save();
-        ctx.filter = `blur(${Math.max(1, size / 10)}px)`; 
-        ctx.globalAlpha = opacity / 100;
-        ctx.strokeStyle = color;
-        ctx.lineWidth = size;
-        ctx.lineCap = 'round';
-        ctx.beginPath();
-        ctx.moveTo(startX, startY);
-        ctx.lineTo(endX, endY);
-        ctx.stroke();
-        ctx.restore();
-        break;
-    }
-  }
-
-  drawSprayPaint(ctx, x, y) {
-    const { size, opacity, color } = this.state.sketch;
-    const density = 25;
-    ctx.globalAlpha = (opacity / 100) * 0.15;
-    ctx.fillStyle = color;
-    ctx.globalCompositeOperation = 'source-over';
-
-    for (let i = 0; i < density; i++) {
-      const angle = Math.random() * Math.PI * 2;
-      const distance = Math.random() * (size / 2);
-      const sprayX = x + Math.cos(angle) * distance;
-      const sprayY = y + Math.sin(angle) * distance;
-      ctx.beginPath();
-      ctx.arc(sprayX, sprayY, Math.random() * 2 + 0.5, 0, Math.PI * 2);
-      ctx.fill();
-    }
-  }
-
-  drawSmudge(ctx, x, y) {
-    const { size, opacity } = this.state.sketch;
-    const smudgeRadius = size * 1.5;
-    const pixelatedSize = 2; // Read in pixelated chunks for smudging
-    
-    // Get the image data around the cursor
-    const sourceData = ctx.getImageData(x - smudgeRadius, y - smudgeRadius, smudgeRadius * 2, smudgeRadius * 2);
-    const data = sourceData.data;
-
-    // A very basic smudge simulation: average colors and move them slightly
-    for (let i = 0; i < data.length; i += 4 * pixelatedSize) {
-        // Simple shift/blur
-        const r = data[i];
-        const g = data[i + 1];
-        const b = data[i + 2];
-        const a = data[i + 3];
-
-        // Smudge effect by blending current pixel with neighbor
-        const neighborIndex = i + 4 * pixelatedSize;
-        if (neighborIndex < data.length) {
-            data[i] = (r * (1 - opacity / 100)) + (data[neighborIndex] * (opacity / 100));
-            data[i + 1] = (g * (1 - opacity / 100)) + (data[neighborIndex + 1] * (opacity / 100));
-            data[i + 2] = (b * (1 - opacity / 100)) + (data[neighborIndex + 2] * (opacity / 100));
-        }
-    }
-    
-    ctx.putImageData(sourceData, x - smudgeRadius, y - smudgeRadius);
-  }
-
-  // ===============================
-  // Pixel Mode
-  // ===============================
-  handlePixelStart(x, y, button) {
-    const { activeTool } = this.state.pixel;
-    const isPrimary = button === 0;
-
-    if (['pencil', 'eraser', 'symmetricPencil', 'symmetricEraser'].includes(activeTool)) {
-      this.state.history.pushHistory('Draw Stroke');
-      this.drawPixelLine(x, y, x, y, isPrimary);
-    } else if (activeTool === 'fill' || activeTool === 'symmetricFill') {
-      this.state.history.pushHistory('Fill');
-      this.tools.handlePixelFill(x, y, isPrimary, activeTool.includes('symmetric'));
-      this.state.isDrawing = false; // Fill is a single click action
-    } else if (activeTool === 'eyedropper') {
-      this.tools.handlePixelEyedropper(x, y, isPrimary);
-      this.state.isDrawing = false;
-    } else if (['line', 'rect', 'circle', 'rectFilled', 'circleFilled'].includes(activeTool)) {
-      // Shape tools need a temporary canvas to draw the preview
-      this.canvas.tempPixelCtx.clearRect(0, 0, this.state.pixel.width, this.state.pixel.height);
-      this.canvas.tempPixelCtx.drawImage(this.canvas.elements.pixelCanvas, 0, 0);
-    }
-  }
-
-  handlePixelMove(x, y) {
-    const { activeTool } = this.state.pixel;
-    const isPrimary = true; // Mouse down button 
-
-    if (['pencil', 'eraser', 'symmetricPencil', 'symmetricEraser'].includes(activeTool)) {
-      // Freeform drawing (uses Bresenham's line algorithm in drawPixelLine)
-      this.drawPixelLine(this.prevX, this.prevY, x, y, isPrimary, activeTool.includes('symmetric'));
-    } else if (['line', 'rect', 'circle', 'rectFilled', 'circleFilled'].includes(activeTool)) {
-      // Shape preview - restore original canvas state and draw preview shape
-      this.canvas.elements.pixelCtx.clearRect(0, 0, this.state.pixel.width, this.state.pixel.height);
-      this.canvas.elements.pixelCtx.drawImage(this.canvas.tempPixelCanvas, 0, 0);
-
-      const color = this.state.pixel.primaryColor;
-      const startX = this.state.toolStartPos.x;
-      const startY = this.state.toolStartPos.y;
-      const filled = activeTool.includes('Filled') || this.state.isShiftPressed; // Shift for filled preview
-
-      if (activeTool.includes('line')) {
-        this.drawPixelShape(startX, startY, x, y, color, 'line');
-      } else if (activeTool.includes('rect')) {
-        this.drawPixelShape(startX, startY, x, y, color, 'rect', filled);
-      } else if (activeTool.includes('circle')) {
-        this.drawPixelShape(startX, startY, x, y, color, 'circle', filled);
-      }
-    }
-    
-    // Update lastPos
-    this.state.lastPos = { x, y };
-  }
-
-  commitPixelTempLayer(endX, endY) {
-    const { activeTool, primaryColor } = this.state.pixel;
-    
-    if (['line', 'rect', 'circle', 'rectFilled', 'circleFilled'].includes(activeTool)) {
-      this.state.history.pushHistory(`Draw ${activeTool}`);
-      
-      const startX = this.state.toolStartPos.x;
-      const startY = this.state.toolStartPos.y;
-      const color = primaryColor;
-      const filled = activeTool.includes('Filled') || this.state.isShiftPressed;
-
-      // Draw the final shape directly to the sprite data
-      if (activeTool.includes('line')) {
-        this.drawPixelShape(startX, startY, endX, endY, color, 'line', false, true);
-      } else if (activeTool.includes('rect')) {
-        this.drawPixelShape(startX, startY, endX, endY, color, 'rect', filled, true);
-      } else if (activeTool.includes('circle')) {
-        this.drawPixelShape(startX, startY, endX, endY, color, 'circle', filled, true);
-      }
-      
-      // The canvas is redrawn inside drawPixelShape when commit=true
-      
-      // Clear temp canvas
-      this.canvas.tempPixelCtx.clearRect(0, 0, this.state.pixel.width, this.state.pixel.height);
-    }
-  }
-
-  // ===============================
-  // Pixel Drawing Functions
-  // ===============================
-  drawPixel(x, y, color) {
-    const { width, height, sprites, currentFrame, activeTool, symmetry } = this.state.pixel;
-    const data = sprites[currentFrame].data;
-    
-    const commitDraw = (px, py, c) => {
-      if (px >= 0 && px < width && py >= 0 && py < height) {
-        const idx = py * width + px;
-        data[idx] = activeTool.includes('eraser') ? 'transparent' : c;
-      }
-    };
-    
-    // 1. Draw at (x, y)
-    commitDraw(x, y, color);
-    
-    // 2. Apply Symmetry if a symmetric tool is used
-    if (activeTool.includes('symmetric') && symmetry !== 'none') {
-      const centerX = width / 2;
-      const centerY = height / 2;
-      
-      // Calculate symmetric points
-      const symPoints = [];
-      if (symmetry === 'horizontal' || symmetry === 'both') {
-        const symX = width - 1 - x;
-        if (symX !== x) symPoints.push({ x: symX, y: y });
-      }
-      if (symmetry === 'vertical' || symmetry === 'both') {
-        const symY = height - 1 - y;
-        if (symY !== y) symPoints.push({ x: x, y: symY });
-      }
-      
-      if (symmetry === 'both' && width % 2 !== 0 && height % 2 !== 0) {
-        // Diagonal point for odd sizes
-        const symX = width - 1 - x;
-        const symY = height - 1 - y;
-        if (symX !== x && symY !== y) symPoints.push({ x: symX, y: symY });
-      }
-
-      // Draw symmetric points
-      symPoints.forEach(p => commitDraw(p.x, p.y, color));
-    }
-  }
-
-  drawPixelLine(startX, startY, endX, endY, isPrimary, isSymmetric = false) {
-    const color = isPrimary ? this.state.pixel.primaryColor : this.state.pixel.secondaryColor;
-    
-    let dx = Math.abs(endX - startX);
-    let dy = Math.abs(endY - startY);
-    let sx = startX < endX ? 1 : -1;
-    let sy = startY < endY ? 1 : -1;
-    let err = dx - dy;
-    let x = startX;
-    let y = startY;
-
-    while (true) {
-      this.drawPixel(x, y, color);
-      
-      if (x === endX && y === endY) break;
-      let e2 = 2 * err;
-      if (e2 > -dy) { err -= dy; x += sx; }
-      if (e2 < dx) { err += dx; y += sy; }
-    }
-
-    this.canvas.drawPixelCanvas();
-  }
-
-  /**
-   * Universal function for drawing pixel shapes (line, rect, circle).
-   * @param {number} startX - Start X coordinate.
-   * @param {number} startY - Start Y coordinate.
-   * @param {number} endX - End X coordinate.
-   * @param {number} endY - End Y coordinate.
-   * @param {string} color - Hex color string.
-   * @param {string} shape - 'line', 'rect', or 'circle'.
-   * @param {boolean} filled - Whether the shape should be filled (for rect/circle).
-   * @param {boolean} commit - If true, draws to sprite data; otherwise, draws to live canvas for preview.
-   */
-  drawPixelShape(startX, startY, endX, endY, color, shape, filled = false, commit = false) {
-    // If committing, the canvas's data array is modified, which is the final step.
-    // If not committing, the shape is drawn directly onto the visible canvas for a real-time preview.
-    
-    const spriteData = this.state.pixel.sprites[this.state.pixel.currentFrame].data;
-    const { width, height } = this.state.pixel;
-
-    const plotPixel = (x, y, c) => {
-      if (x >= 0 && x < width && y >= 0 && y < height) {
-        const index = y * width + x;
-        if (commit) {
-          spriteData[index] = c;
-        } else {
-          // Draw directly to visible canvas for preview
-          this.canvas.elements.pixelCtx.fillStyle = c;
-          this.canvas.elements.pixelCtx.fillRect(x, y, 1, 1);
-        }
-      }
-    };
-    
-    const drawLine = (x0, y0, x1, y1, c) => {
-      let dx = Math.abs(x1 - x0);
-      let dy = Math.abs(y1 - y0);
-      let sx = (x0 < x1) ? 1 : -1;
-      let sy = (y0 < y1) ? 1 : -1;
-      let err = dx - dy;
-
-      while (true) {
-        plotPixel(x0, y0, c);
-        if (x0 === x1 && y0 === y1) break;
-        let e2 = 2 * err;
-        if (e2 > -dy) { err -= dy; x0 += sx; }
-        if (e2 < dx) { err += dx; y0 += sy; }
-      }
-    };
-
-    if (shape === 'line') {
-      drawLine(startX, startY, endX, endY, color);
-      
-    } else if (shape === 'rect') {
-      const minX = Math.min(startX, endX);
-      const maxX = Math.max(startX, endX);
-      const minY = Math.min(startY, endY);
-      const maxY = Math.max(startY, endY);
-
-      for (let y = minY; y <= maxY; y++) {
-        for (let x = minX; x <= maxX; x++) {
-          if (filled || x === minX || x === maxX || y === minY || y === maxY) {
-            plotPixel(x, y, color);
-          }
-        }
-      }
-      
-    } else if (shape === 'circle') {
-      const centerX = startX;
-      const centerY = startY;
-      const radius = Math.round(Math.sqrt(Math.pow(endX - centerX, 2) + Math.pow(endY - centerY, 2)));
-
-      for (let y = -radius; y <= radius; y++) {
-        for (let x = -radius; x <= radius; x++) {
-          const distance = Math.sqrt(x * x + y * y);
-          const isOutline = !filled && (Math.abs(distance - radius) < 1.0); // 1.0 is tolerance for 'line' thickness
-          const isFilled = filled && distance <= radius;
-          
-          if (isFilled || isOutline) {
-            plotPixel(centerX + x, centerY + y, color);
-          }
-        }
-      }
-    }
-    
-    // Final render if committing the change
-    if (commit) {
-      this.canvas.drawPixelCanvas();
-    }
-  }
-}
-
-class DrawingTools {
-  constructor(state, canvas, ui) {
-    this.state = state;
-    this.canvas = canvas;
-    this.ui = ui;
-  }
-
-  getPixelCoords(e) {
-    const rect = this.canvas.elements.canvas.getBoundingClientRect();
-    const scaleX = this.state.pixel.width / rect.width;
-    const scaleY = this.state.pixel.height / rect.height;
-    
-    return {
-      x: Math.floor((e.clientX - rect.left) * scaleX),
-      y: Math.floor((e.clientY - rect.top) * scaleY)
-    };
-  }
-
-  getSketchCoords(e) {
-    const rect = this.canvas.elements.sketchCanvas.getBoundingClientRect();
-    const zoomFactor = this.state.sketch.zoom / 100;
-    
-    return {
-      x: (e.clientX - rect.left) / zoomFactor,
-      y: (e.clientY - rect.top) / zoomFactor
-    };
-  }
-
-  handlePixelFill(x, y, isPrimary, isSymmetric = false) {
-    const { width, height, sprites, currentFrame, primaryColor, secondaryColor, symmetry } = this.state.pixel;
-    const data = sprites[currentFrame].data;
-    const index = y * width + x;
-    const targetColor = data[index];
-    const fillColor = isPrimary ? primaryColor : secondaryColor;
-
-    if (targetColor === fillColor) return;
-
-    // Recursive or iterative flood fill
-    const fill = (startX, startY) => {
-      const stack = [[startX, startY]];
-      while (stack.length > 0) {
-        const [cx, cy] = stack.pop();
-        if (cx < 0 || cx >= width || cy < 0 || cy >= height) continue;
-        
-        const i = cy * width + cx;
-        if (data[i] !== targetColor) continue;
-
-        data[i] = fillColor;
-        stack.push([cx + 1, cy], [cx - 1, cy], [cx, cy + 1], [cx, cy - 1]);
-      }
-    };
-    
-    // 1. Fill at (x, y)
-    fill(x, y);
-    
-    // 2. Apply Symmetric Fill if required
-    if (isSymmetric && symmetry !== 'none') {
-      // Logic for calculating symmetric points and calling fill() for each
-      const symPoints = [];
-      
-      if (symmetry === 'horizontal' || symmetry === 'both') {
-        const symX = width - 1 - x;
-        if (symX !== x) symPoints.push({ x: symX, y: y });
-      }
-      if (symmetry === 'vertical' || symmetry === 'both') {
-        const symY = height - 1 - y;
-        if (symY !== y) symPoints.push({ x: x, y: symY });
-      }
-      if (symmetry === 'both' && width % 2 !== 0 && height % 2 !== 0) {
-        const symX = width - 1 - x;
-        const symY = height - 1 - y;
-        if (symX !== x && symY !== y) symPoints.push({ x: symX, y: symY });
-      }
-
-      symPoints.forEach(p => {
-        const target = data[p.y * width + p.x];
-        if (target !== fillColor) {
-          fill(p.x, p.y);
-        }
-      });
-    }
-
-    this.canvas.drawPixelCanvas();
-  }
-  
-  handlePixelEyedropper(x, y, isPrimary) {
-    const { width, sprites, currentFrame } = this.state.pixel;
-    const data = sprites[currentFrame].data;
-    
-    if (x >= 0 && x < width && y >= 0 && y < this.state.pixel.height) {
-      const index = y * width + x;
-      const color = data[index];
-      
-      if (color) {
-        if (isPrimary) {
-          this.state.pixel.primaryColor = color;
-          this.canvas.elements.primaryColor.style.backgroundColor = color;
-        } else {
-          this.state.pixel.secondaryColor = color;
-          this.canvas.elements.secondaryColor.style.backgroundColor = color;
-        }
-        this.ui.updateCanvasInfo();
-      }
-    }
-  }
-
-  // NOTE: drawWithBrush is now handled in DrawingManager
-}
-
-// =====================
-// HISTORY MANAGEMENT
-// =====================
-class HistoryManager {
-  // ... (No changes needed in HistoryManager)
-  constructor(state, canvasManager) {
-    this.state = state;
-    this.canvas = canvasManager;
-  }
-  
-  pushHistory(action) {
-    if (!action || typeof action !== 'string') {
-      console.warn('Invalid history action:', action);
-      return;
-    }
-    
-    const historyState = this.state[this.state.mode];
-    
-    if (!historyState) {
-      console.error('Invalid mode for history:', this.state.mode);
-      return;
-    }
-    
-    // Clear redo history
-    historyState.history.splice(historyState.historyIndex + 1);
-    
-    let snapshot;
-    try {
-      if (this.state.mode === 'pixel') {
-        snapshot = {
-          action,
-          sprites: this.state.pixel.sprites.map(sprite => ({
-            ...sprite,
-            data: [...sprite.data]
-          })),
-          currentFrame: this.state.pixel.currentFrame
-        };
-      } else {
-        snapshot = {
-          action,
-          layers: this.state.sketch.layers.map(layer => ({
-            id: layer.id,
-            name: layer.name,
-            opacity: layer.opacity,
-            blendMode: layer.blendMode,
-            visible: layer.visible,
-            imageData: layer.canvas.toDataURL()
-          })),
-          activeLayer: this.state.sketch.activeLayer
-        };
-      }
-    } catch (error) {
-      console.error('Failed to create history snapshot:', error);
-      return;
-    }
-    
-    historyState.history.push(snapshot);
-    historyState.historyIndex = historyState.history.length - 1;
-    
-    // Limit history size
-    if (historyState.history.length > HISTORY_LIMITS.MAX_ENTRIES) {
-      historyState.history.shift();
-      historyState.historyIndex--;
-    }
-  }
-  
-  applyHistorySnapshot(snapshot) {
-    if (this.state.mode === 'pixel') {
-      this.state.pixel.sprites = snapshot.sprites.map(sprite => ({
-        ...sprite,
-        data: [...sprite.data]
-      }));
-      this.state.pixel.currentFrame = snapshot.currentFrame;
-      this.canvas.drawPixelCanvas();
-    } else {
-      // Restore sketch layers
-      this.state.sketch.layers = snapshot.layers.map(layerData => {
-        const layer = this.canvas.createSketchLayer(layerData.name);
-        layer.id = layerData.id;
-        layer.opacity = layerData.opacity;
-        layer.blendMode = layerData.blendMode;
-        layer.visible = layerData.visible;
-        
-        const img = new Image();
-        img.onload = () => {
-          layer.ctx.drawImage(img, 0, 0);
-          this.canvas.drawSketchCanvas();
-        };
-        img.src = layerData.imageData;
-        
-        return layer;
-      });
-      
-      this.state.sketch.activeLayer = snapshot.activeLayer;
-      this.canvas.drawSketchCanvas();
-    }
-  }
-  
-  undo() {
-    const historyState = this.state[this.state.mode];
-    if (historyState.historyIndex > 0) {
-      historyState.historyIndex--;
-      this.applyHistorySnapshot(historyState.history[historyState.historyIndex]);
-      this.canvas.drawPixelCanvas(); // Redraw pixel canvas in case of partial sprite data in snapshot
-    }
-  }
-  
-  redo() {
-    const historyState = this.state[this.state.mode];
-    if (historyState.historyIndex < historyState.history.length - 1) {
-      historyState.historyIndex++;
-      this.applyHistorySnapshot(historyState.history[historyState.historyIndex]);
-      this.canvas.drawPixelCanvas();
-    }
-  }
-}
-
-// =====================
-// UI MANAGER
-// =====================
-class UIManager {
-  // ... (No changes needed in UIManager, logic is sound)
-  constructor(state, canvasManager, historyManager) {
-    this.state = state;
-    this.canvas = canvasManager;
-    this.history = historyManager;
-    this.setupPalettes();
-    this.updateUI();
-  }
-  
-  setupPalettes() {
-    this.populatePaletteSelector();
-    this.renderPaletteSwatches();
-    this.renderCustomPalette();
-  }
-  
-  populatePaletteSelector() {
-    this.canvas.elements.paletteSelector.innerHTML = '';
-    
-    Object.keys(BUILT_IN_PALETTES).forEach(key => {
-      const option = document.createElement('option');
-      option.value = key;
-      option.textContent = key.charAt(0).toUpperCase() + key.slice(1).replace(/([A-Z])/g, ' $1');
-      this.canvas.elements.paletteSelector.appendChild(option);
-    });
-    
-    const customOption = document.createElement('option');
-    customOption.value = 'custom';
-    customOption.textContent = 'Custom';
-    this.canvas.elements.paletteSelector.appendChild(customOption);
-  }
-  
-  renderPaletteSwatches() {
-    const selectedValue = this.canvas.elements.paletteSelector.value;
-    const palette = selectedValue === 'custom' ? 
-      this.state.customPalette : 
-      BUILT_IN_PALETTES[selectedValue] || BUILT_IN_PALETTES.default;
-    
-    this.canvas.elements.swatches.innerHTML = '';
-    
-    palette.forEach(color => {
-      const swatch = document.createElement('div');
-      swatch.className = 'swatch';
-      swatch.style.backgroundColor = color;
-      swatch.dataset.color = color;
-      swatch.onclick = (e) => this.handleSwatchClick(e);
-      swatch.oncontextmenu = (e) => {
-        e.preventDefault();
-        this.handleSwatchClick(e, true);
-      };
-      this.canvas.elements.swatches.appendChild(swatch);
-    });
-  }
-  
-  renderCustomPalette() {
-    const colorPickers = this.canvas.elements.colorPickers;
-    if (!colorPickers) return;
-    
-    colorPickers.innerHTML = '';
-    
-    this.state.customPalette.forEach((color, index) => {
-      const input = document.createElement('input');
-      input.type = 'color';
-      input.className = 'color-picker';
-      input.value = color;
-      input.dataset.index = index;
-      input.onchange = () => {
-        this.state.customPalette[index] = input.value;
-        this.state.saveCustomPalette();
-        if (this.canvas.elements.paletteSelector.value === 'custom') {
-          this.renderPaletteSwatches();
-        }
-      };
-      colorPickers.appendChild(input);
-    });
-  }
-  
-  handleSwatchClick(e, isSecondary = false) {
-    const color = e.target.dataset.color;
-    if (!color) return;
-    
-    if (this.state.mode === 'pixel') {
-      if (isSecondary) {
-        this.state.pixel.secondaryColor = color;
-        this.canvas.elements.secondaryColor.style.backgroundColor = color;
-      } else {
-        this.state.pixel.primaryColor = color;
-        this.canvas.elements.primaryColor.style.backgroundColor = color;
-      }
-    } else if (this.state.mode === 'sketch') {
-      this.state.sketch.color = color;
-      if (this.canvas.elements.sketchColor) this.canvas.elements.sketchColor.value = color;
-    }
-    
-    this.updateCanvasInfo();
-  }
-  
-  updateSpriteSelector() {
-    const selector = this.canvas.elements.spriteSelector;
-    if (!selector) return;
-    
-    selector.innerHTML = '';
-    this.state.pixel.sprites.forEach((sprite, index) => {
-      const option = document.createElement('option');
-      option.value = index;
-      option.textContent = sprite.name || `Frame ${index + 1}`;
-      option.selected = index === this.state.pixel.currentFrame;
-      selector.appendChild(option);
-    });
-  }
-  
-  updateLayersList() {
-    const layerList = this.canvas.elements.layerList;
-    if (!layerList) return;
-    
-    layerList.innerHTML = '';
-    
-    this.state.sketch.layers.forEach((layer, index) => {
-      const item = document.createElement('div');
-      item.className = `layer-item ${index === this.state.sketch.activeLayer ? 'active' : ''}`;
-      item.dataset.index = index;
-      
-      const checkbox = document.createElement('input');
-      checkbox.type = 'checkbox';
-      checkbox.checked = layer.visible;
-      checkbox.onclick = (e) => {
-        e.stopPropagation();
-        layer.visible = checkbox.checked;
-        this.canvas.drawSketchCanvas();
-      };
-      
-      const span = document.createElement('span');
-      span.textContent = layer.name;
-      
-      item.appendChild(checkbox);
-      item.appendChild(span);
-      
-      item.onclick = () => {
-        this.state.sketch.activeLayer = index;
-        this.updateLayersList();
-        this.updateSketchControls();
-      };
-      
-      layerList.appendChild(item);
-    });
-    
-    // Update layer opacity/blend mode controls for the active layer
-    const activeLayer = this.state.sketch.layers[this.state.sketch.activeLayer];
-    if (activeLayer && this.canvas.elements.layerOpacity && this.canvas.elements.blendMode) {
-      this.canvas.elements.layerOpacity.value = activeLayer.opacity;
-      this.canvas.elements.layerOpacityLabel.textContent = activeLayer.opacity;
-      this.canvas.elements.blendMode.value = activeLayer.blendMode;
-    }
-  }
-  
-  updateCanvasInfo() {
-    const canvasInfo = this.canvas.elements.canvasInfo;
-    if (!canvasInfo) return;
-    
-    const { mode } = this.state;
-    let info = '';
-    
-    if (mode === 'pixel') {
-      const { width, height, activeTool, primaryColor } = this.state.pixel;
-      info = `${width}×${height} | ${activeTool} | ${primaryColor}`;
-      
-      if (this.canvas.elements.canvasWidth) this.canvas.elements.canvasWidth.value = width;
-      if (this.canvas.elements.canvasHeight) this.canvas.elements.canvasHeight.value = height;
-    } else if (mode === 'sketch') {
-      const { width, height, activeTool, color } = this.state.sketch;
-      info = `${width}×${height} | ${activeTool} | ${color}`;
-    }
-    
-    canvasInfo.textContent = info;
-  }
-  
-  updateSketchControls() {
-    const { size, opacity, hardness, flow } = this.state.sketch;
-    
-    const elements = this.canvas.elements;
-    
-    if (elements.brushSize) elements.brushSize.value = size;
-    if (elements.brushSizeLabel) elements.brushSizeLabel.textContent = size;
-    if (elements.brushOpacity) elements.brushOpacity.value = opacity;
-    if (elements.opacityLabel) elements.opacityLabel.textContent = opacity;
-    if (elements.brushHardness) elements.brushHardness.value = hardness;
-    if (elements.hardnessLabel) elements.hardnessLabel.textContent = hardness;
-    if (elements.brushFlow) elements.brushFlow.value = flow;
-    if (elements.flowLabel) elements.flowLabel.textContent = flow;
-    
-    // Update brush preview
-    const brushPreview = elements.brushPreview;
-    if (brushPreview) {
-      const displaySize = Math.max(8, size); // Minimum size for visibility
-      brushPreview.style.width = `${displaySize}px`;
-      brushPreview.style.height = `${displaySize}px`;
-      brushPreview.style.backgroundColor = this.state.sketch.color;
-      brushPreview.style.opacity = opacity / 100;
-      brushPreview.style.borderRadius = elements.brushHardness.value < 50 ? '50%' : '0';
-    }
-    
-    this.updateLayersList(); // To ensure active layer controls are correct
-  }
-  
-  updateToolControls() {
-    document.querySelectorAll('.tool-btn').forEach(btn => {
-      btn.classList.remove('active');
-      
-      const tool = btn.dataset.tool;
-      if (this.state.mode === 'pixel' && tool === this.state.pixel.activeTool) {
-        btn.classList.add('active');
-      } else if (this.state.mode === 'sketch' && tool === this.state.sketch.activeTool) {
-        btn.classList.add('active');
-      }
-    });
-  }
-  
-  updateSymmetryDisplay() {
-    document.querySelectorAll('.symmetry-btn').forEach(btn => {
-      btn.classList.toggle('active', btn.dataset.symmetry === this.state.pixel.symmetry);
-    });
-    
-    const mode = this.state.pixel.symmetry;
-    const info = mode === 'none' ? 'No symmetry active' : 
-                 mode === 'horizontal' ? 'Horizontal symmetry active' :
-                 mode === 'vertical' ? 'Vertical symmetry active' :
-                 mode === 'both' ? 'Both axes symmetry active' : 'Unknown symmetry';
-    
-    const symmetryInfo = this.canvas.elements.symmetryInfo;
-    if (symmetryInfo) {
-      symmetryInfo.textContent = info;
-    }
-  }
-  
-  updateUI() {
-    this.updateSpriteSelector();
-    this.updateLayersList();
-    this.updateCanvasInfo();
-    this.updateToolControls();
-    this.updateSketchControls();
-    this.updateSymmetryDisplay();
-  }
-}
-
-// =====================
-// JERRY EDITOR MAIN CLASS
-// =====================
+// Jerry Editor - Professional Pixel & Sketch Art Editor
 class JerryEditor {
-  constructor() {
-    this.state = new EditorState();
-    this.canvas = new CanvasManager(this.state);
-    
-    // 💡 CRITICAL FIX: Initialize HistoryManager BEFORE UIManager.
-    // The UIManager constructor calls updateUI(), which immediately
-    // tries to access this.history.
-    this.history = new HistoryManager(this.state, this.canvas);
-    
-    this.ui = new UIManager(this.state, this.canvas, this.history);
-    
-    this.tools = new DrawingTools(this.state, this.canvas, this.ui);
-    
-    this.drawingManager = new DrawingManager(this.state, this.canvas);
-    
-    this.attachEventListeners();
-    this.setMode('pixel');
-    
-    // This is Fix #1: Ensures the canvas display runs correctly.
-    // It should run *after* all managers are set up.
-    this.updateCanvasDisplay(); 
-    
-    // Initial history snapshot
-    this.history.pushHistory('Initial');
-    
-    // PWA registration... (rest of the constructor)
-    // ...
-
-    
-    // PWA registration
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('./service-worker.js').catch(err => 
-        console.log('Service Worker registration failed:', err)
-      );
-    }
-  }
-  
-  setMode(newMode) {
-    if (this.state.mode === newMode) return;
-    this.state.mode = newMode;
-
-    // Update mode buttons
-    document.querySelectorAll('.mode-btn').forEach(btn => {
-      btn.classList.toggle('active', btn.dataset.mode === newMode);
-    });
-
-    // Show/hide pixel and sketch UI
-    const pixelUI = document.querySelectorAll('.pixel-controls, .pixel-tools');
-    const sketchUI = document.querySelectorAll('.sketch-controls, .sketch-tools');
-
-    pixelUI.forEach(el => {
-      el.style.display = newMode === 'pixel' ? (el.classList.contains('pixel-tools') ? 'flex' : 'block') : 'none';
-    });
-
-    sketchUI.forEach(el => {
-      el.style.display = newMode === 'sketch' ? 
-        (el.classList.contains('sketch-tools') ? 'flex' : 'block') : 'none';
-    });
-
-    // Show/hide canvases
-    const canvasWrapper = this.canvas.elements.canvas.parentElement;
-    canvasWrapper.style.overflow = newMode === 'sketch' ? 'auto' : 'hidden'; // Enable scrolling for sketch
-    
-    this.canvas.elements.canvas.style.display = newMode === 'pixel' ? 'grid' : 'none';
-    this.canvas.elements.sketchCanvas.style.display = newMode === 'sketch' ? 'block' : 'none';
-    this.canvas.elements.selectionOverlay.style.display = newMode === 'sketch' ? 'block' : 'none';
-
-    // Update grid visibility
-    this.canvas.elements.canvasGrid.style.display = 
-        (newMode === 'pixel' && this.state.pixel.showGrid) ? 'grid' : 'none';
-
-    // Refresh canvas and UI info
-    this.updateCanvasDisplay();
-    this.ui.updateCanvasInfo();
-    this.ui.updateToolControls();
-  }
-
-  updateCanvasDisplay() {
-    if (this.state.mode === 'pixel') {
-      const zoomFactor = this.state.pixel.zoom / 100;
-      // Calculate cellSize based on zoom and a default size, but enforce minimum 1
-      const cellSize = Math.max(1, Math.round(CANVAS_LIMITS.DEFAULT_CELL_SIZE * zoomFactor)); 
-      this.state.pixel.cellSize = cellSize;
-      
-      this.canvas.updatePixelCanvasSize();
-      this.canvas.renderPixelGrid(); // Re-render grid to update cell size
-      this.canvas.drawPixelCanvas();
-    } else if (this.state.mode === 'sketch') {
-      const zoomFactor = this.state.sketch.zoom / 100;
-      this.canvas.elements.sketchCanvas.style.transform = `scale(${zoomFactor})`;
-      this.canvas.elements.selectionOverlay.style.transform = `scale(${zoomFactor})`;
-      this.canvas.drawSketchCanvas();
-    }
-    
-    this.canvas.elements.zoomIndicator.textContent = `${this.state[this.state.mode].zoom}%`;
-  }
-  
-  adjustZoom(delta) {
-    const currentState = this.state[this.state.mode];
-    let newZoom;
-    
-    if (delta === 'reset') {
-      newZoom = 100;
-    } else {
-      newZoom = currentState.zoom + delta;
-      newZoom = Math.max(CANVAS_LIMITS.MIN_ZOOM, Math.min(CANVAS_LIMITS.MAX_ZOOM, newZoom));
-    }
-    
-    currentState.zoom = newZoom;
-    this.updateCanvasDisplay();
-  }
-  
-  clearCanvas() {
-    if (!confirm('Clear the entire canvas? This cannot be undone.')) return;
-    
-    this.history.pushHistory('Clear Canvas');
-    
-    if (this.state.mode === 'pixel') {
-      const { sprites, currentFrame } = this.state.pixel;
-      sprites[currentFrame].data.fill('transparent');
-      this.canvas.drawPixelCanvas();
-    } else if (this.state.mode === 'sketch') {
-      const layer = this.state.sketch.layers[this.state.sketch.activeLayer];
-      if (layer) {
-        layer.ctx.clearRect(0, 0, this.state.sketch.width, this.state.sketch.height);
-        this.canvas.drawSketchCanvas();
-      }
-    }
-  }
-  
-  resizeCanvas() {
-    const widthInput = this.canvas.elements.canvasWidth;
-    const heightInput = this.canvas.elements.canvasHeight;
-    
-    if (!widthInput || !heightInput) {
-      console.error('Canvas size inputs not found');
-      return;
-    }
-    
-    const newWidth = parseInt(widthInput.value);
-    const newHeight = parseInt(heightInput.value);
-    
-    // Validate input
-    if (isNaN(newWidth) || isNaN(newHeight)) {
-      alert('Please enter valid numbers for canvas size');
-      return;
-    }
-    
-    if (newWidth < CANVAS_LIMITS.MIN_SIZE || newWidth > CANVAS_LIMITS.MAX_SIZE ||
-        newHeight < CANVAS_LIMITS.MIN_SIZE || newHeight > CANVAS_LIMITS.MAX_SIZE) {
-      alert(`Canvas size must be between ${CANVAS_LIMITS.MIN_SIZE}×${CANVAS_LIMITS.MIN_SIZE} and ${CANVAS_LIMITS.MAX_SIZE}×${CANVAS_LIMITS.MAX_SIZE}`);
-      return;
-    }
-    
-    this.history.pushHistory('Resize Canvas');
-    
-    if (this.state.mode === 'pixel') {
-      const oldWidth = this.state.pixel.width;
-      const oldHeight = this.state.pixel.height;
-      
-      this.state.pixel.width = newWidth;
-      this.state.pixel.height = newHeight;
-      
-      // Resize all sprites
-      this.state.pixel.sprites.forEach(sprite => {
-        const oldData = sprite.data;
-        const newData = new Array(newWidth * newHeight).fill('transparent');
+    constructor() {
+        this.mode = 'pixel';
+        this.currentTool = 'pencil';
+        this.symmetryMode = 'none';
+        this.primaryColor = '#000000';
+        this.secondaryColor = '#ffffff';
+        this.zoom = 1;
+        this.isDrawing = false;
+        this.lastPos = null;
+        this.undoStack = [];
+        this.redoStack = [];
+        this.maxUndoSteps = 50;
         
-        // Copy existing data
-        for (let y = 0; y < Math.min(oldHeight, newHeight); y++) {
-          for (let x = 0; x < Math.min(oldWidth, newWidth); x++) {
-            const oldIndex = y * oldWidth + x;
-            const newIndex = y * newWidth + x;
-            newData[newIndex] = oldData[oldIndex];
-          }
+        // Pixel art properties
+        this.canvasWidth = 16;
+        this.canvasHeight = 16;
+        this.pixelSize = 20;
+        this.grid = [];
+        this.sprites = [{ name: 'Sprite 1', data: null }];
+        this.currentSprite = 0;
+        this.showGrid = true;
+        
+        // Sketch art properties
+        this.layers = [];
+        this.currentLayer = 0;
+        this.brushSize = 10;
+        this.brushOpacity = 100;
+        this.brushHardness = 100;
+        this.brushFlow = 100;
+        this.blendMode = 'source-over';
+        
+        // Selection properties
+        this.selection = null;
+        this.selectionData = null;
+        
+        this.init();
+    }
+    
+    init() {
+        this.setupElements();
+        this.setupEventListeners();
+        this.loadPalettes();
+        this.initializeCanvas();
+        this.loadProject();
+        this.updateUI();
+    }
+    
+    setupElements() {
+        // Canvas elements
+        this.pixelCanvas = document.getElementById('canvas');
+        this.sketchCanvas = document.getElementById('sketchCanvas');
+        this.sketchCtx = this.sketchCanvas.getContext('2d');
+        this.selectionOverlay = document.getElementById('selectionOverlay');
+        this.selectionCtx = this.selectionOverlay.getContext('2d');
+        this.canvasGrid = document.getElementById('canvasGrid');
+        
+        // UI elements
+        this.canvasInfo = document.getElementById('canvasInfo');
+        this.zoomIndicator = document.getElementById('zoomIndicator');
+        this.primaryColorEl = document.getElementById('primaryColor');
+        this.secondaryColorEl = document.getElementById('secondaryColor');
+        this.paletteSelector = document.getElementById('paletteSelector');
+        this.swatchesContainer = document.getElementById('swatches');
+        this.colorPickers = document.getElementById('colorPickers');
+        
+        // Controls
+        this.canvasWidthInput = document.getElementById('canvasWidth');
+        this.canvasHeightInput = document.getElementById('canvasHeight');
+        this.spriteSelector = document.getElementById('spriteSelector');
+        this.brushSizeSlider = document.getElementById('brushSize');
+        this.brushOpacitySlider = document.getElementById('brushOpacity');
+        this.brushHardnessSlider = document.getElementById('brushHardness');
+        this.brushFlowSlider = document.getElementById('brushFlow');
+        this.sketchColorPicker = document.getElementById('sketchColor');
+        this.layerList = document.getElementById('layerList');
+        this.layerOpacitySlider = document.getElementById('layerOpacity');
+        this.blendModeSelect = document.getElementById('blendMode');
+    }
+    
+    setupEventListeners() {
+        // Mode switching
+        document.querySelectorAll('.mode-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                document.querySelector('.mode-btn.active').classList.remove('active');
+                btn.classList.add('active');
+                this.switchMode(btn.dataset.mode);
+            });
+        });
+        
+        // Tool selection
+        document.querySelectorAll('.tool-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const toolGroup = btn.closest('.tool-group');
+                toolGroup.querySelector('.tool-btn.active')?.classList.remove('active');
+                btn.classList.add('active');
+                this.currentTool = btn.dataset.tool;
+                this.updateCanvasInfo();
+            });
+        });
+        
+        // Symmetry controls
+        document.querySelectorAll('.symmetry-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                document.querySelector('.symmetry-btn.active').classList.remove('active');
+                btn.classList.add('active');
+                this.symmetryMode = btn.dataset.symmetry;
+            });
+        });
+        
+        // Canvas interactions
+        this.setupCanvasEvents();
+        
+        // Header buttons
+        document.getElementById('newProject').addEventListener('click', () => this.newProject());
+        document.getElementById('saveProject').addEventListener('click', () => this.saveProject());
+        document.getElementById('exportPNG').addEventListener('click', () => this.exportPNG());
+        
+        // Canvas controls
+        document.getElementById('resizeCanvas').addEventListener('click', () => this.resizeCanvas());
+        document.getElementById('zoomIn').addEventListener('click', () => this.adjustZoom(1.5));
+        document.getElementById('zoomOut').addEventListener('click', () => this.adjustZoom(0.75));
+        document.getElementById('zoomReset').addEventListener('click', () => this.setZoom(1));
+        document.getElementById('undo').addEventListener('click', () => this.undo());
+        document.getElementById('redo').addEventListener('click', () => this.redo());
+        document.getElementById('clear').addEventListener('click', () => this.clearCanvas());
+        document.getElementById('gridToggle').addEventListener('change', (e) => {
+            this.showGrid = e.target.checked;
+            this.updateGrid();
+        });
+        
+        // Transform controls
+        document.getElementById('rotateLeft').addEventListener('click', () => this.rotate(-90));
+        document.getElementById('rotateRight').addEventListener('click', () => this.rotate(90));
+        document.getElementById('rotate180').addEventListener('click', () => this.rotate(180));
+        document.getElementById('flipHorizontal').addEventListener('click', () => this.flip('horizontal'));
+        document.getElementById('flipVertical').addEventListener('click', () => this.flip('vertical'));
+        
+        // Sprite controls
+        document.getElementById('newSprite').addEventListener('click', () => this.newSprite());
+        document.getElementById('duplicateSprite').addEventListener('click', () => this.duplicateSprite());
+        document.getElementById('deleteSprite').addEventListener('click', () => this.deleteSprite());
+        this.spriteSelector?.addEventListener('change', (e) => {
+            this.switchSprite(parseInt(e.target.value));
+        });
+        
+        // Color controls
+        this.primaryColorEl.addEventListener('click', () => this.openColorPicker('primary'));
+        this.secondaryColorEl.addEventListener('click', () => this.openColorPicker('secondary'));
+        this.paletteSelector?.addEventListener('change', (e) => this.loadPalette(e.target.value));
+        
+        // Sketch controls
+        this.brushSizeSlider?.addEventListener('input', (e) => {
+            this.brushSize = parseInt(e.target.value);
+            document.getElementById('brushSizeLabel').textContent = this.brushSize;
+            this.updateBrushPreview();
+        });
+        
+        this.brushOpacitySlider?.addEventListener('input', (e) => {
+            this.brushOpacity = parseInt(e.target.value);
+            document.getElementById('opacityLabel').textContent = this.brushOpacity;
+            this.updateBrushPreview();
+        });
+        
+        this.brushHardnessSlider?.addEventListener('input', (e) => {
+            this.brushHardness = parseInt(e.target.value);
+            document.getElementById('hardnessLabel').textContent = this.brushHardness;
+            this.updateBrushPreview();
+        });
+        
+        this.brushFlowSlider?.addEventListener('input', (e) => {
+            this.brushFlow = parseInt(e.target.value);
+            document.getElementById('flowLabel').textContent = this.brushFlow;
+        });
+        
+        this.sketchColorPicker?.addEventListener('change', (e) => {
+            this.primaryColor = e.target.value;
+            this.primaryColorEl.style.background = this.primaryColor;
+        });
+        
+        // Layer controls
+        document.getElementById('addLayer')?.addEventListener('click', () => this.addLayer());
+        this.layerOpacitySlider?.addEventListener('input', (e) => {
+            if (this.layers[this.currentLayer]) {
+                this.layers[this.currentLayer].opacity = parseInt(e.target.value) / 100;
+                document.getElementById('layerOpacityLabel').textContent = e.target.value;
+                this.redrawLayers();
+            }
+        });
+        
+        this.blendModeSelect?.addEventListener('change', (e) => {
+            if (this.layers[this.currentLayer]) {
+                this.layers[this.currentLayer].blendMode = e.target.value;
+                this.redrawLayers();
+            }
+        });
+        
+        // Export/Import
+        document.getElementById('exportJSON').addEventListener('click', () => this.exportJSON());
+        document.getElementById('exportPNG2').addEventListener('click', () => this.exportPNG());
+        document.getElementById('importFile').addEventListener('change', (e) => this.importFile(e));
+        
+        // Keyboard shortcuts
+        document.addEventListener('keydown', (e) => this.handleKeyboard(e));
+        
+        // Palette management
+        document.getElementById('saveCustomPalette')?.addEventListener('click', () => this.saveCustomPalette());
+        
+        // Canvas size presets for sketch mode
+        document.querySelectorAll('[data-size]').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const [width, height] = e.target.dataset.size.split('x').map(Number);
+                this.resizeSketchCanvas(width, height);
+            });
+        });
+        
+        // Auto-save
+        setInterval(() => this.autoSave(), 30000);
+    }
+    
+    setupCanvasEvents() {
+        const canvasWrapper = document.querySelector('.canvas-wrapper');
+        
+        canvasWrapper.addEventListener('mousedown', (e) => this.startDrawing(e));
+        canvasWrapper.addEventListener('mousemove', (e) => this.draw(e));
+        canvasWrapper.addEventListener('mouseup', () => this.stopDrawing());
+        canvasWrapper.addEventListener('mouseout', () => this.stopDrawing());
+        canvasWrapper.addEventListener('contextmenu', (e) => e.preventDefault());
+        
+        // Touch events for mobile
+        canvasWrapper.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            const touch = e.touches[0];
+            const mouseEvent = new MouseEvent('mousedown', {
+                clientX: touch.clientX,
+                clientY: touch.clientY,
+                button: 0
+            });
+            this.startDrawing(mouseEvent);
+        });
+        
+        canvasWrapper.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+            const touch = e.touches[0];
+            const mouseEvent = new MouseEvent('mousemove', {
+                clientX: touch.clientX,
+                clientY: touch.clientY
+            });
+            this.draw(mouseEvent);
+        });
+        
+        canvasWrapper.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            this.stopDrawing();
+        });
+        
+        // Zoom with mouse wheel
+        canvasWrapper.addEventListener('wheel', (e) => {
+            e.preventDefault();
+            const zoomFactor = e.deltaY > 0 ? 0.9 : 1.1;
+            this.adjustZoom(zoomFactor);
+        });
+    }
+    
+    switchMode(mode) {
+        this.mode = mode;
+        
+        // Show/hide relevant UI elements
+        document.querySelectorAll('.pixel-tools, .pixel-controls').forEach(el => {
+            el.style.display = mode === 'pixel' ? 'block' : 'none';
+        });
+        
+        document.querySelectorAll('.sketch-tools, .sketch-controls').forEach(el => {
+            el.style.display = mode === 'sketch' ? 'block' : 'none';
+        });
+        
+        // Show/hide canvases
+        this.pixelCanvas.style.display = mode === 'pixel' ? 'block' : 'none';
+        this.sketchCanvas.style.display = mode === 'sketch' ? 'block' : 'none';
+        this.canvasGrid.style.display = mode === 'pixel' && this.showGrid ? 'block' : 'none';
+        
+        // Initialize mode-specific features
+        if (mode === 'sketch') {
+            this.initializeSketchMode();
+            this.currentTool = 'brush';
+        } else {
+            this.currentTool = 'pencil';
+            this.updatePixelCanvas();
         }
         
-        sprite.data = newData;
-      });
-      
-      this.canvas.updatePixelCanvasSize();
-      this.canvas.renderPixelGrid();
-      this.canvas.drawPixelCanvas();
-    }
-    
-    this.ui.updateCanvasInfo();
-  }
-  
-  newSprite() {
-    const { width, height } = this.state.pixel;
-    const newSprite = {
-      id: Date.now(),
-      name: `Frame ${this.state.pixel.sprites.length + 1}`,
-      data: new Array(width * height).fill('transparent')
-    };
-    
-    this.state.pixel.sprites.push(newSprite);
-    this.state.pixel.currentFrame = this.state.pixel.sprites.length - 1;
-    
-    this.ui.updateSpriteSelector();
-    this.canvas.drawPixelCanvas();
-    this.history.pushHistory('New Sprite');
-  }
-  
-  duplicateSprite() {
-    const { sprites, currentFrame } = this.state.pixel;
-    const currentSprite = sprites[currentFrame];
-    
-    const newSprite = {
-      id: Date.now(),
-      name: `${currentSprite.name} Copy`,
-      data: [...currentSprite.data]
-    };
-    
-    sprites.splice(currentFrame + 1, 0, newSprite);
-    this.state.pixel.currentFrame = currentFrame + 1;
-    
-    this.ui.updateSpriteSelector();
-    this.canvas.drawPixelCanvas();
-    this.history.pushHistory('Duplicate Sprite');
-  }
-  
-  deleteSprite() {
-    if (this.state.pixel.sprites.length <= 1) {
-      alert('Cannot delete the last sprite.');
-      return;
-    }
-    
-    this.state.pixel.sprites.splice(this.state.pixel.currentFrame, 1);
-    this.state.pixel.currentFrame = Math.max(0, this.state.pixel.currentFrame - 1);
-    
-    this.ui.updateSpriteSelector();
-    this.canvas.drawPixelCanvas();
-    this.history.pushHistory('Delete Sprite');
-  }
-  
-  addLayer() {
-    const newLayer = this.canvas.createSketchLayer(`Layer ${this.state.sketch.layers.length + 1}`);
-    this.state.sketch.layers.push(newLayer);
-    this.state.sketch.activeLayer = this.state.sketch.layers.length - 1;
-    
-    this.ui.updateLayersList();
-    this.history.pushHistory('Add Layer');
-  }
-  
-  setSymmetryMode(mode) {
-    this.state.pixel.symmetry = mode;
-    this.ui.updateSymmetryDisplay();
-  }
-  
-  transformSelection(type, value) {
-    if (this.state.mode !== 'pixel') return;
-    
-    this.history.pushHistory(`Transform ${type}`);
-    
-    const { width, height, sprites, currentFrame } = this.state.pixel;
-    const spriteData = sprites[currentFrame].data;
-    const newData = new Array(width * height).fill('transparent');
-    
-    const targetWidth = (type === 'rotate' && Math.abs(value) === 90) ? height : width;
-    const targetHeight = (type === 'rotate' && Math.abs(value) === 90) ? width : height;
-
-    // Temporarily swap dimensions for 90/270 degree rotations
-    const isDimensionSwap = (type === 'rotate' && Math.abs(value) === 90);
-
-    // If rotating 90/270, we need to resize the canvas
-    if (isDimensionSwap) {
-        this.state.pixel.width = targetWidth;
-        this.state.pixel.height = targetHeight;
-        this.canvas.updatePixelCanvasSize();
-    }
-    
-    for (let y = 0; y < height; y++) {
-      for (let x = 0; x < width; x++) {
-        const oldIndex = y * width + x;
-        const color = spriteData[oldIndex];
-        if (color === 'transparent') continue;
+        // Update active tool button
+        const toolGroup = document.querySelector(`.${mode}-tools`);
+        toolGroup.querySelector('.tool-btn.active')?.classList.remove('active');
+        toolGroup.querySelector(`.tool-btn[data-tool="${this.currentTool}"]`)?.classList.add('active');
         
-        let newX = x, newY = y;
+        this.updateCanvasInfo();
+    }
+    
+    initializeCanvas() {
+        if (this.mode === 'pixel') {
+            this.initializeGrid();
+            this.updatePixelCanvas();
+            this.updateGrid();
+        } else {
+            this.initializeSketchMode();
+        }
+    }
+    
+    initializeGrid() {
+        this.grid = [];
+        for (let y = 0; y < this.canvasHeight; y++) {
+            this.grid[y] = [];
+            for (let x = 0; x < this.canvasWidth; x++) {
+                this.grid[y][x] = 'transparent';
+            }
+        }
+    }
+    
+    initializeSketchMode() {
+        this.sketchCanvas.width = 800;
+        this.sketchCanvas.height = 600;
         
-        if (type === 'flip') {
-          if (value === 'H') newX = width - 1 - x;
-          if (value === 'V') newY = height - 1 - y;
-        } else if (type === 'rotate') {
-          if (value === 90) { // Clockwise
-            newX = y;
-            newY = targetHeight - 1 - x;
-          } else if (value === 180) {
-            newX = width - 1 - x;
-            newY = height - 1 - y;
-          } else if (value === -90) { // Counter-clockwise
-            newX = targetWidth - 1 - y;
-            newY = x;
-          }
+        if (this.layers.length === 0) {
+            this.addLayer();
+            // Fill background with white
+            this.sketchCtx.fillStyle = '#ffffff';
+            this.sketchCtx.fillRect(0, 0, this.sketchCanvas.width, this.sketchCanvas.height);
         }
         
-        if (newX >= 0 && newX < targetWidth && newY >= 0 && newY < targetHeight) {
-          const newIndex = newY * targetWidth + newX;
-          newData[newIndex] = color;
-        }
-      }
+        this.updateLayerList();
+        this.updateBrushPreview();
     }
     
-    // Apply new data, ensuring the new array size matches the new dimensions
-    if (isDimensionSwap) {
-        sprites[currentFrame].data = new Array(targetWidth * targetHeight).fill('transparent');
-        sprites[currentFrame].data = newData;
-        this.canvas.renderPixelGrid(); // Re-render grid after size change
-    } else {
-        sprites[currentFrame].data = newData;
-    }
-    
-    this.canvas.drawPixelCanvas();
-  }
-  
-  newProject() {
-    if (!confirm('Start a new project? All unsaved work will be lost.')) return;
-    
-    // Reset pixel state
-    this.state.pixel = {
-      width: 16,
-      height: 16,
-      cellSize: 30,
-      zoom: 100,
-      sprites: [{ id: 1, name: 'Frame 1', data: new Array(16 * 16).fill('transparent') }],
-      currentFrame: 0,
-      primaryColor: '#000000',
-      secondaryColor: '#ffffff',
-      activeTool: 'pencil',
-      symmetry: 'none',
-      history: [],
-      historyIndex: -1,
-      selection: null,
-      showGrid: true
-    };
-    
-    // Reset sketch state
-    this.state.sketch = {
-      width: 800,
-      height: 600,
-      layers: [this.canvas.createSketchLayer('Layer 1')],
-      activeLayer: 0,
-      color: '#000000',
-      size: 10,
-      opacity: 100,
-      hardness: 100,
-      flow: 100,
-      activeTool: 'brush',
-      history: [],
-      historyIndex: -1,
-      zoom: 100
-    };
-    
-    this.canvas.elements.canvasWidth.value = 16;
-    this.canvas.elements.canvasHeight.value = 16;
-    
-    // Reinitialize canvases and UI
-    this.canvas.initializeCanvases();
-    this.canvas.elements.primaryColor.style.backgroundColor = this.state.pixel.primaryColor;
-    this.canvas.elements.secondaryColor.style.backgroundColor = this.state.pixel.secondaryColor;
-    
-    this.setMode('pixel');
-    this.ui.updateUI();
-    this.updateCanvasDisplay();
-    this.history.pushHistory('New Project');
-  }
-  
-  exportJSON() {
-    const projectData = {
-      version: '1.0',
-      mode: this.state.mode,
-      pixel: {
-        width: this.state.pixel.width,
-        height: this.state.pixel.height,
-        sprites: this.state.pixel.sprites,
-        primaryColor: this.state.pixel.primaryColor,
-        secondaryColor: this.state.pixel.secondaryColor
-      },
-      sketch: {
-        width: this.state.sketch.width,
-        height: this.state.sketch.height,
-        layers: this.state.sketch.layers.map(layer => ({
-          id: layer.id,
-          name: layer.name,
-          opacity: layer.opacity,
-          blendMode: layer.blendMode,
-          visible: layer.visible,
-          imageData: layer.canvas.toDataURL()
-        }))
-      }
-    };
-    
-    const json = JSON.stringify(projectData, null, 2);
-    if (this.canvas.elements.output) this.canvas.elements.output.value = json;
-    
-    // Download file
-    const blob = new Blob([json], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'jerry_project.json';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  }
-  
-  exportPNG() {
-    let canvas, filename;
-    
-    // Create a temporary, composited canvas for export
-    const exportCanvas = document.createElement('canvas');
-    let width, height;
-
-    if (this.state.mode === 'pixel') {
-        width = this.state.pixel.width;
-        height = this.state.pixel.height;
-        exportCanvas.width = width;
-        exportCanvas.height = height;
-        const ctx = exportCanvas.getContext('2d');
-        ctx.imageSmoothingEnabled = false;
+    updatePixelCanvas() {
+        this.pixelCanvas.innerHTML = '';
+        this.pixelCanvas.style.gridTemplateColumns = `repeat(${this.canvasWidth}, ${this.pixelSize}px)`;
+        this.pixelCanvas.style.gridTemplateRows = `repeat(${this.canvasHeight}, ${this.pixelSize}px)`;
         
-        // Draw all sprites of the current frame
-        const spriteData = this.state.pixel.sprites[this.state.pixel.currentFrame]?.data || [];
-        for (let y = 0; y < height; y++) {
-            for (let x = 0; x < width; x++) {
-                const index = y * width + x;
-                const color = spriteData[index];
-                if (color && color !== 'transparent') {
-                    ctx.fillStyle = color;
-                    ctx.fillRect(x, y, 1, 1);
+        for (let y = 0; y < this.canvasHeight; y++) {
+            for (let x = 0; x < this.canvasWidth; x++) {
+                const pixel = document.createElement('div');
+                pixel.className = 'pixel';
+                pixel.style.backgroundColor = this.grid[y][x];
+                pixel.dataset.x = x;
+                pixel.dataset.y = y;
+                this.pixelCanvas.appendChild(pixel);
+            }
+        }
+    }
+    
+    updateGrid() {
+        if (this.mode !== 'pixel') return;
+        
+        this.canvasGrid.innerHTML = '';
+        if (!this.showGrid) return;
+        
+        this.canvasGrid.style.gridTemplateColumns = `repeat(${this.canvasWidth}, ${this.pixelSize}px)`;
+        this.canvasGrid.style.gridTemplateRows = `repeat(${this.canvasHeight}, ${this.pixelSize}px)`;
+        
+        for (let i = 0; i < this.canvasWidth * this.canvasHeight; i++) {
+            const gridCell = document.createElement('div');
+            gridCell.className = 'grid-cell';
+            this.canvasGrid.appendChild(gridCell);
+        }
+    }
+    
+    getCanvasPos(e) {
+        const rect = (this.mode === 'pixel' ? this.pixelCanvas : this.sketchCanvas).getBoundingClientRect();
+        return {
+            x: (e.clientX - rect.left) / this.zoom,
+            y: (e.clientY - rect.top) / this.zoom
+        };
+    }
+    
+    getPixelPos(e) {
+        const pos = this.getCanvasPos(e);
+        return {
+            x: Math.floor(pos.x / this.pixelSize),
+            y: Math.floor(pos.y / this.pixelSize)
+        };
+    }
+    
+    startDrawing(e) {
+        this.isDrawing = true;
+        const pos = this.mode === 'pixel' ? this.getPixelPos(e) : this.getCanvasPos(e);
+        this.lastPos = pos;
+        
+        this.saveState();
+        
+        if (this.mode === 'pixel') {
+            this.handlePixelTool(pos, e.button === 2);
+        } else {
+            this.handleSketchTool(pos, e);
+        }
+    }
+    
+    draw(e) {
+        if (!this.isDrawing) return;
+        
+        const pos = this.mode === 'pixel' ? this.getPixelPos(e) : this.getCanvasPos(e);
+        
+        if (this.mode === 'pixel') {
+            this.handlePixelTool(pos, e.button === 2);
+        } else {
+            this.handleSketchTool(pos, e);
+        }
+        
+        this.lastPos = pos;
+    }
+    
+    stopDrawing() {
+        this.isDrawing = false;
+        this.lastPos = null;
+        
+        if (this.mode === 'sketch' && this.currentTool !== 'select') {
+            this.mergeCurrentStroke();
+        }
+    }
+    
+    handlePixelTool(pos, rightClick = false) {
+        if (pos.x < 0 || pos.x >= this.canvasWidth || pos.y < 0 || pos.y >= this.canvasHeight) return;
+        
+        const color = rightClick ? this.secondaryColor : this.primaryColor;
+        
+        switch (this.currentTool) {
+            case 'pencil':
+            case 'symmetricPencil':
+                this.drawPixel(pos.x, pos.y, color);
+                if (this.currentTool === 'symmetricPencil') {
+                    this.applySymmetry(pos.x, pos.y, color);
+                }
+                break;
+                
+            case 'eraser':
+            case 'symmetricEraser':
+                this.drawPixel(pos.x, pos.y, 'transparent');
+                if (this.currentTool === 'symmetricEraser') {
+                    this.applySymmetry(pos.x, pos.y, 'transparent');
+                }
+                break;
+                
+            case 'eyedropper':
+                const pickedColor = this.grid[pos.y][pos.x];
+                if (pickedColor !== 'transparent') {
+                    if (rightClick) {
+                        this.secondaryColor = pickedColor;
+                        this.secondaryColorEl.style.background = pickedColor;
+                    } else {
+                        this.primaryColor = pickedColor;
+                        this.primaryColorEl.style.background = pickedColor;
+                    }
+                }
+                break;
+                
+            case 'fill':
+            case 'symmetricFill':
+                this.floodFill(pos.x, pos.y, color);
+                if (this.currentTool === 'symmetricFill') {
+                    const symmetryPositions = this.getSymmetryPositions(pos.x, pos.y);
+                    symmetryPositions.forEach(sPos => {
+                        this.floodFill(sPos.x, sPos.y, color);
+                    });
+                }
+                break;
+                
+            case 'line':
+                if (this.lastPos && (this.lastPos.x !== pos.x || this.lastPos.y !== pos.y)) {
+                    this.drawLine(this.lastPos.x, this.lastPos.y, pos.x, pos.y, color);
+                }
+                break;
+                
+            case 'rect':
+            case 'rectFilled':
+                if (this.lastPos && (this.lastPos.x !== pos.x || this.lastPos.y !== pos.y)) {
+                    this.drawRect(this.lastPos.x, this.lastPos.y, pos.x, pos.y, color, this.currentTool === 'rectFilled');
+                }
+                break;
+                
+            case 'circle':
+            case 'circleFilled':
+                if (this.lastPos && (this.lastPos.x !== pos.x || this.lastPos.y !== pos.y)) {
+                    this.drawCircle(this.lastPos.x, this.lastPos.y, pos.x, pos.y, color, this.currentTool === 'circleFilled');
+                }
+                break;
+        }
+        
+        this.updatePixelCanvas();
+    }
+    
+    handleSketchTool(pos, e) {
+        const ctx = this.layers[this.currentLayer].ctx;
+        const color = this.primaryColor;
+        
+        ctx.globalAlpha = this.brushOpacity / 100;
+        ctx.globalCompositeOperation = this.blendMode;
+        
+        switch (this.currentTool) {
+            case 'brush':
+                this.drawBrush(ctx, pos, color, 'soft');
+                break;
+                
+            case 'pen':
+                this.drawBrush(ctx, pos, color, 'hard');
+                break;
+                
+            case 'marker':
+                this.drawMarker(ctx, pos, color);
+                break;
+                
+            case 'pencilSketch':
+                this.drawPencil(ctx, pos, color);
+                break;
+                
+            case 'charcoal':
+                this.drawCharcoal(ctx, pos, color);
+                break;
+                
+            case 'eraser':
+                ctx.globalCompositeOperation = 'destination-out';
+                this.drawBrush(ctx, pos, color, 'soft');
+                break;
+                
+            case 'smudge':
+                this.smudge(ctx, pos);
+                break;
+                
+            case 'blur':
+                this.blur(ctx, pos);
+                break;
+                
+            case 'lineSketch':
+                if (this.lastPos && this.isDrawing) {
+                    this.drawSketchLine(ctx, this.lastPos, pos, color);
+                }
+                break;
+                
+            case 'rectSketch':
+                if (this.lastPos && this.isDrawing) {
+                    this.drawSketchRect(ctx, this.lastPos, pos, color);
+                }
+                break;
+                
+            case 'circleSketch':
+                if (this.lastPos && this.isDrawing) {
+                    this.drawSketchCircle(ctx, this.lastPos, pos, color);
+                }
+                break;
+                
+            case 'sprayPaint':
+                this.drawSprayPaint(ctx, pos, color);
+                break;
+        }
+        
+        this.redrawLayers();
+    }
+    
+    drawPixel(x, y, color) {
+        if (x < 0 || x >= this.canvasWidth || y < 0 || y >= this.canvasHeight) return;
+        this.grid[y][x] = color;
+    }
+    
+    applySymmetry(x, y, color) {
+        const positions = this.getSymmetryPositions(x, y);
+        positions.forEach(pos => this.drawPixel(pos.x, pos.y, color));
+    }
+    
+    getSymmetryPositions(x, y) {
+        const positions = [];
+        const centerX = Math.floor(this.canvasWidth / 2);
+        const centerY = Math.floor(this.canvasHeight / 2);
+        
+        switch (this.symmetryMode) {
+            case 'horizontal':
+                positions.push({ x: this.canvasWidth - 1 - x, y });
+                break;
+            case 'vertical':
+                positions.push({ x, y: this.canvasHeight - 1 - y });
+                break;
+            case 'both':
+                positions.push(
+                    { x: this.canvasWidth - 1 - x, y },
+                    { x, y: this.canvasHeight - 1 - y },
+                    { x: this.canvasWidth - 1 - x, y: this.canvasHeight - 1 - y }
+                );
+                break;
+        }
+        
+        return positions;
+    }
+    
+    floodFill(startX, startY, fillColor) {
+        const targetColor = this.grid[startY][startX];
+        if (targetColor === fillColor) return;
+        
+        const stack = [{ x: startX, y: startY }];
+        
+        while (stack.length > 0) {
+            const { x, y } = stack.pop();
+            
+            if (x < 0 || x >= this.canvasWidth || y < 0 || y >= this.canvasHeight) continue;
+            if (this.grid[y][x] !== targetColor) continue;
+            
+            this.grid[y][x] = fillColor;
+            
+            stack.push(
+                { x: x + 1, y },
+                { x: x - 1, y },
+                { x, y: y + 1 },
+                { x, y: y - 1 }
+            );
+        }
+    }
+    
+    drawLine(x0, y0, x1, y1, color) {
+        const dx = Math.abs(x1 - x0);
+        const dy = Math.abs(y1 - y0);
+        const sx = x0 < x1 ? 1 : -1;
+        const sy = y0 < y1 ? 1 : -1;
+        let err = dx - dy;
+        
+        while (true) {
+            this.drawPixel(x0, y0, color);
+            
+            if (x0 === x1 && y0 === y1) break;
+            
+            const e2 = 2 * err;
+            if (e2 > -dy) {
+                err -= dy;
+                x0 += sx;
+            }
+            if (e2 < dx) {
+                err += dx;
+                y0 += sy;
+            }
+        }
+    }
+    
+    drawRect(x0, y0, x1, y1, color, filled = false) {
+        const minX = Math.min(x0, x1);
+        const maxX = Math.max(x0, x1);
+        const minY = Math.min(y0, y1);
+        const maxY = Math.max(y0, y1);
+        
+        if (filled) {
+            for (let y = minY; y <= maxY; y++) {
+                for (let x = minX; x <= maxX; x++) {
+                    this.drawPixel(x, y, color);
+                }
+            }
+        } else {
+            for (let x = minX; x <= maxX; x++) {
+                this.drawPixel(x, minY, color);
+                this.drawPixel(x, maxY, color);
+            }
+            for (let y = minY; y <= maxY; y++) {
+                this.drawPixel(minX, y, color);
+                this.drawPixel(maxX, y, color);
+            }
+        }
+    }
+    
+    drawCircle(x0, y0, x1, y1, color, filled = false) {
+        const radius = Math.floor(Math.sqrt(Math.pow(x1 - x0, 2) + Math.pow(y1 - y0, 2)));
+        
+        if (filled) {
+            for (let y = -radius; y <= radius; y++) {
+                for (let x = -radius; x <= radius; x++) {
+                    if (x * x + y * y <= radius * radius) {
+                        this.drawPixel(x0 + x, y0 + y, color);
+                    }
+                }
+            }
+        } else {
+            let x = radius;
+            let y = 0;
+            let err = 0;
+            
+            while (x >= y) {
+                this.drawPixel(x0 + x, y0 + y, color);
+                this.drawPixel(x0 + y, y0 + x, color);
+                this.drawPixel(x0 - y, y0 + x, color);
+                this.drawPixel(x0 - x, y0 + y, color);
+                this.drawPixel(x0 - x, y0 - y, color);
+                this.drawPixel(x0 - y, y0 - x, color);
+                this.drawPixel(x0 + y, y0 - x, color);
+                this.drawPixel(x0 + x, y0 - y, color);
+                
+                if (err <= 0) {
+                    y += 1;
+                    err += 2 * y + 1;
+                }
+                
+                if (err > 0) {
+                    x -= 1;
+                    err -= 2 * x + 1;
                 }
             }
         }
-        filename = 'pixel_art.png';
-    } else {
-        width = this.state.sketch.width;
-        height = this.state.sketch.height;
-        exportCanvas.width = width;
-        exportCanvas.height = height;
-        const ctx = exportCanvas.getContext('2d');
+    }
+    
+    // Sketch drawing methods
+    drawBrush(ctx, pos, color, type = 'soft') {
+        if (!this.lastPos || !this.isDrawing) {
+            ctx.beginPath();
+            ctx.arc(pos.x, pos.y, this.brushSize / 2, 0, 2 * Math.PI);
+            ctx.fillStyle = color;
+            ctx.fill();
+            return;
+        }
         
-        // Draw all layers onto the export canvas
-        this.state.sketch.layers.forEach(layer => {
+        const distance = Math.sqrt(
+            Math.pow(pos.x - this.lastPos.x, 2) + 
+            Math.pow(pos.y - this.lastPos.y, 2)
+        );
+        
+        const steps = Math.max(1, Math.floor(distance));
+        
+        for (let i = 0; i <= steps; i++) {
+            const t = i / steps;
+            const x = this.lastPos.x + (pos.x - this.lastPos.x) * t;
+            const y = this.lastPos.y + (pos.y - this.lastPos.y) * t;
+            
+            if (type === 'soft') {
+                const gradient = ctx.createRadialGradient(x, y, 0, x, y, this.brushSize / 2);
+                const alpha = this.brushOpacity / 100 * (this.brushHardness / 100);
+                gradient.addColorStop(0, this.hexToRgba(color, alpha));
+                gradient.addColorStop(1, this.hexToRgba(color, 0));
+                
+                ctx.fillStyle = gradient;
+            } else {
+                ctx.fillStyle = color;
+            }
+            
+            ctx.beginPath();
+            ctx.arc(x, y, this.brushSize / 2, 0, 2 * Math.PI);
+            ctx.fill();
+        }
+    }
+    
+    drawMarker(ctx, pos, color) {
+        ctx.globalAlpha = 0.3;
+        ctx.fillStyle = color;
+        ctx.beginPath();
+        
+        if (this.lastPos && this.isDrawing) {
+            ctx.moveTo(this.lastPos.x, this.lastPos.y);
+            ctx.lineTo(pos.x, pos.y);
+            ctx.lineWidth = this.brushSize;
+            ctx.lineCap = 'round';
+            ctx.stroke();
+        } else {
+            ctx.arc(pos.x, pos.y, this.brushSize / 2, 0, 2 * Math.PI);
+            ctx.fill();
+        }
+    }
+    
+    drawPencil(ctx, pos, color) {
+        ctx.globalAlpha = 0.7;
+        ctx.strokeStyle = color;
+        ctx.lineWidth = this.brushSize * 0.5;
+        ctx.lineCap = 'round';
+        
+        // Add texture by drawing multiple thin lines
+        const jitter = this.brushSize * 0.1;
+        for (let i = 0; i < 3; i++) {
+            ctx.beginPath();
+            const offsetX = (Math.random() - 0.5) * jitter;
+            const offsetY = (Math.random() - 0.5) * jitter;
+            
+            if (this.lastPos && this.isDrawing) {
+                ctx.moveTo(this.lastPos.x + offsetX, this.lastPos.y + offsetY);
+                ctx.lineTo(pos.x + offsetX, pos.y + offsetY);
+            } else {
+                ctx.moveTo(pos.x + offsetX, pos.y + offsetY);
+                ctx.lineTo(pos.x + offsetX + 1, pos.y + offsetY + 1);
+            }
+            ctx.stroke();
+        }
+    }
+    
+    drawCharcoal(ctx, pos, color) {
+        ctx.globalAlpha = 0.4;
+        ctx.fillStyle = color;
+        
+        // Charcoal has rough, scattered texture
+        const particles = Math.floor(this.brushSize / 2);
+        for (let i = 0; i < particles; i++) {
+            const angle = Math.random() * Math.PI * 2;
+            const distance = Math.random() * this.brushSize / 2;
+            const x = pos.x + Math.cos(angle) * distance;
+            const y = pos.y + Math.sin(angle) * distance;
+            const size = Math.random() * 3 + 1;
+            
+            ctx.beginPath();
+            ctx.arc(x, y, size, 0, 2 * Math.PI);
+            ctx.fill();
+        }
+    }
+    
+    drawSprayPaint(ctx, pos, color) {
+        ctx.fillStyle = color;
+        ctx.globalAlpha = 0.1;
+        
+        const sprayDensity = this.brushSize;
+        for (let i = 0; i < sprayDensity; i++) {
+            const angle = Math.random() * Math.PI * 2;
+            const distance = Math.random() * this.brushSize;
+            const x = pos.x + Math.cos(angle) * distance;
+            const y = pos.y + Math.sin(angle) * distance;
+            
+            ctx.beginPath();
+            ctx.arc(x, y, 1, 0, 2 * Math.PI);
+            ctx.fill();
+        }
+    }
+    
+    smudge(ctx, pos) {
+        if (!this.lastPos) return;
+        
+        const radius = this.brushSize / 2;
+        const imageData = ctx.getImageData(pos.x - radius, pos.y - radius, radius * 2, radius * 2);
+        
+        // Simple smudge effect by shifting pixels
+        const dx = (pos.x - this.lastPos.x) * 0.5;
+        const dy = (pos.y - this.lastPos.y) * 0.5;
+        
+        ctx.putImageData(imageData, pos.x - radius + dx, pos.y - radius + dy);
+    }
+    
+    blur(ctx, pos) {
+        const radius = this.brushSize / 2;
+        const imageData = ctx.getImageData(pos.x - radius, pos.y - radius, radius * 2, radius * 2);
+        const data = imageData.data;
+        
+        // Simple box blur
+        const blurRadius = 2;
+        for (let y = blurRadius; y < radius * 2 - blurRadius; y++) {
+            for (let x = blurRadius; x < radius * 2 - blurRadius; x++) {
+                let r = 0, g = 0, b = 0, a = 0, count = 0;
+                
+                for (let dy = -blurRadius; dy <= blurRadius; dy++) {
+                    for (let dx = -blurRadius; dx <= blurRadius; dx++) {
+                        const idx = ((y + dy) * radius * 2 + (x + dx)) * 4;
+                        r += data[idx];
+                        g += data[idx + 1];
+                        b += data[idx + 2];
+                        a += data[idx + 3];
+                        count++;
+                    }
+                }
+                
+                const idx = (y * radius * 2 + x) * 4;
+                data[idx] = r / count;
+                data[idx + 1] = g / count;
+                data[idx + 2] = b / count;
+                data[idx + 3] = a / count;
+            }
+        }
+        
+        ctx.putImageData(imageData, pos.x - radius, pos.y - radius);
+    }
+    
+    drawSketchLine(ctx, start, end, color) {
+        ctx.strokeStyle = color;
+        ctx.lineWidth = this.brushSize;
+        ctx.lineCap = 'round';
+        ctx.beginPath();
+        ctx.moveTo(start.x, start.y);
+        ctx.lineTo(end.x, end.y);
+        ctx.stroke();
+    }
+    
+    drawSketchRect(ctx, start, end, color) {
+        ctx.strokeStyle = color;
+        ctx.lineWidth = this.brushSize;
+        ctx.strokeRect(
+            Math.min(start.x, end.x),
+            Math.min(start.y, end.y),
+            Math.abs(end.x - start.x),
+            Math.abs(end.y - start.y)
+        );
+    }
+    
+    drawSketchCircle(ctx, start, end, color) {
+        const radius = Math.sqrt(Math.pow(end.x - start.x, 2) + Math.pow(end.y - start.y, 2));
+        ctx.strokeStyle = color;
+        ctx.lineWidth = this.brushSize;
+        ctx.beginPath();
+        ctx.arc(start.x, start.y, radius, 0, 2 * Math.PI);
+        ctx.stroke();
+    }
+    
+    // Layer management
+    addLayer() {
+        const canvas = document.createElement('canvas');
+        canvas.width = this.sketchCanvas.width;
+        canvas.height = this.sketchCanvas.height;
+        const ctx = canvas.getContext('2d');
+        
+        const layer = {
+            canvas: canvas,
+            ctx: ctx,
+            visible: true,
+            opacity: 1,
+            blendMode: 'source-over',
+            name: `Layer ${this.layers.length + 1}`
+        };
+        
+        this.layers.push(layer);
+        this.currentLayer = this.layers.length - 1;
+        this.updateLayerList();
+        this.redrawLayers();
+    }
+    
+    updateLayerList() {
+        if (!this.layerList) return;
+        
+        this.layerList.innerHTML = '';
+        
+        for (let i = this.layers.length - 1; i >= 0; i--) {
+            const layer = this.layers[i];
+            const layerEl = document.createElement('div');
+            layerEl.className = `layer-item ${i === this.currentLayer ? 'active' : ''}`;
+            layerEl.innerHTML = `
+                <span class="layer-name">${layer.name}</span>
+                <button class="layer-toggle ${layer.visible ? 'visible' : 'hidden'}" data-layer="${i}">👁</button>
+                <button class="layer-delete" data-layer="${i}">🗑</button>
+            `;
+            
+            layerEl.addEventListener('click', (e) => {
+                if (!e.target.classList.contains('layer-toggle') && !e.target.classList.contains('layer-delete')) {
+                    this.currentLayer = i;
+                    this.updateLayerList();
+                    this.updateLayerControls();
+                }
+            });
+            
+            layerEl.querySelector('.layer-toggle').addEventListener('click', (e) => {
+                e.stopPropagation();
+                layer.visible = !layer.visible;
+                this.updateLayerList();
+                this.redrawLayers();
+            });
+            
+            layerEl.querySelector('.layer-delete').addEventListener('click', (e) => {
+                e.stopPropagation();
+                if (this.layers.length > 1) {
+                    this.layers.splice(i, 1);
+                    if (this.currentLayer >= this.layers.length) {
+                        this.currentLayer = this.layers.length - 1;
+                    }
+                    this.updateLayerList();
+                    this.updateLayerControls();
+                    this.redrawLayers();
+                }
+            });
+            
+            this.layerList.appendChild(layerEl);
+        }
+    }
+    
+    updateLayerControls() {
+        if (!this.layers[this.currentLayer]) return;
+        
+        const layer = this.layers[this.currentLayer];
+        if (this.layerOpacitySlider) {
+            this.layerOpacitySlider.value = layer.opacity * 100;
+            document.getElementById('layerOpacityLabel').textContent = Math.round(layer.opacity * 100);
+        }
+        
+        if (this.blendModeSelect) {
+            this.blendModeSelect.value = layer.blendMode;
+        }
+    }
+    
+    redrawLayers() {
+        // Clear main canvas
+        this.sketchCtx.clearRect(0, 0, this.sketchCanvas.width, this.sketchCanvas.height);
+        
+        // Composite all visible layers
+        for (let i = 0; i < this.layers.length; i++) {
+            const layer = this.layers[i];
             if (layer.visible) {
-                ctx.globalAlpha = layer.opacity / 100;
-                ctx.globalCompositeOperation = layer.blendMode;
+                this.sketchCtx.save();
+                this.sketchCtx.globalAlpha = layer.opacity;
+                this.sketchCtx.globalCompositeOperation = layer.blendMode;
+                this.sketchCtx.drawImage(layer.canvas, 0, 0);
+                this.sketchCtx.restore();
+            }
+        }
+    }
+    
+    mergeCurrentStroke() {
+        // This would typically merge the current stroke to the layer
+        // For now, strokes are drawn directly to layer canvas
+    }
+    
+    // Utility methods
+    hexToRgba(hex, alpha) {
+        const r = parseInt(hex.slice(1, 3), 16);
+        const g = parseInt(hex.slice(3, 5), 16);
+        const b = parseInt(hex.slice(5, 7), 16);
+        return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+    }
+    
+    updateBrushPreview() {
+        const preview = document.getElementById('brushPreview');
+        if (!preview) return;
+        
+        preview.innerHTML = '';
+        const canvas = document.createElement('canvas');
+        canvas.width = 60;
+        canvas.height = 60;
+        const ctx = canvas.getContext('2d');
+        
+        // Draw brush preview
+        const centerX = canvas.width / 2;
+        const centerY = canvas.height / 2;
+        const previewSize = Math.min(this.brushSize, 25);
+        
+        if (this.brushHardness < 100) {
+            const gradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, previewSize / 2);
+            gradient.addColorStop(0, this.primaryColor);
+            gradient.addColorStop(this.brushHardness / 100, this.primaryColor);
+            gradient.addColorStop(1, 'transparent');
+            ctx.fillStyle = gradient;
+        } else {
+            ctx.fillStyle = this.primaryColor;
+        }
+        
+        ctx.globalAlpha = this.brushOpacity / 100;
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, previewSize / 2, 0, 2 * Math.PI);
+        ctx.fill();
+        
+        preview.appendChild(canvas);
+    }
+    
+    // Transform operations
+    rotate(degrees) {
+        if (this.mode === 'pixel') {
+            this.rotatePixelCanvas(degrees);
+        } else {
+            this.rotateSketchCanvas(degrees);
+        }
+    }
+    
+    rotatePixelCanvas(degrees) {
+        const newGrid = [];
+        const radians = (degrees * Math.PI) / 180;
+        const cos = Math.cos(radians);
+        const sin = Math.sin(radians);
+        
+        // For 90-degree rotations, we can do exact pixel rotation
+        if (degrees === 90 || degrees === -270) {
+            for (let x = 0; x < this.canvasWidth; x++) {
+                newGrid[x] = [];
+                for (let y = 0; y < this.canvasHeight; y++) {
+                    newGrid[x][y] = this.grid[this.canvasHeight - 1 - y][x];
+                }
+            }
+        } else if (degrees === -90 || degrees === 270) {
+            for (let x = 0; x < this.canvasWidth; x++) {
+                newGrid[x] = [];
+                for (let y = 0; y < this.canvasHeight; y++) {
+                    newGrid[x][y] = this.grid[y][this.canvasWidth - 1 - x];
+                }
+            }
+        } else if (degrees === 180 || degrees === -180) {
+            for (let y = 0; y < this.canvasHeight; y++) {
+                newGrid[y] = [];
+                for (let x = 0; x < this.canvasWidth; x++) {
+                    newGrid[y][x] = this.grid[this.canvasHeight - 1 - y][this.canvasWidth - 1 - x];
+                }
+            }
+        }
+        
+        this.grid = newGrid;
+        this.updatePixelCanvas();
+    }
+    
+    rotateSketchCanvas(degrees) {
+        const layer = this.layers[this.currentLayer];
+        if (!layer) return;
+        
+        const tempCanvas = document.createElement('canvas');
+        tempCanvas.width = layer.canvas.width;
+        tempCanvas.height = layer.canvas.height;
+        const tempCtx = tempCanvas.getContext('2d');
+        
+        tempCtx.save();
+        tempCtx.translate(tempCanvas.width / 2, tempCanvas.height / 2);
+        tempCtx.rotate((degrees * Math.PI) / 180);
+        tempCtx.translate(-tempCanvas.width / 2, -tempCanvas.height / 2);
+        tempCtx.drawImage(layer.canvas, 0, 0);
+        tempCtx.restore();
+        
+        layer.ctx.clearRect(0, 0, layer.canvas.width, layer.canvas.height);
+        layer.ctx.drawImage(tempCanvas, 0, 0);
+        
+        this.redrawLayers();
+    }
+    
+    flip(direction) {
+        if (this.mode === 'pixel') {
+            this.flipPixelCanvas(direction);
+        } else {
+            this.flipSketchCanvas(direction);
+        }
+    }
+    
+    flipPixelCanvas(direction) {
+        const newGrid = JSON.parse(JSON.stringify(this.grid));
+        
+        if (direction === 'horizontal') {
+            for (let y = 0; y < this.canvasHeight; y++) {
+                for (let x = 0; x < this.canvasWidth; x++) {
+                    newGrid[y][x] = this.grid[y][this.canvasWidth - 1 - x];
+                }
+            }
+        } else if (direction === 'vertical') {
+            for (let y = 0; y < this.canvasHeight; y++) {
+                for (let x = 0; x < this.canvasWidth; x++) {
+                    newGrid[y][x] = this.grid[this.canvasHeight - 1 - y][x];
+                }
+            }
+        }
+        
+        this.grid = newGrid;
+        this.updatePixelCanvas();
+    }
+    
+    flipSketchCanvas(direction) {
+        const layer = this.layers[this.currentLayer];
+        if (!layer) return;
+        
+        const tempCanvas = document.createElement('canvas');
+        tempCanvas.width = layer.canvas.width;
+        tempCanvas.height = layer.canvas.height;
+        const tempCtx = tempCanvas.getContext('2d');
+        
+        tempCtx.save();
+        if (direction === 'horizontal') {
+            tempCtx.scale(-1, 1);
+            tempCtx.translate(-tempCanvas.width, 0);
+        } else {
+            tempCtx.scale(1, -1);
+            tempCtx.translate(0, -tempCanvas.height);
+        }
+        tempCtx.drawImage(layer.canvas, 0, 0);
+        tempCtx.restore();
+        
+        layer.ctx.clearRect(0, 0, layer.canvas.width, layer.canvas.height);
+        layer.ctx.drawImage(tempCanvas, 0, 0);
+        
+        this.redrawLayers();
+    }
+    
+    // Canvas operations
+    resizeCanvas() {
+        const newWidth = parseInt(this.canvasWidthInput.value);
+        const newHeight = parseInt(this.canvasHeightInput.value);
+        
+        if (this.mode === 'pixel') {
+            this.resizePixelCanvas(newWidth, newHeight);
+        }
+    }
+    
+    resizePixelCanvas(newWidth, newHeight) {
+        const newGrid = [];
+        for (let y = 0; y < newHeight; y++) {
+            newGrid[y] = [];
+            for (let x = 0; x < newWidth; x++) {
+                if (y < this.canvasHeight && x < this.canvasWidth) {
+                    newGrid[y][x] = this.grid[y][x];
+                } else {
+                    newGrid[y][x] = 'transparent';
+                }
+            }
+        }
+        
+        this.canvasWidth = newWidth;
+        this.canvasHeight = newHeight;
+        this.grid = newGrid;
+        
+        this.updatePixelCanvas();
+        this.updateGrid();
+        this.updateCanvasInfo();
+    }
+    
+    resizeSketchCanvas(width, height) {
+        this.sketchCanvas.width = width;
+        this.sketchCanvas.height = height;
+        this.selectionOverlay.width = width;
+        this.selectionOverlay.height = height;
+        
+        // Resize all layers
+        this.layers.forEach(layer => {
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = width;
+            tempCanvas.height = height;
+            const tempCtx = tempCanvas.getContext('2d');
+            tempCtx.drawImage(layer.canvas, 0, 0);
+            
+            layer.canvas.width = width;
+            layer.canvas.height = height;
+            layer.ctx.drawImage(tempCanvas, 0, 0);
+        });
+        
+        this.redrawLayers();
+        this.updateCanvasInfo();
+    }
+    
+    clearCanvas() {
+        if (confirm('Clear the entire canvas? This cannot be undone.')) {
+            this.saveState();
+            
+            if (this.mode === 'pixel') {
+                this.initializeGrid();
+                this.updatePixelCanvas();
+            } else {
+                const layer = this.layers[this.currentLayer];
+                if (layer) {
+                    layer.ctx.clearRect(0, 0, layer.canvas.width, layer.canvas.height);
+                    this.redrawLayers();
+                }
+            }
+        }
+    }
+    
+    // Zoom operations
+    adjustZoom(factor) {
+        this.setZoom(this.zoom * factor);
+    }
+    
+    setZoom(zoom) {
+        this.zoom = Math.max(0.25, Math.min(8, zoom));
+        
+        const canvasWrapper = document.querySelector('.canvas-wrapper');
+        canvasWrapper.style.transform = `scale(${this.zoom})`;
+        
+        this.zoomIndicator.textContent = `${Math.round(this.zoom * 100)}%`;
+    }
+    
+    // Undo/Redo system
+    saveState() {
+        if (this.mode === 'pixel') {
+            const state = {
+                grid: JSON.parse(JSON.stringify(this.grid)),
+                canvasWidth: this.canvasWidth,
+                canvasHeight: this.canvasHeight
+            };
+            
+            this.undoStack.push(state);
+            if (this.undoStack.length > this.maxUndoSteps) {
+                this.undoStack.shift();
+            }
+            this.redoStack = [];
+        } else {
+            // For sketch mode, save layer states
+            const state = this.layers.map(layer => {
+                const canvas = document.createElement('canvas');
+                canvas.width = layer.canvas.width;
+                canvas.height = layer.canvas.height;
+                const ctx = canvas.getContext('2d');
                 ctx.drawImage(layer.canvas, 0, 0);
+                return {
+                    canvas: canvas,
+                    visible: layer.visible,
+                    opacity: layer.opacity,
+                    blendMode: layer.blendMode,
+                    name: layer.name
+                };
+            });
+            
+            this.undoStack.push(state);
+            if (this.undoStack.length > this.maxUndoSteps) {
+                this.undoStack.shift();
+            }
+            this.redoStack = [];
+        }
+    }
+    
+    undo() {
+        if (this.undoStack.length === 0) return;
+        
+        if (this.mode === 'pixel') {
+            const currentState = {
+                grid: JSON.parse(JSON.stringify(this.grid)),
+                canvasWidth: this.canvasWidth,
+                canvasHeight: this.canvasHeight
+            };
+            this.redoStack.push(currentState);
+            
+            const prevState = this.undoStack.pop();
+            this.grid = prevState.grid;
+            this.canvasWidth = prevState.canvasWidth;
+            this.canvasHeight = prevState.canvasHeight;
+            
+            this.canvasWidthInput.value = this.canvasWidth;
+            this.canvasHeightInput.value = this.canvasHeight;
+            this.updatePixelCanvas();
+            this.updateGrid();
+        } else {
+            // Save current state to redo stack
+            const currentState = this.layers.map(layer => {
+                const canvas = document.createElement('canvas');
+                canvas.width = layer.canvas.width;
+                canvas.height = layer.canvas.height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(layer.canvas, 0, 0);
+                return {
+                    canvas: canvas,
+                    visible: layer.visible,
+                    opacity: layer.opacity,
+                    blendMode: layer.blendMode,
+                    name: layer.name
+                };
+            });
+            this.redoStack.push(currentState);
+            
+            // Restore previous state
+            const prevState = this.undoStack.pop();
+            this.layers = prevState.map(layerState => {
+                const canvas = document.createElement('canvas');
+                canvas.width = layerState.canvas.width;
+                canvas.height = layerState.canvas.height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(layerState.canvas, 0, 0);
+                
+                return {
+                    canvas: canvas,
+                    ctx: ctx,
+                    visible: layerState.visible,
+                    opacity: layerState.opacity,
+                    blendMode: layerState.blendMode,
+                    name: layerState.name
+                };
+            });
+            
+            this.updateLayerList();
+            this.updateLayerControls();
+            this.redrawLayers();
+        }
+        
+        this.updateCanvasInfo();
+    }
+    
+    redo() {
+        if (this.redoStack.length === 0) return;
+        
+        if (this.mode === 'pixel') {
+            const currentState = {
+                grid: JSON.parse(JSON.stringify(this.grid)),
+                canvasWidth: this.canvasWidth,
+                canvasHeight: this.canvasHeight
+            };
+            this.undoStack.push(currentState);
+            
+            const nextState = this.redoStack.pop();
+            this.grid = nextState.grid;
+            this.canvasWidth = nextState.canvasWidth;
+            this.canvasHeight = nextState.canvasHeight;
+            
+            this.canvasWidthInput.value = this.canvasWidth;
+            this.canvasHeightInput.value = this.canvasHeight;
+            this.updatePixelCanvas();
+            this.updateGrid();
+        } else {
+            // Save current state to undo stack
+            const currentState = this.layers.map(layer => {
+                const canvas = document.createElement('canvas');
+                canvas.width = layer.canvas.width;
+                canvas.height = layer.canvas.height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(layer.canvas, 0, 0);
+                return {
+                    canvas: canvas,
+                    visible: layer.visible,
+                    opacity: layer.opacity,
+                    blendMode: layer.blendMode,
+                    name: layer.name
+                };
+            });
+            this.undoStack.push(currentState);
+            
+            // Restore next state
+            const nextState = this.redoStack.pop();
+            this.layers = nextState.map(layerState => {
+                const canvas = document.createElement('canvas');
+                canvas.width = layerState.canvas.width;
+                canvas.height = layerState.canvas.height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(layerState.canvas, 0, 0);
+                
+                return {
+                    canvas: canvas,
+                    ctx: ctx,
+                    visible: layerState.visible,
+                    opacity: layerState.opacity,
+                    blendMode: layerState.blendMode,
+                    name: layerState.name
+                };
+            });
+            
+            this.updateLayerList();
+            this.updateLayerControls();
+            this.redrawLayers();
+        }
+        
+        this.updateCanvasInfo();
+    }
+    
+    // Sprite management
+    newSprite() {
+        const spriteName = prompt('Enter sprite name:', `Sprite ${this.sprites.length + 1}`);
+        if (!spriteName) return;
+        
+        this.sprites.push({ name: spriteName, data: null });
+        this.updateSpriteSelector();
+    }
+    
+    duplicateSprite() {
+        const currentSprite = this.sprites[this.currentSprite];
+        const newName = prompt('Enter new sprite name:', `${currentSprite.name} Copy`);
+        if (!newName) return;
+        
+        this.sprites.push({
+            name: newName,
+            data: JSON.parse(JSON.stringify(this.grid))
+        });
+        this.updateSpriteSelector();
+    }
+    
+    deleteSprite() {
+        if (this.sprites.length <= 1) {
+            alert('Cannot delete the last sprite.');
+            return;
+        }
+        
+        if (confirm(`Delete sprite "${this.sprites[this.currentSprite].name}"?`)) {
+            this.sprites.splice(this.currentSprite, 1);
+            if (this.currentSprite >= this.sprites.length) {
+                this.currentSprite = this.sprites.length - 1;
+            }
+            this.switchSprite(this.currentSprite);
+            this.updateSpriteSelector();
+        }
+    }
+    
+    switchSprite(index) {
+        // Save current sprite data
+        this.sprites[this.currentSprite].data = JSON.parse(JSON.stringify(this.grid));
+        
+        // Switch to new sprite
+        this.currentSprite = index;
+        const spriteData = this.sprites[index].data;
+        
+        if (spriteData) {
+            this.grid = JSON.parse(JSON.stringify(spriteData));
+            this.canvasWidth = this.grid[0].length;
+            this.canvasHeight = this.grid.length;
+            this.canvasWidthInput.value = this.canvasWidth;
+            this.canvasHeightInput.value = this.canvasHeight;
+        } else {
+            this.initializeGrid();
+        }
+        
+        this.updatePixelCanvas();
+        this.updateGrid();
+        this.updateCanvasInfo();
+    }
+    
+    updateSpriteSelector() {
+        if (!this.spriteSelector) return;
+        
+        this.spriteSelector.innerHTML = '';
+        this.sprites.forEach((sprite, index) => {
+            const option = document.createElement('option');
+            option.value = index;
+            option.textContent = sprite.name;
+            option.selected = index === this.currentSprite;
+            this.spriteSelector.appendChild(option);
+        });
+    }
+    
+    // Color palette management
+    loadPalette(paletteName) {
+        const colors = this.palettes[paletteName] || this.palettes.basic;
+        
+        if (this.swatchesContainer) {
+            this.swatchesContainer.innerHTML = '';
+            colors.forEach(color => {
+                const swatch = document.createElement('div');
+                swatch.className = 'color-swatch';
+                swatch.style.backgroundColor = color;
+                swatch.title = color;
+                swatch.addEventListener('click', (e) => {
+                    if (e.button === 0) {
+                        this.primaryColor = color;
+                        this.primaryColorEl.style.background = color;
+                        if (this.sketchColorPicker) this.sketchColorPicker.value = color;
+                    }
+                });
+                swatch.addEventListener('contextmenu', (e) => {
+                    e.preventDefault();
+                    this.secondaryColor = color;
+                    this.secondaryColorEl.style.background = color;
+                });
+                this.swatchesContainer.appendChild(swatch);
+            });
+        }
+    }
+    
+    setupColorPickers() {
+        if (!this.colorPickers) return;
+        
+        for (let i = 0; i < 8; i++) {
+            const colorInput = document.createElement('input');
+            colorInput.type = 'color';
+            colorInput.className = 'color-picker';
+            colorInput.value = '#000000';
+            colorInput.addEventListener('change', (e) => {
+                this.updateCustomPalette();
+            });
+            this.colorPickers.appendChild(colorInput);
+        }
+    }
+    
+    updateCustomPalette() {
+        const customColors = Array.from(this.colorPickers.querySelectorAll('.color-picker'))
+            .map(input => input.value);
+        this.palettes.custom = customColors;
+    }
+    
+    saveCustomPalette() {
+        this.updateCustomPalette();
+        const paletteName = prompt('Enter palette name:', 'Custom Palette');
+        if (paletteName) {
+            this.palettes[paletteName.toLowerCase()] = [...this.palettes.custom];
+            
+            // Add to selector if not already there
+            if (!Array.from(this.paletteSelector.options).some(opt => opt.value === paletteName.toLowerCase())) {
+                const option = document.createElement('option');
+                option.value = paletteName.toLowerCase();
+                option.textContent = paletteName;
+                this.paletteSelector.appendChild(option);
+            }
+            
+            this.savePalettes();
+        }
+    }
+    
+    savePalettes() {
+        localStorage.setItem('jerryEditor_palettes', JSON.stringify(this.palettes));
+    }
+    
+    loadSavedPalettes() {
+        const saved = localStorage.getItem('jerryEditor_palettes');
+        if (saved) {
+            const savedPalettes = JSON.parse(saved);
+            Object.assign(this.palettes, savedPalettes);
+        }
+    }
+    
+    openColorPicker(type) {
+        const input = document.createElement('input');
+        input.type = 'color';
+        input.value = type === 'primary' ? this.primaryColor : this.secondaryColor;
+        input.addEventListener('change', (e) => {
+            if (type === 'primary') {
+                this.primaryColor = e.target.value;
+                this.primaryColorEl.style.background = e.target.value;
+                if (this.sketchColorPicker) this.sketchColorPicker.value = e.target.value;
+            } else {
+                this.secondaryColor = e.target.value;
+                this.secondaryColorEl.style.background = e.target.value;
             }
         });
-        ctx.globalAlpha = 1;
-        ctx.globalCompositeOperation = 'source-over';
-        filename = 'sketch.png';
+        input.click();
     }
     
-    const scale = parseInt(prompt('Export scale (1-10):', '4')) || 4;
-    
-    // Create scaled canvas
-    const scaledCanvas = document.createElement('canvas');
-    scaledCanvas.width = width * scale;
-    scaledCanvas.height = height * scale;
-    const ctx = scaledCanvas.getContext('2d');
-    
-    if (this.state.mode === 'pixel') {
-      ctx.imageSmoothingEnabled = false;
-    }
-    
-    ctx.drawImage(exportCanvas, 0, 0, scaledCanvas.width, scaledCanvas.height);
-    
-    // Download
-    const url = scaledCanvas.toDataURL('image/png');
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  }
-  
-  importProject(e) {
-    const file = e.target.files[0];
-    if (!file) return;
-    
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      try {
-        const data = JSON.parse(event.target.result);
-        this.loadProjectData(data);
-        alert('Project imported successfully!');
-      } catch (error) {
-        alert('Error importing project: Invalid file format.');
-        console.error(error);
-      }
-    };
-    reader.readAsText(file);
-  }
-  
-  loadProjectData(data) {
-    if (data.pixel) {
-      this.state.pixel.width = data.pixel.width || 16;
-      this.state.pixel.height = data.pixel.height || 16;
-      // Ensure data array size is correct, filling with transparent if mismatch occurs
-      this.state.pixel.sprites = (data.pixel.sprites || []).map(s => ({
-          ...s,
-          data: s.data.slice(0, s.width * s.height || 256) // Simple size safety
-      }));
-      if (this.state.pixel.sprites.length === 0) {
-           this.state.pixel.sprites = [{ id: 1, name: 'Frame 1', data: new Array(this.state.pixel.width * this.state.pixel.height).fill('transparent') }];
-      }
-      
-      this.state.pixel.primaryColor = data.pixel.primaryColor || '#000000';
-      this.state.pixel.secondaryColor = data.pixel.secondaryColor || '#ffffff';
-      this.state.pixel.currentFrame = 0;
-      
-      if (this.canvas.elements.canvasWidth) this.canvas.elements.canvasWidth.value = this.state.pixel.width;
-      if (this.canvas.elements.canvasHeight) this.canvas.elements.canvasHeight.value = this.state.pixel.height;
-      if (this.canvas.elements.primaryColor) this.canvas.elements.primaryColor.style.backgroundColor = this.state.pixel.primaryColor;
-      if (this.canvas.elements.secondaryColor) this.canvas.elements.secondaryColor.style.backgroundColor = this.state.pixel.secondaryColor;
-    }
-    
-    if (data.sketch && data.sketch.layers) {
-      this.state.sketch.width = data.sketch.width || 800;
-      this.state.sketch.height = data.sketch.height || 600;
-      this.state.sketch.layers = [];
-      
-      // Update sketch canvas sizes before loading layers
-      this.canvas.elements.sketchCanvas.width = this.state.sketch.width;
-      this.canvas.elements.sketchCanvas.height = this.state.sketch.height;
-      this.canvas.elements.selectionOverlay.width = this.state.sketch.width;
-      this.canvas.elements.selectionOverlay.height = this.state.sketch.height;
-      
-      data.sketch.layers.forEach(layerData => {
-        const layer = this.canvas.createSketchLayer(layerData.name);
-        layer.id = layerData.id;
-        layer.opacity = layerData.opacity;
-        layer.blendMode = layerData.blendMode;
-        layer.visible = layerData.visible;
-        
-        if (layerData.imageData) {
-          const img = new Image();
-          img.onload = () => {
-            layer.ctx.drawImage(img, 0, 0);
-            this.canvas.drawSketchCanvas();
-          };
-          img.src = layerData.imageData;
-        }
-        
-        this.state.sketch.layers.push(layer);
-      });
-      
-      this.state.sketch.activeLayer = Math.min(0, this.state.sketch.layers.length - 1);
-    }
-    
-    this.setMode(data.mode || 'pixel');
-    this.ui.updateUI();
-    this.updateCanvasDisplay();
-    this.history.pushHistory('Import Project');
-  }
-
-  attachEventListeners() {
-    // Mode toggle
-    document.querySelectorAll('.mode-btn').forEach(btn => {
-      btn.onclick = () => this.setMode(btn.dataset.mode);
-    });
-  
-    // Tool selection
-    document.querySelectorAll('.tool-btn').forEach(btn => {
-      btn.onclick = () => {
-        const tool = btn.dataset.tool;
-        if (this.state.mode === 'pixel') {
-          this.state.pixel.activeTool = tool;
-        } else {
-          this.state.sketch.activeTool = tool;
-        }
-        this.ui.updateToolControls();
-        this.ui.updateCanvasInfo();
-      };
-    });
-    
-    // Primary/Secondary Color pickers
-    if (this.canvas.elements.primaryColor) {
-      this.canvas.elements.primaryColor.onclick = () => {
-        const colorInput = document.createElement('input');
-        colorInput.type = 'color';
-        colorInput.value = this.state.pixel.primaryColor;
-        colorInput.onchange = () => {
-          this.state.pixel.primaryColor = colorInput.value;
-          this.canvas.elements.primaryColor.style.backgroundColor = colorInput.value;
-          this.ui.updateCanvasInfo();
-        };
-        colorInput.click();
-      };
-    }
-    
-    if (this.canvas.elements.secondaryColor) {
-      this.canvas.elements.secondaryColor.onclick = () => {
-        const colorInput = document.createElement('input');
-        colorInput.type = 'color';
-        colorInput.value = this.state.pixel.secondaryColor;
-        colorInput.onchange = () => {
-          this.state.pixel.secondaryColor = colorInput.value;
-          this.canvas.elements.secondaryColor.style.backgroundColor = colorInput.value;
-          this.ui.updateCanvasInfo();
-        };
-        colorInput.click();
-      };
-    }
-
-    // ----------------------------
-    // Canvas input handlers
-    // ----------------------------
-    const canvasContainer = document.querySelector('.canvas-wrapper');
-  
-    const getCanvasCoords = (e) => {
-        const rect = e.currentTarget.getBoundingClientRect();
-        const clientX = e.clientX || (e.touches && e.touches[0].clientX);
-        const clientY = e.clientY || (e.touches && e.touches[0].clientY);
-        
-        let offsetX = clientX - rect.left;
-        let offsetY = clientY - rect.top;
-
-        if (this.state.mode === 'pixel') {
-          // FIX: Remove redundant division by zoomFactor.
-          // cellSize already incorporates the zoom for correct display scaling.
-          const cellSize = this.state.pixel.cellSize;
+    // Project management
+    newProject() {
+        if (confirm('Create a new project? Unsaved changes will be lost.')) {
+            this.initializeGrid();
+            this.sprites = [{ name: 'Sprite 1', data: null }];
+            this.currentSprite = 0;
             
-          // Calculate the pixel index using the current display cell size
-          const pixelX = Math.floor(offsetX / cellSize); 
-          const pixelY = Math.floor(offsetY / cellSize);
-          return { x: pixelX, y: pixelY, button: e.button };
-        } else {
-          const zoomFactor = this.state.sketch.zoom / 100;
-          // Sketch is a direct pixel-to-pixel map with scaling applied via CSS transform
-          const sketchX = offsetX / zoomFactor;
-          const sketchY = offsetY / zoomFactor;
-          return { x: sketchX, y: sketchY, button: e.button };
+            if (this.mode === 'sketch') {
+                this.layers = [];
+                this.addLayer();
+                // Fill background with white
+                this.layers[0].ctx.fillStyle = '#ffffff';
+                this.layers[0].ctx.fillRect(0, 0, this.sketchCanvas.width, this.sketchCanvas.height);
+            }
+            
+            this.undoStack = [];
+            this.redoStack = [];
+            
+            this.updatePixelCanvas();
+            this.updateGrid();
+            this.updateSpriteSelector();
+            this.updateLayerList();
+            this.redrawLayers();
+            this.updateCanvasInfo();
         }
-
-
-    // Pointer events (desktop + stylus)
-    canvasContainer.onpointerdown = (e) => {
-        e.preventDefault();
-        const { x, y, button } = getCanvasCoords(e);
-        this.drawingManager.start(x, y, button);
-    };
-    canvasContainer.onpointermove = (e) => {
-        e.preventDefault();
-        const { x, y } = getCanvasCoords(e);
-        this.drawingManager.move(x, y);
-    };
-    canvasContainer.onpointerup = (e) => {
-        e.preventDefault();
-        this.drawingManager.end();
-    };
-
-    canvasContainer.oncontextmenu = (e) => e.preventDefault();
-  
-    // Touch events (mobile) - already handled by pointer events on modern browsers, 
-    // but the fallback below ensures smooth operation.
-    canvasContainer.ontouchstart = (e) => {
-        e.preventDefault();
-        const { x, y, button } = getCanvasCoords(e);
-        this.drawingManager.start(x, y, 0); // Simulate left click for touch
-    };
-    canvasContainer.ontouchmove = (e) => {
-        e.preventDefault();
-        const { x, y } = getCanvasCoords(e);
-        this.drawingManager.move(x, y);
-    };
-    canvasContainer.ontouchend = (e) => {
-        e.preventDefault();
-        this.drawingManager.end();
-    };
-  
-    // ----------------------------
-    // Global pointerup (outside canvas)
-    // ----------------------------
-    document.onpointerup = () => this.drawingManager?.end();
-  
-    // ----------------------------
-    // Control Handlers
-    // ----------------------------
-    if (this.canvas.elements.newProject) this.canvas.elements.newProject.onclick = () => this.newProject();
-    if (this.canvas.elements.saveProject) this.canvas.elements.saveProject.onclick = () => this.exportJSON(); // Use JSON export as 'Save'
-    if (this.canvas.elements.exportPNG) this.canvas.elements.exportPNG.onclick = () => this.exportPNG();
-    if (this.canvas.elements.undo) this.canvas.elements.undo.onclick = () => this.history.undo();
-    if (this.canvas.elements.redo) this.canvas.elements.redo.onclick = () => this.history.redo();
-    if (this.canvas.elements.clear) this.canvas.elements.clear.onclick = () => this.clearCanvas();
-    if (this.canvas.elements.resizeCanvas) this.canvas.elements.resizeCanvas.onclick = () => this.resizeCanvas();
-  
-    if (this.canvas.elements.zoomIn) this.canvas.elements.zoomIn.onclick = () => this.adjustZoom(25);
-    if (this.canvas.elements.zoomOut) this.canvas.elements.zoomOut.onclick = () => this.adjustZoom(-25);
-    if (this.canvas.elements.zoomReset) this.canvas.elements.zoomReset.onclick = () => this.adjustZoom('reset');
-  
-    if (this.canvas.elements.gridToggle) {
-      this.canvas.elements.gridToggle.onchange = () => {
-        this.state.pixel.showGrid = this.canvas.elements.gridToggle.checked;
-        this.canvas.renderPixelGrid();
-      };
-    }
-  
-    if (this.canvas.elements.sketchColor) {
-      this.canvas.elements.sketchColor.oninput = () => {
-        this.state.sketch.color = this.canvas.elements.sketchColor.value;
-        this.ui.updateCanvasInfo();
-        this.ui.updateSketchControls();
-      };
     }
     
-    // Palette controls
-    if (this.canvas.elements.paletteSelector) this.canvas.elements.paletteSelector.onchange = () => this.ui.renderPaletteSwatches();
-    if (this.canvas.elements.saveCustomPalette) this.canvas.elements.saveCustomPalette.onclick = () => {
-      this.state.saveCustomPalette();
-      alert('Custom palette saved!');
-    };
-    
-    // Sprite controls
-    if (this.canvas.elements.spriteSelector) {
-      this.canvas.elements.spriteSelector.onchange = (e) => {
-        this.state.pixel.currentFrame = parseInt(e.target.value);
-        this.canvas.drawPixelCanvas();
-      };
+    saveProject() {
+        const project = this.getProjectData();
+        localStorage.setItem('jerryEditor_project', JSON.stringify(project));
+        
+        // Visual feedback
+        const btn = document.getElementById('saveProject');
+        const originalText = btn.textContent;
+        btn.textContent = 'Saved!';
+        btn.classList.add('success');
+        setTimeout(() => {
+            btn.textContent = originalText;
+            btn.classList.remove('success');
+        }, 1000);
     }
-    if (this.canvas.elements.newSprite) this.canvas.elements.newSprite.onclick = () => this.newSprite();
-    if (this.canvas.elements.duplicateSprite) this.canvas.elements.duplicateSprite.onclick = () => this.duplicateSprite();
-    if (this.canvas.elements.deleteSprite) this.canvas.elements.deleteSprite.onclick = () => this.deleteSprite();
     
-    // Symmetry controls
-    document.querySelectorAll('.symmetry-btn').forEach(btn => {
-      btn.onclick = () => this.setSymmetryMode(btn.dataset.symmetry);
-    });
+    loadProject() {
+        const saved = localStorage.getItem('jerryEditor_project');
+        if (saved) {
+            try {
+                const project = JSON.parse(saved);
+                this.loadProjectData(project);
+            } catch (e) {
+                console.error('Failed to load project:', e);
+            }
+        }
+    }
     
-    // Transform controls
-    if (this.canvas.elements.rotateLeft) this.canvas.elements.rotateLeft.onclick = () => this.transformSelection('rotate', -90);
-    if (this.canvas.elements.rotate180) this.canvas.elements.rotate180.onclick = () => this.transformSelection('rotate', 180);
-    if (this.canvas.elements.rotateRight) this.canvas.elements.rotateRight.onclick = () => this.transformSelection('rotate', 90);
-    if (this.canvas.elements.flipHorizontal) this.canvas.elements.flipHorizontal.onclick = () => this.transformSelection('flip', 'H');
-    if (this.canvas.elements.flipVertical) this.canvas.elements.flipVertical.onclick = () => this.transformSelection('flip', 'V');
+    autoSave() {
+        const project = this.getProjectData();
+        localStorage.setItem('jerryEditor_autosave', JSON.stringify(project));
+    }
     
-    // Sketch controls
-    const sketchInputs = ['brushSize', 'brushOpacity', 'brushHardness', 'brushFlow'];
-    sketchInputs.forEach(id => {
-      const element = this.canvas.elements[id];
-      if (element) {
-        element.oninput = () => {
-          const value = parseInt(element.value);
-          const property = id.replace('brush', '').toLowerCase();
-          this.state.sketch[property === 'size' ? 'size' : property] = value;
-          this.ui.updateSketchControls();
+    getProjectData() {
+        const project = {
+            mode: this.mode,
+            canvasWidth: this.canvasWidth,
+            canvasHeight: this.canvasHeight,
+            sprites: this.sprites,
+            currentSprite: this.currentSprite,
+            grid: this.grid,
+            primaryColor: this.primaryColor,
+            secondaryColor: this.secondaryColor,
+            symmetryMode: this.symmetryMode,
+            showGrid: this.showGrid,
+            version: '1.0'
         };
-      }
-    });
+        
+        if (this.mode === 'sketch') {
+            project.sketchCanvas = {
+                width: this.sketchCanvas.width,
+                height: this.sketchCanvas.height
+            };
+            project.layers = this.layers.map(layer => ({
+                data: layer.canvas.toDataURL(),
+                visible: layer.visible,
+                opacity: layer.opacity,
+                blendMode: layer.blendMode,
+                name: layer.name
+            }));
+            project.currentLayer = this.currentLayer;
+        }
+        
+        return project;
+    }
     
-    // Canvas size buttons for sketch mode
-    document.querySelectorAll('[data-size]').forEach(btn => {
-      btn.onclick = () => {
-        const [width, height] = btn.dataset.size.split('x').map(Number);
+    loadProjectData(project) {
+        this.mode = project.mode || 'pixel';
+        this.canvasWidth = project.canvasWidth || 16;
+        this.canvasHeight = project.canvasHeight || 16;
+        this.sprites = project.sprites || [{ name: 'Sprite 1', data: null }];
+        this.currentSprite = project.currentSprite || 0;
+        this.grid = project.grid || [];
+        this.primaryColor = project.primaryColor || '#000000';
+        this.secondaryColor = project.secondaryColor || '#ffffff';
+        this.symmetryMode = project.symmetryMode || 'none';
+        this.showGrid = project.showGrid !== undefined ? project.showGrid : true;
         
-        // Push history before resizing layers
-        this.history.pushHistory('Resize Sketch Canvas');
+        // Update UI elements
+        this.canvasWidthInput.value = this.canvasWidth;
+        this.canvasHeightInput.value = this.canvasHeight;
+        this.primaryColorEl.style.background = this.primaryColor;
+        this.secondaryColorEl.style.background = this.secondaryColor;
+        document.getElementById('gridToggle').checked = this.showGrid;
         
-        this.state.sketch.width = width;
-        this.state.sketch.height = height;
-        
-        this.canvas.elements.sketchCanvas.width = width;
-        this.canvas.elements.sketchCanvas.height = height;
-        this.canvas.elements.selectionOverlay.width = width;
-        this.canvas.elements.selectionOverlay.height = height;
-        
-        // Update all layers to new size (content is preserved if smaller)
-        this.state.sketch.layers.forEach(layer => {
-          const oldCanvas = layer.canvas;
-          const newCanvas = document.createElement('canvas');
-          newCanvas.width = width;
-          newCanvas.height = height;
-          const newCtx = newCanvas.getContext('2d');
-          
-          newCtx.drawImage(oldCanvas, 0, 0);
-          layer.canvas = newCanvas;
-          layer.ctx = newCtx;
+        // Set symmetry mode
+        document.querySelectorAll('.symmetry-btn').forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.symmetry === this.symmetryMode);
         });
         
-        this.canvas.drawSketchCanvas();
-        this.ui.updateCanvasInfo();
-      };
-    });
-    
-    // Layer controls
-    if (this.canvas.elements.addLayer) this.canvas.elements.addLayer.onclick = () => this.addLayer();
-    if (this.canvas.elements.layerOpacity) {
-      this.canvas.elements.layerOpacity.oninput = () => {
-        const layer = this.state.sketch.layers[this.state.sketch.activeLayer];
-        if (layer) {
-          layer.opacity = parseInt(this.canvas.elements.layerOpacity.value);
-          this.canvas.elements.layerOpacityLabel.textContent = layer.opacity;
-          this.canvas.drawSketchCanvas();
+        if (project.mode === 'sketch' && project.layers) {
+            this.sketchCanvas.width = project.sketchCanvas.width;
+            this.sketchCanvas.height = project.sketchCanvas.height;
+            this.selectionOverlay.width = project.sketchCanvas.width;
+            this.selectionOverlay.height = project.sketchCanvas.height;
+            
+            this.layers = [];
+            this.currentLayer = project.currentLayer || 0;
+            
+            const loadPromises = project.layers.map((layerData, index) => {
+                return new Promise((resolve) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        const canvas = document.createElement('canvas');
+                        canvas.width = this.sketchCanvas.width;
+                        canvas.height = this.sketchCanvas.height;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0);
+                        
+                        this.layers[index] = {
+                            canvas: canvas,
+                            ctx: ctx,
+                            visible: layerData.visible,
+                            opacity: layerData.opacity,
+                            blendMode: layerData.blendMode,
+                            name: layerData.name
+                        };
+                        resolve();
+                    };
+                    img.src = layerData.data;
+                });
+            });
+            
+            Promise.all(loadPromises).then(() => {
+                this.updateLayerList();
+                this.updateLayerControls();
+                this.redrawLayers();
+            });
         }
-      };
-    }
-    if (this.canvas.elements.blendMode) {
-      this.canvas.elements.blendMode.onchange = () => {
-        const layer = this.state.sketch.layers[this.state.sketch.activeLayer];
-        if (layer) {
-          layer.blendMode = this.canvas.elements.blendMode.value;
-          this.canvas.drawSketchCanvas();
-          this.history.pushHistory('Change Blend Mode');
-        }
-      };
-    }
-    
-    // Export/Import controls
-    if (this.canvas.elements.exportJSON) this.canvas.elements.exportJSON.onclick = () => this.exportJSON();
-    if (this.canvas.elements.exportPNG2) this.canvas.elements.exportPNG2.onclick = () => this.exportPNG();
-    if (this.canvas.elements.importFile) this.canvas.elements.importFile.onchange = (e) => this.importProject(e);
-    
-    // Panel collapsing
-    document.querySelectorAll('.panel-header').forEach(header => {
-      header.onclick = () => {
-        const content = header.nextElementSibling;
-        const arrow = header.querySelector('span');
         
-        if (content.style.display === 'none' || content.style.display === '') {
-          content.style.display = 'block';
-          arrow.textContent = '▼';
-        } else {
-          content.style.display = 'none';
-          arrow.textContent = '▶';
+        // Switch to correct mode
+        this.switchMode(this.mode);
+        
+        if (this.grid.length === 0) {
+            this.initializeGrid();
         }
-      };
-    });
+        
+        this.updatePixelCanvas();
+        this.updateGrid();
+        this.updateSpriteSelector();
+        this.updateCanvasInfo();
+    }
+    
+    // Export/Import
+    exportJSON() {
+        const project = this.getProjectData();
+        const dataStr = JSON.stringify(project, null, 2);
+        const output = document.getElementById('output');
+        
+        if (output) {
+            output.style.display = 'block';
+            output.value = dataStr;
+            output.select();
+        }
+        
+        // Also trigger download
+        this.downloadFile('jerry-project.json', dataStr);
+    }
+    
+    exportPNG() {
+        let canvas, filename;
+        
+        if (this.mode === 'pixel') {
+            // Create a clean export canvas without grid
+            canvas = document.createElement('canvas');
+            canvas.width = this.canvasWidth;
+            canvas.height = this.canvasHeight;
+            const ctx = canvas.getContext('2d');
+            
+            // Disable image smoothing for pixel art
+            ctx.imageSmoothingEnabled = false;
+            
+            const imageData = ctx.createImageData(this.canvasWidth, this.canvasHeight);
+            
+            for (let y = 0; y < this.canvasHeight; y++) {
+                for (let x = 0; x < this.canvasWidth; x++) {
+                    const color = this.grid[y][x];
+                    const index = (y * this.canvasWidth + x) * 4;
+                    
+                    if (color === 'transparent') {
+                        imageData.data[index + 3] = 0; // Alpha = 0
+                    } else {
+                        const rgb = this.hexToRgb(color);
+                        imageData.data[index] = rgb.r;
+                        imageData.data[index + 1] = rgb.g;
+                        imageData.data[index + 2] = rgb.b;
+                        imageData.data[index + 3] = 255;
+                    }
+                }
+            }
+            
+            ctx.putImageData(imageData, 0, 0);
+            filename = 'pixel-art.png';
+        } else {
+            canvas = this.sketchCanvas;
+            filename = 'sketch-art.png';
+        }
+        
+        // Download the image
+        canvas.toBlob((blob) => {
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        });
+    }
+    
+    importFile(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+        
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            try {
+                const project = JSON.parse(event.target.result);
+                if (confirm('Import this project? Current work will be lost.')) {
+                    this.loadProjectData(project);
+                }
+            } catch (error) {
+                alert('Invalid project file.');
+            }
+        };
+        reader.readAsText(file);
+    }
+    
+    downloadFile(filename, content) {
+        const blob = new Blob([content], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    }
+    
+    hexToRgb(hex) {
+        const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+        return result ? {
+            r: parseInt(result[1], 16),
+            g: parseInt(result[2], 16),
+            b: parseInt(result[3], 16)
+        } : { r: 0, g: 0, b: 0 };
+    }
     
     // Keyboard shortcuts
-    document.onkeydown = (e) => {
-      this.state.isShiftPressed = e.shiftKey;
-      this.state.isCtrlPressed = e.ctrlKey || e.metaKey;
-      
-      if (e.ctrlKey || e.metaKey) {
-        switch (e.key) {
-          case 'z':
-            e.preventDefault();
-            if (e.shiftKey) this.history.redo(); else this.history.undo();
-            break;
-          case 'y':
-            e.preventDefault();
-            this.history.redo();
-            break;
-          case 's':
-            e.preventDefault();
-            this.exportJSON(); // Save project (as JSON)
-            break;
-          case 'n':
+    handleKeyboard(e) {
+        // Prevent shortcuts when typing in inputs
+        if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+        
+        const key = e.key.toLowerCase();
+        const ctrl = e.ctrlKey || e.metaKey;
+        const shift = e.shiftKey;
+        
+        // Global shortcuts
+        if (ctrl && key === 'n') {
             e.preventDefault();
             this.newProject();
-            break;
-          case 'e':
+            return;
+        }
+        
+        if (ctrl && key === 's') {
+            e.preventDefault();
+            this.saveProject();
+            return;
+        }
+        
+        if (ctrl && key === 'e') {
             e.preventDefault();
             this.exportPNG();
-            break;
-          case 'h':
-            e.preventDefault();
-            if (this.state.mode === 'pixel') this.transformSelection('flip', 'H');
-            break;
-          case 'j':
-            e.preventDefault();
-            if (this.state.mode === 'pixel') this.transformSelection('flip', 'V');
-            break;
+            return;
         }
-      } else {
-        // Tool shortcuts for pixel mode
-        const pixelTools = {
-          'b': 'pencil', 'e': 'eraser', 'i': 'eyedropper', 'g': 'fill',
-          'l': 'line', 'r': 'rect', 'o': 'circle'
+        
+        if (ctrl && key === 'z' && !shift) {
+            e.preventDefault();
+            this.undo();
+            return;
+        }
+        
+        if ((ctrl && key === 'y') || (ctrl && shift && key === 'z')) {
+            e.preventDefault();
+            this.redo();
+            return;
+        }
+        
+        if (ctrl && key === 'h') {
+            e.preventDefault();
+            this.flip('horizontal');
+            return;
+        }
+        
+        if (ctrl && key === 'j') {
+            e.preventDefault();
+            this.flip('vertical');
+            return;
+        }
+        
+        // Tool shortcuts
+        const toolMap = {
+            'b': this.mode === 'pixel' ? 'pencil' : 'brush',
+            'e': 'eraser',
+            'i': 'eyedropper',
+            'g': this.mode === 'pixel' ? 'fill' : null,
+            'm': this.mode === 'pixel' ? 'select' : 'marker',
+            'v': 'move',
+            'l': this.mode === 'pixel' ? 'line' : 'lineSketch',
+            'r': this.mode === 'pixel' ? 'rect' : 'rectSketch',
+            'o': this.mode === 'pixel' ? 'circle' : 'circleSketch',
+            'p': this.mode === 'sketch' ? 'pen' : null,
+            'c': this.mode === 'sketch' ? 'pencilSketch' : null,
+            'h': this.mode === 'sketch' ? 'charcoal' : null,
+            's': this.mode === 'sketch' ? 'smudge' : null,
+            'u': this.mode === 'sketch' ? 'blur' : null,
+            'y': this.mode === 'sketch' ? 'sprayPaint' : null
         };
         
-        // Tool shortcuts for sketch mode  
-        const sketchTools = {
-          'b': 'brush', 'p': 'pen', 'm': 'marker', 'c': 'pencilSketch', 'h': 'charcoal',
-          'e': 'eraser', 's': 'smudge', 'u': 'blur', 'l': 'lineSketch', 
-          'r': 'rectSketch', 'o': 'circleSketch', 'y': 'sprayPaint'
-        };
-        
-        // Symmetry shortcuts (pixel mode only)
-        const symmetryKeys = { 'q': 'none', 'w': 'horizontal', 'a': 'vertical', 's': 'both' };
-        
-        if (this.state.mode === 'pixel') {
-          let tool = pixelTools[e.key];
-          if (tool) {
-            // Check for Shift+Tool for symmetric tools
-            if (e.shiftKey && (tool === 'pencil' || tool === 'eraser' || tool === 'fill')) {
-                tool = `symmetric${tool.charAt(0).toUpperCase()}${tool.slice(1)}`;
-            }
-            // Check for Shift+Tool for filled shapes
-            if (e.shiftKey && (tool === 'rect' || tool === 'circle')) {
-                tool = `${tool}Filled`;
-            }
+        if (toolMap[key] && toolMap[key] !== null) {
+            e.preventDefault();
+            this.currentTool = shift && this.mode === 'pixel' ? 
+                this.getSymmetricTool(toolMap[key]) : 
+                (shift && ['rect', 'circle', 'rectSketch', 'circleSketch'].includes(toolMap[key]) ? 
+                    toolMap[key] + 'Filled' : toolMap[key]);
             
-            this.state.pixel.activeTool = tool;
-            this.ui.updateToolControls();
-            this.ui.updateCanvasInfo();
-            e.preventDefault();
-          } else if (symmetryKeys[e.key]) {
-            this.setSymmetryMode(symmetryKeys[e.key]);
-            e.preventDefault();
-          }
-        } else if (this.state.mode === 'sketch' && sketchTools[e.key]) {
-          this.state.sketch.activeTool = sketchTools[e.key];
-          this.ui.updateToolControls();
-          this.ui.updateCanvasInfo();
-          e.preventDefault();
+            const toolGroup = document.querySelector(`.${this.mode}-tools`);
+            toolGroup.querySelector('.tool-btn.active')?.classList.remove('active');
+            toolGroup.querySelector(`.tool-btn[data-tool="${this.currentTool}"]`)?.classList.add('active');
+            
+            this.updateCanvasInfo();
         }
         
-        // Transform shortcuts (pixel mode)
-        if (this.state.mode === 'pixel') {
-          if (e.key === '[' || e.key === ']') e.preventDefault();
-          if (e.key === '[') this.transformSelection('rotate', -90);
-          if (e.key === ']') this.transformSelection('rotate', 90);
+        // Symmetry shortcuts
+        const symmetryMap = {
+            'q': 'none',
+            'w': 'horizontal',
+            'a': 'vertical',
+            's': 'both'
+        };
+        
+        if (symmetryMap[key] && this.mode === 'pixel') {
+            e.preventDefault();
+            this.symmetryMode = symmetryMap[key];
+            document.querySelectorAll('.symmetry-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.symmetry === this.symmetryMode);
+            });
         }
         
-        // Brush size adjustment (sketch mode)
-        if (this.state.mode === 'sketch') {
-          if (e.key === '[' || e.key === ']') e.preventDefault();
-          if (e.key === '[') {
-            this.state.sketch.size = Math.max(SKETCH_LIMITS.MIN_BRUSH_SIZE, this.state.sketch.size - 1);
-            this.ui.updateSketchControls();
-          }
-          if (e.key === ']') {
-            this.state.sketch.size = Math.min(SKETCH_LIMITS.MAX_BRUSH_SIZE, this.state.sketch.size + 1);
-            this.ui.updateSketchControls();
-          }
+        // Transform shortcuts
+        if (key === '[') {
+            e.preventDefault();
+            this.rotate(-90);
         }
-      }
-    };
+        
+        if (key === ']') {
+            e.preventDefault();
+            this.rotate(90);
+        }
+        
+        // Zoom shortcuts
+        if (key === '=' || key === '+') {
+            e.preventDefault();
+            this.adjustZoom(1.5);
+        }
+        
+        if (key === '-') {
+            e.preventDefault();
+            this.adjustZoom(0.75);
+        }
+        
+        if (key === '0') {
+            e.preventDefault();
+            this.setZoom(1);
+        }
+    }
     
-    document.onkeyup = (e) => {
-      this.state.isShiftPressed = e.shiftKey;
-      this.state.isCtrlPressed = e.ctrlKey || e.metaKey;
-    };
+    getSymmetricTool(tool) {
+        const symmetricMap = {
+            'pencil': 'symmetricPencil',
+            'eraser': 'symmetricEraser',
+            'fill': 'symmetricFill'
+        };
+        return symmetricMap[tool] || tool;
+    }
     
-    // Prevent scrolling on touch devices when drawing
-    document.addEventListener('touchmove', (e) => {
-      if (e.target.closest('.canvas-area') && this.state.isDrawing) {
-        e.preventDefault();
-      }
-    }, { passive: false });
-  }
-}
+    // UI updates
+    updateCanvasInfo() {
+        if (!this.canvasInfo) return;
+        
+        const size = this.mode === 'pixel' ? 
+            `${this.canvasWidth}×${this.canvasHeight}` : 
+            `${this.sketchCanvas.width}×${this.sketchCanvas.height}`;
+        
+        const tool = this.currentTool.charAt(0).toUpperCase() + this.currentTool.slice(1);
+        
+        this.canvasInfo.textContent = `${size} | ${tool} | ${this.primaryColor}`;
+    }
+    
+    updateUI() {
+        this.updateCanvasInfo();
+        this.updateSpriteSelector();
+        
+        if (this.mode === 'sketch') {
+            this.updateLayerList();
+            this.updateLayerControls();
+            this.updateBrushPreview();
+        }
+    }
 
-// =====================
-// AUTO SAVE FUNCTIONS
-// =====================
-function autoSave() {
-  if (typeof jerryEditor !== 'undefined' && jerryEditor.state) {
-    try {
-      // Save full project state as JSON
-      const projectData = {
-          mode: jerryEditor.state.mode,
-          pixel: {
-            width: jerryEditor.state.pixel.width,
-            height: jerryEditor.state.pixel.height,
-            sprites: jerryEditor.state.pixel.sprites,
-          },
-          sketch: {
-            width: jerryEditor.state.sketch.width,
-            height: jerryEditor.state.sketch.height,
-            layers: jerryEditor.state.sketch.layers.map(layer => ({
-              id: layer.id,
-              name: layer.name,
-              opacity: layer.opacity,
-              blendMode: layer.blendMode,
-              visible: layer.visible,
-              imageData: layer.canvas.toDataURL()
-            }))
-          }
+  loadPalettes() {
+      const palettes = {
+          'default': ['transparent','#FFFFFF','#C0C0C0','#808080','#404040','#000000','#FF0000','#00FF00','#0000FF','#FFFF00','#FF00FF'],
+          'retro8bit': ['transparent','#F4F4F4','#E8E8E8','#BCBCBC','#7C7C7C','#A00000','#FF6A00','#FFD500','#00A844','#0047AB','#000000'],
+          'gameboyClassic': ['transparent','#E0F8D0','#88C070','#346856','#081820','#9BBB0F','#8BAC0F','#306230','#0F380F','#155015','#071821'],
+          'synthwave': ['transparent','#FF00FF','#FF0080','#FF4080','#FF8000','#FFFF00','#80FF00','#00FFFF','#0080FF','#8000FF','#2D1B69'],
+          'earthTones': ['transparent','#FFF8DC','#D2B48C','#CD853F','#A0522D','#8B4513','#654321','#556B2F','#8FBC8F','#2F4F4F','#191970'],
+          'crystalIce': ['transparent','#F0F8FF','#E6F3FF','#B3D9FF','#80BFFF','#4DA6FF','#1A8CFF','#0066CC','#004C99','#003366','#001A33'],
+          'moltenCore': ['transparent','#FFFACD','#FFE4B5','#FFA500','#FF6347','#FF4500','#DC143C','#B22222','#8B0000','#4B0000','#000000'],
+          'enchantedForest': ['transparent','#F0FFF0','#E6FFE6','#CCFFCC','#99FF99','#66CC66','#339933','#228B22','#006400','#004400','#002200'],
+          'nesClassic': ['transparent','#FFFFFF','#FCFCFC','#F8F8F8','#BCBCBC','#7C7C7C','#A4E4FC','#3CBCFC','#0078F8','#0000FC','#000000'],
+          'cyberpunk': ['transparent','#00FFFF','#00E6E6','#00CCCC','#00B3B3','#FF00FF','#E600E6','#CC00CC','#B300B3','#4D0080','#0D001A'],
+          'desertSands': ['transparent','#FFF8DC','#F5DEB3','#DEB887','#D2B48C','#BC9A6A','#A0522D','#8B4513','#654321','#3E2723','#2E1A14'],
+          'deepOcean': ['transparent','#E0F6FF','#B3E5FC','#4FC3F7','#29B6F6','#03A9F4','#0288D1','#0277BD','#01579B','#01447A','#002F5A'],
+          'cosmicVoid': ['transparent','#E1BEE7','#CE93D8','#BA68C8','#AB47BC','#8E24AA','#7B1FA2','#6A1B9A','#4A148C','#38006B','#1A0033'],
+          'inkWash': ['transparent','#FFFFFF','#F5F5F5','#E0E0E0','#BDBDBD','#9E9E9E','#757575','#424242','#212121','#FF5722','#000000'],
+          'autumnLeaves': ['transparent','#FFF8E7','#FFE0B3','#FFCC80','#FF8F65','#FF7043','#F4511E','#E65100','#BF360C','#8D2F00','#5D1F00'],
+          'sakuraBloom': ['transparent','#FFF0F5','#FFE4E1','#FFC0CB','#FFB6C1','#FF91A4','#FF69B4','#E91E63','#C2185B','#AD1457','#880E4F']
       };
-      localStorage.setItem('jerryProjectAutoSave', JSON.stringify(projectData));
-    } catch (error) {
-      // Catch quota errors
-      if (error.name === 'QuotaExceededError') {
-        console.warn('Auto-save failed: Storage quota exceeded.');
-      } else {
-        console.warn('Auto-save failed:', error);
+      
+      if (this.paletteSelector) {
+          Object.keys(palettes).forEach(paletteName => {
+              const option = document.createElement('option');
+              option.value = paletteName;
+              option.textContent = paletteName.charAt(0).toUpperCase() + paletteName.slice(1);
+              this.paletteSelector.appendChild(option);
+          });
       }
-    }
+      
+      this.palettes = palettes;
+      this.loadSavedPalettes();
+      this.loadPalette('default');
+      this.setupColorPickers();
   }
 }
 
-function restoreSave() {
-  if (typeof jerryEditor === 'undefined' || !jerryEditor.state) return;
-  
-  try {
-    const data = localStorage.getItem('jerryProjectAutoSave');
-    if (data) {
-      const projectData = JSON.parse(data);
-      if (confirm('A previous auto-saved project was found. Would you like to restore it?')) {
-        jerryEditor.loadProjectData(projectData);
-        jerryEditor.history.pushHistory('Restore Auto-Save');
-        return true;
-      }
-    }
-  } catch (error) {
-    console.warn('Restore save failed:', error);
-  }
-  return false;
-}
-
-// Set up auto-save interval
-setInterval(autoSave, 15000); // Auto-save every 15 seconds
-
-// =====================
-// INITIALIZE APPLICATION
-// =====================
-let jerryEditor;
-
+// Initialize the editor when the page loads
 document.addEventListener('DOMContentLoaded', () => {
-  jerryEditor = new JerryEditor();
-  
-  // Restore auto-saved data after initialization, but before the initial history push
-  if (restoreSave()) {
-    // If restored, re-push the state to clear the redo stack and log the restore
-    jerryEditor.history.pushHistory('Project Restored');
-  } else {
-    // Initial history push if not restored (already done in constructor, but left here as a safety)
-    jerryEditor.history.pushHistory('Initial Project');
-  }
-  
-  // Prevent default touch behaviors that interfere with drawing
-  document.addEventListener('touchstart', (e) => {
-    if (e.target.closest('.canvas-area')) {
-      // Allow multi-touch for zoom/pan if implemented, but prevent default single-touch scroll
-      if (e.touches.length === 1 && jerryEditor.state.isDrawing) {
-        e.preventDefault();
-      }
-    }
-  }, { passive: false });
-  
-  document.addEventListener('touchmove', (e) => {
-    if (e.target.closest('.canvas-area') && jerryEditor.state.isDrawing) {
-      e.preventDefault();
-    }
-  }, { passive: false });
-  
-  // Handle viewport changes for mobile
-  const handleResize = () => {
-    if (jerryEditor) {
-      jerryEditor.updateCanvasDisplay();
-    }
-  };
-  
-  window.addEventListener('resize', handleResize);
-  window.addEventListener('orientationchange', () => {
-    setTimeout(handleResize, 100);
-  });
+    window.jerryEditor = new JerryEditor();
 });
+
+// Register service worker for PWA functionality
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js')
+            .then((registration) => {
+                console.log('SW registered: ', registration);
+            })
+            .catch((registrationError) => {
+                console.log('SW registration failed: ', registrationError);
+            });
+    });
+}
