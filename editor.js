@@ -262,7 +262,7 @@ function createPixelGrid(width, height) {
 }
 
 function updatePixelCanvasTransform() {
-    const container = document.getElementById('canvasContainer');
+    const container = document.querySelector('.canvas-area');
     if (!container || !pixelCanvas) return;
 
     // Apply zoom
@@ -971,6 +971,7 @@ if (pixelCanvas) {
     pixelCanvas.removeEventListener('mouseup', handleMouseUp);
     
     // Add working event listeners
+    if (pixelCanvas) {
     pixelCanvas.addEventListener('mousedown', (e) => {
         if(currentMode !== 'pixel') return;
         e.preventDefault();
@@ -982,31 +983,58 @@ if (pixelCanvas) {
             drawingShape = true;
             shapeStart = {x, y};
             savePixelState();
+        } else if(isMovingSelection) {
+            finalizeSelection();
         } else {
             savePixelState();
             isPainting = true;
             handlePixelPaint(e);
         }
+        lastMousePos = {x: e.clientX, y: e.clientY};
     });
 
     pixelCanvas.addEventListener('mousemove', (e) => {
         if(currentMode !== 'pixel') return;
         e.preventDefault();
+        const {x, y} = getCellFromEvent(e);
         
-        if(isPainting) {
-            handlePixelPaint(e);
+        if(isSelecting && previewCtx) {
+            const x0 = Math.min(selectionStart.x, x);
+            const y0 = Math.min(selectionStart.y, y);
+            const x1 = Math.max(selectionStart.x, x);
+            const y1 = Math.max(selectionStart.y, y);
+
+            previewCtx.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
+            previewCtx.strokeStyle = 'rgba(0,150,255,0.8)';
+            previewCtx.lineWidth = 2;
+            previewCtx.setLineDash([4, 2]);
+            previewCtx.strokeRect(
+                x0 * cellSize, y0 * cellSize,
+                (x1 - x0 + 1) * cellSize, (y1 - y0 + 1) * cellSize
+            );
         } else if(drawingShape) {
-            const {x, y} = getCellFromEvent(e);
             drawPreviewShape(shapeStart.x, shapeStart.y, x, y, currentTool, primaryColor);
+        } else if(isMovingSelection && lastMousePos) {
+            const dx = Math.floor((e.clientX - lastMousePos.x) / (cellSize * zoomLevel));
+            const dy = Math.floor((e.clientY - lastMousePos.y) / (cellSize * zoomLevel));
+            if(dx !== 0 || dy !== 0) {
+                moveSelection(dx, dy);
+                lastMousePos = {x: e.clientX, y: e.clientY};
+            }
+        } else if(isPainting) {
+            handlePixelPaint(e);
         }
     });
 
     pixelCanvas.addEventListener('mouseup', (e) => {
         if(currentMode !== 'pixel') return;
         e.preventDefault();
+        const {x, y} = getCellFromEvent(e);
         
-        if(drawingShape) {
-            const {x, y} = getCellFromEvent(e);
+        if(isSelecting && previewCtx) {
+            endSelection(x, y);
+            previewCtx.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
+        } else if(drawingShape) {
             drawingShape = false;
             if(previewCtx) previewCtx.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
             
@@ -1025,9 +1053,14 @@ if (pixelCanvas) {
         }
         
         isPainting = false;
+        lastMousePos = null;
     });
 }
 
+// Prevent context menu on canvas
+pixelCanvas?.addEventListener('contextmenu', e => e.preventDefault());
+sketchCanvas?.addEventListener('contextmenu', e => e.preventDefault());
+  
 // =====================
 // MOUSE EVENTS FOR SKETCH CANVAS
 // =====================
@@ -1452,6 +1485,19 @@ if (resizeBtn) {
         }
     });
 }
+
+  // Canvas size buttons for sketch mode
+document.querySelectorAll('[data-size]').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+        if(currentMode !== 'sketch') return;
+        
+        const [width, height] = e.target.dataset.size.split('x').map(Number);
+        sketchCanvas.width = width;
+        sketchCanvas.height = height;
+        updateSketchCanvasTransform();
+        updateCanvasInfo();
+    });
+});
 
 // Grid toggle
 const gridToggle = document.getElementById('gridToggle');
