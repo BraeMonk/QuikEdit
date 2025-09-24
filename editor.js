@@ -60,6 +60,8 @@ let currentMode = 'pixel';
 let currentTool = 'pencil';
 let symmetryMode = 'none';
 let isPainting = false;
+let drawingShape = false;
+let shapeStart = {x: 0, y: 0};
 let startX = 0, startY = 0;
 let canvasWidth = 16, canvasHeight = 16;
 let pixelData = [];
@@ -68,7 +70,12 @@ let lastMousePos = null;
 let currentPaletteName = 'default';
 let currentPalette = palettes[currentPaletteName];
 let selectedColorIndex = 1;
-let userPalettes = JSON.parse(localStorage.getItem('userPalettes') || '[]');
+let userPalettes = [];
+try {
+    userPalettes = JSON.parse(localStorage.getItem('userPalettes') || '[]');
+} catch(e) {
+    console.warn('Could not load user palettes');
+}
 
 // Add a new user palette
 function addUserPalette(name, colors) {
@@ -102,6 +109,7 @@ function setPaletteByName(name) {
     if(currentMode === 'pixel') {
         activePalette = palette;
         currentPalette = palette; // sync properly
+        currentPaletteName = name;
         currentColorIndex = Math.min(currentColorIndex, palette.length - 1);
         primaryColor = activePalette[currentColorIndex];
         currentColor = primaryColor; // Keep currentColor in sync
@@ -249,12 +257,6 @@ function createPixelGrid(width, height) {
         }
     }
 
-    // Update preview canvas size safely
-    if (previewCanvas) {
-        previewCanvas.width = width * cellSize;
-        previewCanvas.height = height * cellSize;
-    }
-
     // Apply current grid toggle state
     updateGridDisplay();
 }
@@ -278,12 +280,7 @@ if(gridToggle) {
         updateGridDisplay();
     });
 }
-// Update preview canvas size safely
-    if (previewCanvas) {
-        previewCanvas.width = width * cellSize;
-        previewCanvas.height = height * cellSize;
-    }
-}
+
 
 function getSymmetricPoints(x, y) {
 const points = [{x, y}];
@@ -820,27 +817,26 @@ function updateSymmetryInfo() {
 let drawingShape = false;
 let shapeStart = {x: 0, y: 0};
 
+// Mouse events for pixel canvas
 pixelCanvas.addEventListener('mousedown', e => {
-if(currentMode !== 'pixel') return;
-e.preventDefault();
+    if(currentMode !== 'pixel') return;
+    e.preventDefault();
+    const {x, y} = getCellFromEvent(e);
 
-const {x, y} = getCellFromEvent(e);
-
-if(currentTool === 'select') {
-startSelection(x, y);
-} else if(['line', 'rect', 'circle'].includes(currentTool)) {
-drawingShape = true;
-shapeStart = {x, y};
-savePixelState();
-} else if(isMovingSelection) {
-finalizeSelection();
-} else {
-savePixelState();
-isPainting = true;
-handlePixelPaint(e);
-}
-
-lastMousePos = {x: e.clientX, y: e.clientY};
+    if(currentTool === 'select') {
+        startSelection(x, y);
+    } else if(['line', 'rect', 'circle'].includes(currentTool)) {
+        drawingShape = true;
+        shapeStart = {x, y};
+        savePixelState();
+    } else if(isMovingSelection) {
+        finalizeSelection();
+    } else {
+        savePixelState();
+        isPainting = true;
+        handlePixelPaint(e);
+    }
+    lastMousePos = {x: e.clientX, y: e.clientY};
 });
 
 pixelCanvas.addEventListener('mousemove', e => {
@@ -859,10 +855,8 @@ pixelCanvas.addEventListener('mousemove', e => {
         previewCtx.lineWidth = 2;
         previewCtx.setLineDash([4, 2]);
         previewCtx.strokeRect(
-            x0 * cellSize,
-            y0 * cellSize,
-            (x1 - x0 + 1) * cellSize,
-            (y1 - y0 + 1) * cellSize
+            x0 * cellSize, y0 * cellSize,
+            (x1 - x0 + 1) * cellSize, (y1 - y0 + 1) * cellSize
         );
     } else if(drawingShape) {
         drawPreviewShape(shapeStart.x, shapeStart.y, x, y, currentTool, primaryColor);
@@ -911,41 +905,41 @@ pixelCanvas.addEventListener('mouseup', e => {
 
 // Touch events
 pixelCanvas.addEventListener('touchstart', e => {
-if(currentMode !== 'pixel') return;
-e.preventDefault();
-const touch = e.touches[0];
-const mouseEvent = new MouseEvent('mousedown', {
-clientX: touch.clientX,
-clientY: touch.clientY,
-button: 0
-});
-pixelCanvas.dispatchEvent(mouseEvent);
+    if(currentMode !== 'pixel') return;
+    e.preventDefault();
+    const touch = e.touches[0];
+    const mouseEvent = new MouseEvent('mousedown', {
+        clientX: touch.clientX,
+        clientY: touch.clientY,
+        button: 0
+    });
+    pixelCanvas.dispatchEvent(mouseEvent);
 });
 
 pixelCanvas.addEventListener('touchmove', e => {
-if(currentMode !== 'pixel') return;
-e.preventDefault();
-const touch = e.touches[0];
-const mouseEvent = new MouseEvent('mousemove', {
-clientX: touch.clientX,
-clientY: touch.clientY
-});
-pixelCanvas.dispatchEvent(mouseEvent);
+    if(currentMode !== 'pixel') return;
+    e.preventDefault();
+    const touch = e.touches[0];
+    const mouseEvent = new MouseEvent('mousemove', {
+        clientX: touch.clientX,
+        clientY: touch.clientY
+    });
+    pixelCanvas.dispatchEvent(mouseEvent);
 });
 
 pixelCanvas.addEventListener('touchend', e => {
-if(currentMode !== 'pixel') return;
-e.preventDefault();
-const touch = e.changedTouches[0];
-const mouseEvent = new MouseEvent('mouseup', {
-clientX: touch.clientX,
-clientY: touch.clientY,
-button: 0
-});
-pixelCanvas.dispatchEvent(mouseEvent);
+    if(currentMode !== 'pixel') return;
+    e.preventDefault();
+    const touch = e.changedTouches[0];
+    const mouseEvent = new MouseEvent('mouseup', {
+        clientX: touch.clientX,
+        clientY: touch.clientY,
+        button: 0
+    });
+    pixelCanvas.dispatchEvent(mouseEvent);
 });
 
-// Right-click context menu prevention
+// Prevent context menu
 pixelCanvas.addEventListener('contextmenu', e => e.preventDefault());
 
 // =====================
@@ -1171,18 +1165,9 @@ function renderPalette() {
             swatch.style.backgroundColor = color;
             if(i === index) swatch.classList.add('selected');
 
-            swatch.addEventListener('click', () => {
-                if(currentMode === 'pixel') {
-                    currentColorIndex = i;
-                    primaryColor = color;
-                    currentColor = color;
-                } else {
-                    sketchColorIndex = i;
-                    brushColor = color;
-                }
-                updateCanvasInfo();
-                renderPalette();
-                updateColorSwatches();
+            swatch.addEventListener('click', (e) => {
+                handleColorSelect(e);
+
             });
 
             paletteContainer.appendChild(swatch);
@@ -1409,7 +1394,7 @@ if(widthInput && heightInput) {
 const gridToggle = document.getElementById('gridToggle');
 if(gridToggle) {
 gridToggle.addEventListener('change', e => {
-canvasGrid.style.display = e.target.checked ? 'grid' : 'none';
+  updateGridDisplay();
 });
 }
 
@@ -2052,6 +2037,10 @@ document.addEventListener('DOMContentLoaded', () => {
 // INITIALIZATION
 // =====================
 function initialize() {
+    if (!pixelCanvas || !paletteContainer) {
+      console.error("Essential elements missing");
+      return;
+    }
     try {
         // Ensure DOM is ready
         if (!pixelCanvas) {
