@@ -929,6 +929,94 @@ class UIManager {
   }
 }
 
+class DrawingTools {
+  constructor(state, canvas) {
+    this.state = state;
+    this.canvas = canvas;
+  }
+
+  getPixelCoords(e) {
+    const rect = this.canvas.elements.canvas.getBoundingClientRect();
+    const scaleX = this.state.pixel.width / rect.width;
+    const scaleY = this.state.pixel.height / rect.height;
+    
+    return {
+      x: Math.floor((e.clientX - rect.left) * scaleX),
+      y: Math.floor((e.clientY - rect.top) * scaleY)
+    };
+  }
+
+  getSketchCoords(e) {
+    const rect = this.canvas.elements.sketchCanvas.getBoundingClientRect();
+    const zoomFactor = this.state.sketch.zoom / 100;
+    
+    return {
+      x: (e.clientX - rect.left) / zoomFactor,
+      y: (e.clientY - rect.top) / zoomFactor
+    };
+  }
+
+  handlePixelDraw(x, y, isPrimary) {
+    const { width, sprites, currentFrame, activeTool, primaryColor, secondaryColor } = this.state.pixel;
+    const data = sprites[currentFrame].data;
+    const color = isPrimary ? primaryColor : secondaryColor;
+
+    if (x >= 0 && x < width && y >= 0 && y < this.state.pixel.height) {
+      const index = y * width + x;
+      if (activeTool === 'pencil') {
+        data[index] = color;
+      } else if (activeTool === 'eraser') {
+        data[index] = 'transparent';
+      }
+    }
+
+    this.canvas.drawPixelCanvas();
+  }
+
+  handlePixelFill(x, y, isPrimary) {
+    // Basic flood fill implementation
+    const { width, height, sprites, currentFrame, primaryColor, secondaryColor } = this.state.pixel;
+    const data = sprites[currentFrame].data;
+    const targetColor = data[y * width + x];
+    const fillColor = isPrimary ? primaryColor : secondaryColor;
+
+    if (targetColor === fillColor) return;
+
+    const stack = [[x, y]];
+    while (stack.length > 0) {
+      const [cx, cy] = stack.pop();
+      if (cx < 0 || cx >= width || cy < 0 || cy >= height) continue;
+      
+      const index = cy * width + cx;
+      if (data[index] !== targetColor) continue;
+
+      data[index] = fillColor;
+      stack.push([cx + 1, cy], [cx - 1, cy], [cx, cy + 1], [cx, cy - 1]);
+    }
+
+    this.canvas.drawPixelCanvas();
+  }
+
+  drawWithBrush(ctx, x, y, tool) {
+    const { size, opacity, color } = this.state.sketch;
+    
+    ctx.globalAlpha = opacity / 100;
+    ctx.strokeStyle = color;
+    ctx.lineWidth = size;
+    ctx.lineCap = 'round';
+
+    ctx.beginPath();
+    if (this.state.lastPos) {
+      ctx.moveTo(this.state.lastPos.x, this.state.lastPos.y);
+      ctx.lineTo(x, y);
+    } else {
+      ctx.moveTo(x, y);
+      ctx.lineTo(x + 0.1, y + 0.1);
+    }
+    ctx.stroke();
+  }
+}
+
 // =====================
 // JERRY EDITOR MAIN CLASS
 // =====================
