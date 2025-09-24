@@ -368,11 +368,11 @@ function renderPixelCanvas() {
 
 function getCellFromEvent(e) {
     const rect = pixelCanvas.getBoundingClientRect();
-    const scale = zoomLevel;
-    const x = Math.floor((e.clientX - rect.left) / (cellSize * scale));
-    const y = Math.floor((e.clientY - rect.top) / (cellSize * scale));
-    return {x, y};
+    const x = Math.floor((e.clientX - rect.left) / (cellSize * zoomLevel));
+    const y = Math.floor((e.clientY - rect.top) / (cellSize * zoomLevel));
+    return { x, y };
 }
+
 
 function paintPixel(x, y, color) {
     if(x < 0 || y < 0 || x >= canvasWidth || y >= canvasHeight) return;
@@ -746,7 +746,7 @@ function handleMouseDown(e) {
         isPainting = true;
         handlePixelPaint(e);
     }
-    lastMousePos = {x: e.clientX, y: e.clientY};
+    if(isMovingSelection) lastMousePos = {x: e.clientX, y: e.clientY};
 }
 
 function handleMouseMove(e) {
