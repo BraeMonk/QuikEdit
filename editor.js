@@ -123,7 +123,7 @@ info.textContent = `${canvasWidth}×${canvasHeight} | ${currentTool} | ${current
 }
 
 function savePixelState() {
-const snapshot = pixelData.map(row => […row]);
+const snapshot = pixelData.map(row => [...row]);
 pixelUndoStack.push(snapshot);
 pixelRedoStack = [];
 if(pixelUndoStack.length > 50) pixelUndoStack.shift();
@@ -132,8 +132,8 @@ if(pixelUndoStack.length > 50) pixelUndoStack.shift();
 function restorePixelState(stackFrom, stackTo) {
 if(stackFrom.length === 0) return;
 const snapshot = stackFrom.pop();
-stackTo.push(pixelData.map(row => […row]));
-pixelData = snapshot.map(row => […row]);
+stackTo.push(pixelData.map(row => [...row]));
+pixelData = snapshot.map(row => [...row]);
 renderPixelCanvas();
 }
 
@@ -179,7 +179,7 @@ while(stack.length > 0) {
 const [x, y] = stack.pop();
 const key = `${x},${y}`;
 
-```
+
 if(visited.has(key)) continue;
 if(x < 0 || y < 0 || x >= canvasWidth || y >= canvasHeight) continue;
 if(pixelData[y][x] !== startColor) continue;
@@ -188,7 +188,7 @@ visited.add(key);
 pixelData[y][x] = newColor;
 
 stack.push([x + 1, y], [x - 1, y], [x, y + 1], [x, y - 1]);
-```
+
 
 }
 }
@@ -210,12 +210,12 @@ getSymmetricPoints(x0, y0).forEach(p => setPixel(p.x, p.y, color));
 setPixel(x0, y0, color);
 }
 
-```
+
 if (x0 === x1 && y0 === y1) break;
 let e2 = 2 * err;
 if(e2 > -dy) { err -= dy; x0 += sx; }
 if(e2 < dx) { err += dx; y0 += sy; }
-```
+
 
 }
 }
@@ -286,7 +286,7 @@ if(e2 < dx) { err += dx; ly += sy; }
 }
 break;
 
-```
+
 case 'rect':
   const xStart = Math.min(x0, x1);
   const xEnd = Math.max(x0, x1);
@@ -311,7 +311,7 @@ case 'circle':
     }
   }
   break;
-```
+
 
 }
 }
@@ -489,7 +489,7 @@ const y0 = Math.min(selectionStart.y, y);
 const x1 = Math.max(selectionStart.x, x);
 const y1 = Math.max(selectionStart.y, y);
 
-```
+
 previewCtx.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
 previewCtx.strokeStyle = 'rgba(0,150,255,0.8)';
 previewCtx.lineWidth = 2;
@@ -500,7 +500,7 @@ previewCtx.strokeRect(
   (x1 - x0 + 1) * cellSize,
   (y1 - y0 + 1) * cellSize
 );
-```
+
 
 } else if(drawingShape) {
 drawPreviewShape(shapeStart.x, shapeStart.y, x, y, currentTool, primaryColor);
@@ -529,7 +529,7 @@ previewCtx.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
 drawingShape = false;
 previewCtx.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
 
-```
+
 switch(currentTool) {
   case 'line':
     drawLine(shapeStart.x, shapeStart.y, x, y, primaryColor);
@@ -542,7 +542,7 @@ switch(currentTool) {
     drawCircle(shapeStart.x, shapeStart.y, radius, primaryColor, false);
     break;
 }
-```
+
 
 }
 
@@ -742,7 +742,7 @@ if(currentMode === 'pixel') {
 pixelCanvas.style.display = 'grid';
 sketchCanvas.style.display = 'none';
 
-```
+
 document.querySelectorAll('.pixel-tools').forEach(d => d.style.display = 'flex');
 document.querySelectorAll('.sketch-tools').forEach(d => d.style.display = 'none');
 
@@ -754,13 +754,13 @@ colorPickersContainer.style.display = (activePalette === customPalette ? 'flex' 
 
 currentColorIndex = lastPixelColorIndex;
 primaryColor = activePalette[currentColorIndex] || builtInPalette[0];
-```
+
 
 } else {
 pixelCanvas.style.display = 'none';
 sketchCanvas.style.display = 'block';
 
-```
+
 document.querySelectorAll('.pixel-tools').forEach(d => d.style.display = 'none');
 document.querySelectorAll('.sketch-tools').forEach(d => d.style.display = 'flex');
 
@@ -773,7 +773,7 @@ colorPickersContainer.style.display = (sketchActivePalette === sketchCustomPalet
 brushColor = sketchActivePalette[sketchColorIndex] || sketchBuiltInPalette[0];
 
 lastPixelColorIndex = currentColorIndex;
-```
+
 
 }
 
@@ -806,7 +806,7 @@ const swatch = document.createElement('div');
 swatch.classList.add('swatch');
 swatch.style.backgroundColor = color;
 
-```
+
 if (i === index) {
   swatch.classList.add('selected');
 }
@@ -825,7 +825,7 @@ swatch.addEventListener('click', () => {
 });
 
 paletteContainer.appendChild(swatch);
-```
+
 
 });
 }
@@ -992,7 +992,7 @@ resizeBtn.addEventListener('click', () => {
 const widthInput = document.getElementById('canvasWidth');
 const heightInput = document.getElementById('canvasHeight');
 
-```
+
 if(widthInput && heightInput) {
   const w = parseInt(widthInput.value);
   const h = parseInt(heightInput.value);
@@ -1012,7 +1012,7 @@ if(widthInput && heightInput) {
     updateCanvasInfo();
   }
 }
-```
+
 
 });
 }
@@ -1185,7 +1185,7 @@ const sprite = {
 name: `Sprite ${sprites.length + 1}`,
 width: canvasWidth,
 height: canvasHeight,
-data: pixelData.map(row => […row])
+data: pixelData.map(row => [...row])
 };
 sprites.push(sprite);
 currentSpriteIndex = sprites.length - 1;
@@ -1199,11 +1199,11 @@ const copy = {
 name: original.name + ' Copy',
 width: original.width,
 height: original.height,
-data: original.data.map(row => […row])
+data: original.data.map(row => [...row])
 };
 sprites.push(copy);
 currentSpriteIndex = sprites.length - 1;
-pixelData = copy.data.map(row => […row]);
+pixelData = copy.data.map(row => [...row]);
 renderPixelCanvas();
 updateSpriteSelector();
 }
@@ -1214,7 +1214,7 @@ sprites.splice(currentSpriteIndex, 1);
 currentSpriteIndex = sprites.length - 1;
 
 if(currentSpriteIndex >= 0) {
-pixelData = sprites[currentSpriteIndex].data.map(row => […row]);
+pixelData = sprites[currentSpriteIndex].data.map(row => [...row]);
 renderPixelCanvas();
 } else {
 createPixelGrid(canvasWidth, canvasHeight);
@@ -1235,7 +1235,7 @@ if(spriteSelector) {
 spriteSelector.addEventListener('change', e => {
 currentSpriteIndex = parseInt(e.target.value);
 if(currentSpriteIndex >= 0) {
-pixelData = sprites[currentSpriteIndex].data.map(row => […row]);
+pixelData = sprites[currentSpriteIndex].data.map(row => [...row]);
 renderPixelCanvas();
 }
 });
@@ -1306,14 +1306,14 @@ const layerDiv = document.createElement('div');
 layerDiv.className = 'layer-item' + (i === activeLayer ? ' active' : '');
 layerDiv.innerHTML = `<span class="layer-name">${layer.name}</span> <button class="layer-visibility" data-layer="${i}">${layer.visible ? '👁' : '🙈'}</button>`;
 
-```
+
 layerDiv.addEventListener('click', () => {
   activeLayer = i;
   updateLayerList();
 });
 
 layerList.appendChild(layerDiv);
-```
+
 
 });
 }
@@ -1389,7 +1389,7 @@ pixelData: pixelData,
 sprites: sprites
 };
 
-```
+
 const dataStr = JSON.stringify(data, null, 2);
 const blob = new Blob([dataStr], {type: 'application/json'});
 const link = document.createElement('a');
@@ -1399,7 +1399,7 @@ link.click();
 
 const output = document.getElementById('output');
 if(output) output.value = dataStr;
-```
+
 
 }
 }
@@ -1449,13 +1449,13 @@ activeLayer = 0;
 updateLayerList();
 }
 
-```
+
   pixelUndoStack = [];
   pixelRedoStack = [];
   sketchUndoStack = [];
   sketchRedoStack = [];
 }
-```
+
 
 });
 }
@@ -1476,14 +1476,14 @@ customPalette,
 sketchCustomPalette
 };
 
-```
+
 const dataStr = JSON.stringify(projectData, null, 2);
 const blob = new Blob([dataStr], {type: 'application/json'});
 const link = document.createElement('a');
 link.href = URL.createObjectURL(blob);
 link.download = 'jerry-editor-project.json';
 link.click();
-```
+
 
 });
 }
@@ -1495,7 +1495,7 @@ importFile.addEventListener('change', e => {
 const file = e.target.files[0];
 if(!file) return;
 
-```
+
 const reader = new FileReader();
 reader.onload = e => {
   try {
@@ -1529,7 +1529,7 @@ reader.onload = e => {
   }
 };
 reader.readAsText(file);
-```
+
 
 });
 }
