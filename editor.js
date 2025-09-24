@@ -233,15 +233,15 @@ function safeGetElement(id) {
 
 function createPixelGrid(width, height) {
     if (!pixelCanvas) return;
-    
+
     pixelCanvas.innerHTML = '';
     pixelData = [];
     pixelCanvas.style.gridTemplateColumns = `repeat(${width}, ${cellSize}px)`;
     pixelCanvas.style.gridTemplateRows = `repeat(${height}, ${cellSize}px)`;
 
-    for(let y = 0; y < height; y++) {
+    for (let y = 0; y < height; y++) {
         pixelData[y] = [];
-        for(let x = 0; x < width; x++) {
+        for (let x = 0; x < width; x++) {
             const cell = document.createElement('div');
             cell.classList.add('cell');
             cell.dataset.x = x;
@@ -249,37 +249,48 @@ function createPixelGrid(width, height) {
             cell.style.width = `${cellSize}px`;
             cell.style.height = `${cellSize}px`;
             cell.style.backgroundColor = 'transparent';
-            // Add grid border for visual grid
-            cell.style.border = '1px solid rgba(128,128,128,0.2)';
+            cell.style.border = showGrid ? '1px solid rgba(128,128,128,0.2)' : 'none';
             cell.style.boxSizing = 'border-box';
             pixelCanvas.appendChild(cell);
             pixelData[y][x] = 'transparent';
         }
     }
 
-    // Apply current grid toggle state
-    updateGridDisplay();
+    updatePixelCanvasTransform();
+}
+
+function updatePixelCanvasTransform() {
+    const container = document.getElementById('canvasContainer');
+    if (!container || !pixelCanvas) return;
+
+    // Apply zoom
+    pixelCanvas.style.transform = `scale(${zoomLevel})`;
+
+    // Center the grid
+    const canvasWidthPx = canvasWidth * cellSize * zoomLevel;
+    const canvasHeightPx = canvasHeight * cellSize * zoomLevel;
+    pixelCanvas.style.marginLeft = `${(container.clientWidth - canvasWidthPx) / 2}px`;
+    pixelCanvas.style.marginTop = `${(container.clientHeight - canvasHeightPx) / 2}px`;
 }
 
 function updateGridDisplay() {
-    const gridToggle = document.getElementById('gridToggle');
     const cells = pixelCanvas.querySelectorAll('.cell');
-    
-    if (gridToggle && cells.length > 0) {
-        const showGrid = gridToggle.checked;
-        cells.forEach(cell => {
-            cell.style.border = showGrid ? '1px solid rgba(128,128,128,0.2)' : 'none';
-        });
-    }
+    cells.forEach(cell => {
+        cell.style.border = showGrid ? '1px solid rgba(128,128,128,0.2)' : 'none';
+    });
 }
+
 
 // Update the grid toggle event listener
 const gridToggle = document.getElementById('gridToggle');
-if(gridToggle) {
-    gridToggle.addEventListener('change', e => {
+if (gridToggle) {
+    showGrid = gridToggle.checked;
+    gridToggle.addEventListener('change', () => {
+        showGrid = gridToggle.checked;
         updateGridDisplay();
     });
 }
+
 
 
 function getSymmetricPoints(x, y) {
@@ -723,7 +734,6 @@ function handleMouseUp(e) {
 
     isPainting = false;
     lastMousePos = null;
-    renderPixelCanvas();
 }
 
 function handleTouchStart(e) {
@@ -974,107 +984,170 @@ color: brushColor
 };
 }
 
-function drawBrushStroke(x, y, settings) {
-const { size, opacity, flow, hardness, color } = settings;
+function drawSketchAt(x, y) {
+    const settings = getBrushSettings();
+    sketchCtx.save();
 
-sketchCtx.save();
-sketchCtx.globalAlpha = opacity * flow;
-sketchCtx.fillStyle = color;
-sketchCtx.beginPath();
+    switch(currentTool) {
+        case 'brush':
+            sketchCtx.globalAlpha = settings.opacity * settings.flow;
+            sketchCtx.fillStyle = settings.color;
+            drawSoftCircle(x, y, settings.size, settings.hardness);
+            break;
 
-if(hardness < 100) {
-// Soft brush
-const gradient = sketchCtx.createRadialGradient(x, y, 0, x, y, size / 2);
-gradient.addColorStop(0, color);
-gradient.addColorStop(hardness, color);
-gradient.addColorStop(1, color + '00');
-sketchCtx.fillStyle = gradient;
+        case 'pen':
+            sketchCtx.globalAlpha = 1;
+            sketchCtx.strokeStyle = settings.color;
+            sketchCtx.lineWidth = settings.size;
+            sketchCtx.lineCap = 'round';
+            sketchCtx.lineJoin = 'round';
+            sketchCtx.lineTo(x, y);
+            sketchCtx.stroke();
+            sketchCtx.beginPath();
+            sketchCtx.moveTo(x, y);
+            break;
+
+        case 'marker':
+            sketchCtx.globalAlpha = 0.3 * settings.flow;
+            sketchCtx.fillStyle = settings.color;
+            drawSoftCircle(x, y, settings.size, settings.hardness);
+            break;
+
+        case 'pencil':
+            sketchCtx.globalAlpha = settings.opacity;
+            sketchCtx.strokeStyle = settings.color;
+            sketchCtx.lineWidth = settings.size / 2;
+            sketchCtx.setLineDash([1, 2]);
+            sketchCtx.lineTo(x, y);
+            sketchCtx.stroke();
+            sketchCtx.beginPath();
+            sketchCtx.moveTo(x, y);
+            break;
+
+        case 'charcoal':
+            sketchCtx.globalAlpha = 0.5 * settings.flow;
+            sketchCtx.fillStyle = settings.color;
+            drawSoftCircle(x, y, settings.size, 50);
+            break;
+
+        case 'eraser':
+            sketchCtx.globalCompositeOperation = 'destination-out';
+            sketchCtx.globalAlpha = 1;
+            drawSoftCircle(x, y, settings.size, settings.hardness);
+            sketchCtx.globalCompositeOperation = 'source-over';
+            break;
+
+        case 'smudge':
+            smudgeAt(x, y, settings);
+            break;
+
+        case 'blur':
+            blurAt(x, y, settings);
+            break;
+    }
+
+    sketchCtx.restore();
 }
 
-sketchCtx.arc(x, y, size / 2, 0, Math.PI * 2);
-sketchCtx.fill();
-sketchCtx.restore();
+function drawSoftCircle(x, y, size, hardness = 100) {
+    const radius = size / 2;
+    if(hardness === 100) {
+        sketchCtx.beginPath();
+        sketchCtx.arc(x, y, radius, 0, Math.PI * 2);
+        sketchCtx.fill();
+    } else {
+        const gradient = sketchCtx.createRadialGradient(x, y, 0, x, y, radius);
+        gradient.addColorStop(0, sketchCtx.fillStyle);
+        gradient.addColorStop(hardness / 100, sketchCtx.fillStyle);
+        gradient.addColorStop(1, sketchCtx.fillStyle + '00');
+        sketchCtx.fillStyle = gradient;
+        sketchCtx.beginPath();
+        sketchCtx.arc(x, y, radius, 0, Math.PI * 2);
+        sketchCtx.fill();
+    }
 }
+
+function smudgeAt(x, y, settings) {
+    const size = settings.size;
+    const imgData = sketchCtx.getImageData(x - size/2, y - size/2, size, size);
+    for(let i = 0; i < imgData.data.length; i += 4) {
+        const offset = (Math.random() - 0.5) * 4;
+        imgData.data[i] += offset;
+        imgData.data[i+1] += offset;
+        imgData.data[i+2] += offset;
+    }
+    sketchCtx.putImageData(imgData, x - size/2, y - size/2);
+}
+
+function blurAt(x, y, settings) {
+    const size = settings.size;
+    sketchCtx.filter = `blur(${size/8}px)`;
+    sketchCtx.drawImage(sketchCanvas, x - size/2, y - size/2, size, size, x - size/2, y - size/2, size, size);
+    sketchCtx.filter = 'none';
+}
+
 
 sketchCanvas.addEventListener('mousedown', e => {
-if(currentMode !== 'sketch') return;
-e.preventDefault();
-sketchPainting = true;
-saveSketchState();
+    if(currentMode !== 'sketch') return;
+    e.preventDefault();
+    sketchPainting = true;
+    saveSketchState();
 
-const rect = sketchCanvas.getBoundingClientRect();
-const x = (e.clientX - rect.left) / zoomLevel;
-const y = (e.clientY - rect.top) / zoomLevel;
+    const rect = sketchCanvas.getBoundingClientRect();
+    const x = (e.clientX - rect.left) / zoomLevel;
+    const y = (e.clientY - rect.top) / zoomLevel;
 
-sketchCtx.beginPath();
-sketchCtx.moveTo(x, y);
-
-const settings = getBrushSettings();
-drawBrushStroke(x, y, settings);
+    sketchCtx.beginPath();
+    sketchCtx.moveTo(x, y);
+    drawSketchAt(x, y); // <-- important!
 });
 
-function updateSketchDrawing() {
-    sketchCanvas.addEventListener('mousemove', e => {
-        if(currentMode !== 'sketch' || !sketchPainting) return;
-        e.preventDefault();
+sketchCanvas.addEventListener('mousemove', e => {
+    if(currentMode !== 'sketch' || !sketchPainting) return;
+    e.preventDefault();
 
-        const rect = sketchCanvas.getBoundingClientRect();
-        const x = (e.clientX - rect.left) / zoomLevel;
-        const y = (e.clientY - rect.top) / zoomLevel;
+    const rect = sketchCanvas.getBoundingClientRect();
+    const x = (e.clientX - rect.left) / zoomLevel;
+    const y = (e.clientY - rect.top) / zoomLevel;
 
-        const settings = getBrushSettings();
-
-        // More responsive drawing
-        sketchCtx.globalAlpha = settings.opacity * settings.flow;
-        sketchCtx.strokeStyle = settings.color;
-        sketchCtx.lineWidth = settings.size;
-        sketchCtx.lineCap = 'round';
-        sketchCtx.lineJoin = 'round';
-        sketchCtx.globalCompositeOperation = 'source-over';
-
-        sketchCtx.lineTo(x, y);
-        sketchCtx.stroke();
-        
-        // Continue path for smooth lines
-        sketchCtx.beginPath();
-        sketchCtx.moveTo(x, y);
-    });
-}
+    drawSketchAt(x, y); // <-- important!
+});
 
 sketchCanvas.addEventListener('mouseup', () => {
-if(currentMode !== 'sketch') return;
-sketchPainting = false;
+    sketchPainting = false;
 });
+
 
 // Touch events for sketch
 sketchCanvas.addEventListener('touchstart', e => {
-if(currentMode !== 'sketch') return;
-e.preventDefault();
-const touch = e.touches[0];
-const mouseEvent = new MouseEvent('mousedown', {
-clientX: touch.clientX,
-clientY: touch.clientY
-});
-sketchCanvas.dispatchEvent(mouseEvent);
+    if(currentMode !== 'sketch') return;
+    e.preventDefault();
+    const touch = e.touches[0];
+    const mouseEvent = new MouseEvent('mousedown', {
+        clientX: touch.clientX,
+        clientY: touch.clientY
+    });
+    sketchCanvas.dispatchEvent(mouseEvent);
 });
 
 sketchCanvas.addEventListener('touchmove', e => {
-if(currentMode !== 'sketch') return;
-e.preventDefault();
-const touch = e.touches[0];
-const mouseEvent = new MouseEvent('mousemove', {
-clientX: touch.clientX,
-clientY: touch.clientY
-});
-sketchCanvas.dispatchEvent(mouseEvent);
+    if(currentMode !== 'sketch') return;
+    e.preventDefault();
+    const touch = e.touches[0];
+    const mouseEvent = new MouseEvent('mousemove', {
+        clientX: touch.clientX,
+        clientY: touch.clientY
+    });
+    sketchCanvas.dispatchEvent(mouseEvent);
 });
 
 sketchCanvas.addEventListener('touchend', e => {
-if(currentMode !== 'sketch') return;
-e.preventDefault();
-const mouseEvent = new MouseEvent('mouseup', {});
-sketchCanvas.dispatchEvent(mouseEvent);
+    if(currentMode !== 'sketch') return;
+    e.preventDefault();
+    const mouseEvent = new MouseEvent('mouseup', {});
+    sketchCanvas.dispatchEvent(mouseEvent);
 });
+
 
 // =====================
 // TOOL BUTTONS
@@ -1358,45 +1431,35 @@ sketchCtx.clearRect(0, 0, sketchCanvas.width, sketchCanvas.height);
 });
 }
 
-// Canvas resize
 const resizeBtn = document.getElementById('resizeCanvas');
-if(resizeBtn) {
-resizeBtn.addEventListener('click', () => {
-const widthInput = document.getElementById('canvasWidth');
-const heightInput = document.getElementById('canvasHeight');
+if (resizeBtn) {
+    resizeBtn.addEventListener('click', () => {
+        const widthInput = document.getElementById('canvasWidth');
+        const heightInput = document.getElementById('canvasHeight');
 
+        if (widthInput && heightInput) {
+            const w = parseInt(widthInput.value);
+            const h = parseInt(heightInput.value);
 
-if(widthInput && heightInput) {
-  const w = parseInt(widthInput.value);
-  const h = parseInt(heightInput.value);
-  
-  if(!isNaN(w) && !isNaN(h) && w > 0 && h > 0) {
-    canvasWidth = w;
-    canvasHeight = h;
+            if (!isNaN(w) && !isNaN(h) && w > 0 && h > 0) {
+                canvasWidth = w;
+                canvasHeight = h;
 
-    if(currentMode === 'pixel') {
-      createPixelGrid(canvasWidth, canvasHeight);
-    } else {
-      sketchCanvas.width = canvasWidth * cellSize;
-      sketchCanvas.height = canvasHeight * cellSize;
-      sketchCanvas.style.transform = `scale(${zoomLevel})`;
-    }
-    
-    updateCanvasInfo();
-  }
+                if (currentMode === 'pixel') {
+                    createPixelGrid(canvasWidth, canvasHeight);
+                    updatePixelCanvasTransform(); // Ensure it's centered + scaled
+                } else {
+                    sketchCanvas.width = canvasWidth * cellSize;
+                    sketchCanvas.height = canvasHeight * cellSize;
+                    updateSketchCanvasTransform(); // optional, similar centering
+                }
+
+                updateCanvasInfo();
+            }
+        }
+    });
 }
 
-
-});
-}
-
-// Grid toggle
-const gridToggle = document.getElementById('gridToggle');
-if(gridToggle) {
-gridToggle.addEventListener('change', e => {
-  updateGridDisplay();
-});
-}
 
 // =====================
 // BRUSH CONTROLS (SKETCH)
