@@ -1,123 +1,7 @@
 // =====================
 // editor.js - Jerry Editor
 // =====================
-
-// =====================
-// GLOBAL STATE
-// =====================
-let currentMode = 'pixel';
-let currentTool = 'pencil';
-let symmetryMode = 'none';
-let isPainting = false;
-let startX = 0, startY = 0;
-let canvasWidth = 16, canvasHeight = 16;
-let pixelData = [];
-let cellSize = 20;
-let lastMousePos = null;
-let currentPaletteName = 'default';
-let currentPalette = palettes[currentPaletteName];
-let selectedColorIndex = 1;
-let userPalettes = JSON.parse(localStorage.getItem('userPalettes') || '[]');
-
-// Add a new user palette
-function addUserPalette(name, colors) {
-    if (!name || !colors || !colors.length) return;
-    const palette = { name, colors };
-    userPalettes.push(palette);
-    localStorage.setItem('userPalettes', JSON.stringify(userPalettes));
-
-    // automatically set this palette as active
-    setPalette(name, true);
-}
-
-// Set active palette by name (built-in or user)
-function setPalette(name, isUser = false) {
-    if (isUser) {
-        const palette = userPalettes.find(p => p.name === name);
-        if (!palette) return;
-        activePalette = palette.colors;
-    } else if (palettes[name]) {
-        activePalette = palettes[name];
-    } else return;
-
-    currentColorIndex = 1; // reset selection
-    primaryColor = activePalette[currentColorIndex];
-    renderPalette();
-}
-
-function setPaletteByName(name) {
-    let palette;
-    if(palettes[name]) {
-        palette = palettes[name];
-    } else if(userPalettes.find(p => p.name === name)) {
-        palette = userPalettes.find(p => p.name === name).colors;
-    } else {
-        return;
-    }
-
-    if(currentMode === 'pixel') {
-        activePalette = palette;
-        currentPalette = palette; // sync properly
-        currentColorIndex = 1;
-        primaryColor = activePalette[currentColorIndex];
-    } else {
-        sketchActivePalette = palette;
-        sketchColorIndex = 0;
-        brushColor = sketchActivePalette[sketchColorIndex];
-    }
-
-    renderPalette();
-}
-
-
-
-
-// Add a single color to current palette (user only)
-function addCustomColor(color) {
-    if (!color) return;
-    activePalette.push(color);
-    currentColorIndex = activePalette.length - 1;
-    primaryColor = color;
-    renderPalette();
-}
-
-// Reset to default built-in palette
-function resetPalette() {
-    activePalette = palettes.default;
-    currentColorIndex = 1;
-    primaryColor = activePalette[currentColorIndex];
-    renderPalette();
-}
-
-function selectColor(index) {
-  if (index >= 0 && index < currentPalette.length) {
-    selectedColorIndex = index;
-    currentColor = currentPalette[index];
-  }
-}
-
-
-// ACTIVE PALETTE FIX
-let activePalette = palettes.default;
-let currentColorIndex = 1; // skip transparent
-let customPalette = ['#000000','#111111','#222222','#333333','#444444','#555555','#666666','#777777'];
-
-// Ensure currentColor is synced
-let primaryColor = activePalette[currentColorIndex];
-let secondaryColor = '#FFFFFF';
-let currentColor = primaryColor;
-
-// Sketch palettes
-let sketchBuiltInPalette = ['#000000','#555555','#AAAAAA','#FF5733','#FFC300','#DAF7A6','#33FF57','#3357FF'];
-let sketchCustomPalette = ['#000000','#111111','#222222','#333333','#444444','#555555','#666666','#777777'];
-let sketchActivePalette = sketchBuiltInPalette;
-let sketchColorIndex = 0;
-
-let pixelUndoStack = [];
-let pixelRedoStack = [];
-let sketchUndoStack = [];
-let sketchRedoStack = [];
-let selection = null;
+let isLightMode = window.matchMedia('(prefers-color-scheme: light)').matches;
 
 const palettes = {
   default: isLightMode
@@ -170,6 +54,123 @@ const palettes = {
     : ['transparent','#FFEBEE','#FFCDD2','#F8BBD9','#F48FB1','#F06292','#EC407A','#E91E63','#C2185B','#AD1457','#880E4F']
 };
 // =====================
+// GLOBAL STATE
+// =====================
+let currentMode = 'pixel';
+let currentTool = 'pencil';
+let symmetryMode = 'none';
+let isPainting = false;
+let startX = 0, startY = 0;
+let canvasWidth = 16, canvasHeight = 16;
+let pixelData = [];
+let cellSize = 20;
+let lastMousePos = null;
+let currentPaletteName = 'default';
+let currentPalette = palettes[currentPaletteName];
+let selectedColorIndex = 1;
+let userPalettes = JSON.parse(localStorage.getItem('userPalettes') || '[]');
+
+// Add a new user palette
+function addUserPalette(name, colors) {
+    if (!name || !colors || !colors.length) return;
+    const palette = { name, colors };
+    userPalettes.push(palette);
+    localStorage.setItem('userPalettes', JSON.stringify(userPalettes));
+
+    // automatically set this palette as active
+    setPalette(name, true);
+}
+
+// Set active palette by name (built-in or user)
+function setPaletteByName(name) {
+    let palette;
+    let isUserPalette = false;
+    
+    if(palettes[name]) {
+        palette = palettes[name];
+    } else if(userPalettes.find(p => p.name === name)) {
+        palette = userPalettes.find(p => p.name === name).colors;
+        isUserPalette = true;
+    } else if(name === 'custom') {
+        palette = currentMode === 'pixel' ? customPalette : sketchCustomPalette;
+    } else if(name === 'built-in') {
+        palette = currentMode === 'pixel' ? palettes.default : sketchBuiltInPalette;
+    } else {
+        return;
+    }
+
+    if(currentMode === 'pixel') {
+        activePalette = palette;
+        currentPalette = palette; // sync properly
+        currentColorIndex = Math.min(currentColorIndex, palette.length - 1);
+        primaryColor = activePalette[currentColorIndex];
+        currentColor = primaryColor; // Keep currentColor in sync
+    } else {
+        sketchActivePalette = palette;
+        sketchColorIndex = Math.min(sketchColorIndex, palette.length - 1);
+        brushColor = sketchActivePalette[sketchColorIndex];
+    }
+
+    renderPalette();
+    
+    // Show/hide color pickers for custom palettes
+    if(colorPickersContainer) {
+        colorPickersContainer.style.display = (name === 'custom' || isUserPalette) ? 'flex' : 'none';
+    }
+}
+
+
+
+
+// Add a single color to current palette (user only)
+function addCustomColor(color) {
+    if (!color) return;
+    activePalette.push(color);
+    currentColorIndex = activePalette.length - 1;
+    primaryColor = color;
+    renderPalette();
+}
+
+// Reset to default built-in palette
+function resetPalette() {
+    activePalette = palettes.default;
+    currentColorIndex = 1;
+    primaryColor = activePalette[currentColorIndex];
+    renderPalette();
+}
+
+function selectColor(index) {
+  if (index >= 0 && index < currentPalette.length) {
+    selectedColorIndex = index;
+    currentColor = currentPalette[index];
+  }
+}
+
+
+// ACTIVE PALETTE FIX
+let activePalette = palettes.default;
+let currentColorIndex = 1; // skip transparent
+let customPalette = ['#000000','#111111','#222222','#333333','#444444','#555555','#666666','#777777'];
+
+// Ensure currentColor is synced
+let primaryColor = activePalette[currentColorIndex];
+let secondaryColor = '#FFFFFF';
+let currentColor = primaryColor;
+
+// Sketch palettes
+let sketchBuiltInPalette = ['#000000','#555555','#AAAAAA','#FF5733','#FFC300','#DAF7A6','#33FF57','#3357FF'];
+let sketchCustomPalette = ['#000000','#111111','#222222','#333333','#444444','#555555','#666666','#777777'];
+let sketchActivePalette = sketchBuiltInPalette;
+let sketchColorIndex = 0;
+
+let pixelUndoStack = [];
+let pixelRedoStack = [];
+let sketchUndoStack = [];
+let sketchRedoStack = [];
+let selection = null;
+
+
+// =====================
 // CANVAS ELEMENTS
 // =====================
 const pixelCanvas = document.getElementById('canvas');
@@ -177,17 +178,24 @@ const canvasGrid = document.getElementById('canvasGrid');
 const paletteContainer = document.getElementById('swatches');
 const colorPickersContainer = document.getElementById('colorPickers');
 
-// Create preview canvas
-const previewCanvas = document.createElement('canvas');
-previewCanvas.width = canvasWidth * cellSize;
-previewCanvas.height = canvasHeight * cellSize;
-previewCanvas.style.position = 'absolute';
-previewCanvas.style.top = '0';
-previewCanvas.style.left = '0';
-previewCanvas.style.pointerEvents = 'none';
-previewCanvas.style.zIndex = '10';
-document.querySelector('.canvas-wrapper').appendChild(previewCanvas);
-const previewCtx = previewCanvas.getContext('2d');
+let previewCanvas = null;
+let previewCtx = null;
+
+const canvasWrapper = document.querySelector('.canvas-wrapper');
+if (canvasWrapper) {
+    previewCanvas = document.createElement('canvas');
+    previewCanvas.width = canvasWidth * cellSize;
+    previewCanvas.height = canvasHeight * cellSize;
+    previewCanvas.style.position = 'absolute';
+    previewCanvas.style.top = '0';
+    previewCanvas.style.left = '0';
+    previewCanvas.style.pointerEvents = 'none';
+    previewCanvas.style.zIndex = '10';
+    canvasWrapper.appendChild(previewCanvas);
+    previewCtx = previewCanvas.getContext('2d');
+} else {
+    console.warn("Canvas wrapper not found - preview functionality disabled");
+}
 
 // Sketch canvas
 const sketchCanvas = document.getElementById('sketchCanvas');
@@ -202,34 +210,49 @@ let zoomLevel = 1;
 let sketchLayers = [{ id: 0, name: 'Layer 1', opacity: 1, visible: true, data: null }];
 let activeLayer = 0;
 
+const canvas = pixelCanvas; 
+const toolButtons = document.querySelectorAll('.tool-btn') || [];
 // =====================
 // UTILITY FUNCTIONS
 // =====================
+function safeGetElement(id) {
+    const element = document.getElementById(id);
+    if (!element) {
+        console.warn(`Element with id '${id}' not found`);
+    }
+    return element;
+}
+
 function createPixelGrid(width, height) {
-pixelCanvas.innerHTML = '';
-canvasGrid.innerHTML = '';
-pixelData = [];
-pixelCanvas.style.gridTemplateColumns = `repeat(${width}, ${cellSize}px)`;
-pixelCanvas.style.gridTemplateRows = `repeat(${height}, ${cellSize}px)`;
+    if (!pixelCanvas) return;
+    
+    pixelCanvas.innerHTML = '';
+    if (canvasGrid) canvasGrid.innerHTML = '';
+    
+    pixelData = [];
+    pixelCanvas.style.gridTemplateColumns = `repeat(${width}, ${cellSize}px)`;
+    pixelCanvas.style.gridTemplateRows = `repeat(${height}, ${cellSize}px)`;
 
-for(let y = 0; y < height; y++) {
-pixelData[y] = [];
-for(let x = 0; x < width; x++) {
-const cell = document.createElement('div');
-cell.classList.add('cell');
-cell.dataset.x = x;
-cell.dataset.y = y;
-cell.style.width = `${cellSize}px`;
-cell.style.height = `${cellSize}px`;
-cell.style.backgroundColor = 'transparent';
-pixelCanvas.appendChild(cell);
-pixelData[y][x] = 'transparent';
-}
-}
+    for(let y = 0; y < height; y++) {
+        pixelData[y] = [];
+        for(let x = 0; x < width; x++) {
+            const cell = document.createElement('div');
+            cell.classList.add('cell');
+            cell.dataset.x = x;
+            cell.dataset.y = y;
+            cell.style.width = `${cellSize}px`;
+            cell.style.height = `${cellSize}px`;
+            cell.style.backgroundColor = 'transparent';
+            pixelCanvas.appendChild(cell);
+            pixelData[y][x] = 'transparent';
+        }
+    }
 
-// Update preview canvas size
-previewCanvas.width = width * cellSize;
-previewCanvas.height = height * cellSize;
+// Update preview canvas size safely
+    if (previewCanvas) {
+        previewCanvas.width = width * cellSize;
+        previewCanvas.height = height * cellSize;
+    }
 }
 
 function getSymmetricPoints(x, y) {
@@ -251,10 +274,11 @@ return points.filter((v,i,a) => a.findIndex(t => t.x === v.x && t.y === v.y) ===
 }
 
 function updateCanvasInfo() {
-const info = document.getElementById('canvasInfo');
-if(info) {
-info.textContent = `${canvasWidth}×${canvasHeight} | ${currentTool} | ${currentMode === 'pixel' ? primaryColor : brushColor}`;
-}
+    const info = document.getElementById('canvasInfo');
+    if(!info) return; // Gracefully handle missing element
+    
+    const colorInfo = currentMode === 'pixel' ? primaryColor : brushColor;
+    info.textContent = `${canvasWidth}×${canvasHeight} | ${currentTool} | ${colorInfo}`;
 }
 
 function savePixelState() {
@@ -585,6 +609,151 @@ break;
 }
 }
 
+function handleMouseDown(e) {
+    if(currentMode !== 'pixel') return;
+    e.preventDefault();
+    const {x, y} = getCellFromEvent(e);
+
+    if(currentTool === 'select') {
+        startSelection(x, y);
+    } else if(['line', 'rect', 'circle'].includes(currentTool)) {
+        drawingShape = true;
+        shapeStart = {x, y};
+        savePixelState();
+    } else if(isMovingSelection) {
+        finalizeSelection();
+    } else {
+        savePixelState();
+        isPainting = true;
+        handlePixelPaint(e);
+    }
+    lastMousePos = {x: e.clientX, y: e.clientY};
+}
+
+function handleMouseMove(e) {
+    if(currentMode !== 'pixel') return;
+    e.preventDefault();
+    const {x, y} = getCellFromEvent(e);
+
+    if(isSelecting && previewCtx) { // Add null check
+        const x0 = Math.min(selectionStart.x, x);
+        const y0 = Math.min(selectionStart.y, y);
+        const x1 = Math.max(selectionStart.x, x);
+        const y1 = Math.max(selectionStart.y, y);
+
+        previewCtx.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
+        previewCtx.strokeStyle = 'rgba(0,150,255,0.8)';
+        previewCtx.lineWidth = 2;
+        previewCtx.setLineDash([4, 2]);
+        previewCtx.strokeRect(
+            x0 * cellSize,
+            y0 * cellSize,
+            (x1 - x0 + 1) * cellSize,
+            (y1 - y0 + 1) * cellSize
+        );
+    } else if(drawingShape) {
+        drawPreviewShape(shapeStart.x, shapeStart.y, x, y, currentTool, primaryColor);
+    } else if(isMovingSelection && lastMousePos) {
+        const dx = Math.floor((e.clientX - lastMousePos.x) / cellSize);
+        const dy = Math.floor((e.clientY - lastMousePos.y) / cellSize);
+        if(dx !== 0 || dy !== 0) {
+            moveSelection(dx, dy);
+            lastMousePos = {x: e.clientX, y: e.clientY};
+        }
+    } else if(isPainting) {
+        handlePixelPaint(e);
+    }
+}
+
+function handleMouseUp(e) {
+    if(currentMode !== 'pixel') return;
+    e.preventDefault();
+    const {x, y} = getCellFromEvent(e);
+
+    if(isSelecting && previewCtx) { // Add null check
+        endSelection(x, y);
+        previewCtx.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
+    } else if(drawingShape && previewCtx) { // Add null check
+        drawingShape = false;
+        previewCtx.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
+
+        switch(currentTool) {
+            case 'line':
+                drawLine(shapeStart.x, shapeStart.y, x, y, primaryColor);
+                break;
+            case 'rect':
+                drawRect(shapeStart.x, shapeStart.y, x, y, primaryColor, false);
+                break;
+            case 'circle':
+                const radius = Math.round(Math.hypot(x - shapeStart.x, y - shapeStart.y));
+                drawCircle(shapeStart.x, shapeStart.y, radius, primaryColor, false);
+                break;
+        }
+    }
+
+    isPainting = false;
+    lastMousePos = null;
+    renderPixelCanvas();
+}
+
+function handleTouchStart(e) {
+    if(currentMode !== 'pixel') return;
+    e.preventDefault();
+    const touch = e.touches[0];
+    const mouseEvent = new MouseEvent('mousedown', {
+        clientX: touch.clientX,
+        clientY: touch.clientY,
+        button: 0
+    });
+    handleMouseDown(mouseEvent);
+}
+
+function handleTouchMove(e) {
+    if(currentMode !== 'pixel') return;
+    e.preventDefault();
+    const touch = e.touches[0];
+    const mouseEvent = new MouseEvent('mousemove', {
+        clientX: touch.clientX,
+        clientY: touch.clientY
+    });
+    handleMouseMove(mouseEvent);
+}
+
+function handleTouchEnd(e) {
+    if(currentMode !== 'pixel') return;
+    e.preventDefault();
+    const touch = e.changedTouches[0];
+    const mouseEvent = new MouseEvent('mouseup', {
+        clientX: touch.clientX,
+        clientY: touch.clientY,
+        button: 0
+    });
+    handleMouseUp(mouseEvent);
+}
+
+function handleColorSelect(e) {
+    const swatch = e.target.closest('.swatch');
+    if(!swatch) return;
+    
+    const index = Array.from(paletteContainer.children).indexOf(swatch);
+    if(currentMode === 'pixel') {
+        currentColorIndex = index;
+        primaryColor = currentPalette[index];
+    } else {
+        sketchColorIndex = index;
+        brushColor = sketchActivePalette[index];
+    }
+    updateCanvasInfo();
+    renderPalette();
+    updateColorSwatches();
+}
+
+function handleToolSelect(e) {
+    document.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('active'));
+    e.target.classList.add('active');
+    currentTool = e.target.dataset.tool;
+    updateCanvasInfo();
+}
 // =====================
 // MOUSE EVENTS
 // =====================
@@ -615,77 +784,69 @@ lastMousePos = {x: e.clientX, y: e.clientY};
 });
 
 pixelCanvas.addEventListener('mousemove', e => {
-if(currentMode !== 'pixel') return;
-e.preventDefault();
+    if(currentMode !== 'pixel') return;
+    e.preventDefault();
+    const {x, y} = getCellFromEvent(e);
 
-const {x, y} = getCellFromEvent(e);
+    if(isSelecting && previewCtx) {
+        const x0 = Math.min(selectionStart.x, x);
+        const y0 = Math.min(selectionStart.y, y);
+        const x1 = Math.max(selectionStart.x, x);
+        const y1 = Math.max(selectionStart.y, y);
 
-if(isSelecting) {
-const x0 = Math.min(selectionStart.x, x);
-const y0 = Math.min(selectionStart.y, y);
-const x1 = Math.max(selectionStart.x, x);
-const y1 = Math.max(selectionStart.y, y);
-
-
-previewCtx.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
-previewCtx.strokeStyle = 'rgba(0,150,255,0.8)';
-previewCtx.lineWidth = 2;
-previewCtx.setLineDash([4, 2]);
-previewCtx.strokeRect(
-  x0 * cellSize,
-  y0 * cellSize,
-  (x1 - x0 + 1) * cellSize,
-  (y1 - y0 + 1) * cellSize
-);
-
-
-} else if(drawingShape) {
-drawPreviewShape(shapeStart.x, shapeStart.y, x, y, currentTool, primaryColor);
-} else if(isMovingSelection && lastMousePos) {
-const dx = Math.floor((e.clientX - lastMousePos.x) / cellSize);
-const dy = Math.floor((e.clientY - lastMousePos.y) / cellSize);
-if(dx !== 0 || dy !== 0) {
-moveSelection(dx, dy);
-lastMousePos = {x: e.clientX, y: e.clientY};
-}
-} else if(isPainting) {
-handlePixelPaint(e);
-}
+        previewCtx.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
+        previewCtx.strokeStyle = 'rgba(0,150,255,0.8)';
+        previewCtx.lineWidth = 2;
+        previewCtx.setLineDash([4, 2]);
+        previewCtx.strokeRect(
+            x0 * cellSize,
+            y0 * cellSize,
+            (x1 - x0 + 1) * cellSize,
+            (y1 - y0 + 1) * cellSize
+        );
+    } else if(drawingShape) {
+        drawPreviewShape(shapeStart.x, shapeStart.y, x, y, currentTool, primaryColor);
+    } else if(isMovingSelection && lastMousePos) {
+        const dx = Math.floor((e.clientX - lastMousePos.x) / cellSize);
+        const dy = Math.floor((e.clientY - lastMousePos.y) / cellSize);
+        if(dx !== 0 || dy !== 0) {
+            moveSelection(dx, dy);
+            lastMousePos = {x: e.clientX, y: e.clientY};
+        }
+    } else if(isPainting) {
+        handlePixelPaint(e);
+    }
 });
 
 pixelCanvas.addEventListener('mouseup', e => {
-if(currentMode !== 'pixel') return;
-e.preventDefault();
+    if(currentMode !== 'pixel') return;
+    e.preventDefault();
+    const {x, y} = getCellFromEvent(e);
 
-const {x, y} = getCellFromEvent(e);
+    if(isSelecting && previewCtx) {
+        endSelection(x, y);
+        previewCtx.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
+    } else if(drawingShape && previewCtx) {
+        drawingShape = false;
+        previewCtx.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
 
-if(isSelecting) {
-endSelection(x, y);
-previewCtx.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
-} else if(drawingShape) {
-drawingShape = false;
-previewCtx.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
+        switch(currentTool) {
+            case 'line':
+                drawLine(shapeStart.x, shapeStart.y, x, y, primaryColor);
+                break;
+            case 'rect':
+                drawRect(shapeStart.x, shapeStart.y, x, y, primaryColor, false);
+                break;
+            case 'circle':
+                const radius = Math.round(Math.hypot(x - shapeStart.x, y - shapeStart.y));
+                drawCircle(shapeStart.x, shapeStart.y, radius, primaryColor, false);
+                break;
+        }
+    }
 
-
-switch(currentTool) {
-  case 'line':
-    drawLine(shapeStart.x, shapeStart.y, x, y, primaryColor);
-    break;
-  case 'rect':
-    drawRect(shapeStart.x, shapeStart.y, x, y, primaryColor, false);
-    break;
-  case 'circle':
-    const radius = Math.round(Math.hypot(x - shapeStart.x, y - shapeStart.y));
-    drawCircle(shapeStart.x, shapeStart.y, radius, primaryColor, false);
-    break;
-}
-
-
-}
-
-isPainting = false;
-lastMousePos = null;
-renderPixelCanvas();
+    isPainting = false;
+    lastMousePos = null;
+    renderPixelCanvas();
 });
 
 // Touch events
@@ -918,33 +1079,51 @@ updateModeDisplay();
 // PALETTE HANDLING
 // =====================
 function renderPalette() {
-    const palette = currentMode === 'pixel' ? currentPalette : sketchActivePalette;
-    const index = currentMode === 'pixel' ? currentColorIndex : sketchColorIndex;
+    let palette, index;
+    
+    try {
+        if(currentMode === 'pixel') {
+            palette = activePalette || palettes.default;
+            index = currentColorIndex;
+            currentPalette = palette; // Keep in sync
+        } else {
+            palette = sketchActivePalette || sketchBuiltInPalette;
+            index = sketchColorIndex;
+        }
 
-    paletteContainer.innerHTML = '';
-    palette.forEach((color, i) => {
-        const swatch = document.createElement('div');
-        swatch.classList.add('swatch');
-        swatch.style.backgroundColor = color;
-        if(i === index) swatch.classList.add('selected');
+        if(!paletteContainer || !palette) {
+            console.warn("Palette container or palette not found");
+            return;
+        }
+        
+        paletteContainer.innerHTML = '';
+        palette.forEach((color, i) => {
+            const swatch = document.createElement('div');
+            swatch.classList.add('swatch');
+            swatch.style.backgroundColor = color;
+            if(i === index) swatch.classList.add('selected');
 
-        swatch.addEventListener('click', () => {
-            if(currentMode === 'pixel') {
-                currentColorIndex = i;
-                primaryColor = color;
-            } else {
-                sketchColorIndex = i;
-                brushColor = color;
-            }
-            updateCanvasInfo();
-            renderPalette();
-            updateColorSwatches();
+            swatch.addEventListener('click', () => {
+                if(currentMode === 'pixel') {
+                    currentColorIndex = i;
+                    primaryColor = color;
+                    currentColor = color;
+                } else {
+                    sketchColorIndex = i;
+                    brushColor = color;
+                }
+                updateCanvasInfo();
+                renderPalette();
+                updateColorSwatches();
+            });
+
+            paletteContainer.appendChild(swatch);
         });
 
-        paletteContainer.appendChild(swatch);
-    });
-
-    updateColorSwatches();
+        updateColorSwatches();
+    } catch(error) {
+        console.error("Error rendering palette:", error);
+    }
 }
 
 
@@ -962,40 +1141,52 @@ function updateColorSwatches() {
 const paletteSelector = document.getElementById('paletteSelector');
 
 function updatePaletteSelector() {
-if(!paletteSelector) return;
-paletteSelector.innerHTML = '';
+    if(!paletteSelector) return;
+    paletteSelector.innerHTML = '';
 
-const builtInOption = document.createElement('option');
-builtInOption.value = 'built-in';
-builtInOption.textContent = 'Built-in Palette';
-paletteSelector.appendChild(builtInOption);
+    // Add built-in palettes
+    Object.keys(palettes).forEach(name => {
+        const option = document.createElement('option');
+        option.value = name;
+        option.textContent = name.charAt(0).toUpperCase() + name.slice(1).replace(/([A-Z])/g, ' $1');
+        paletteSelector.appendChild(option);
+    });
 
-const customOption = document.createElement('option');
-customOption.value = 'custom';
-customOption.textContent = 'Custom Palette';
-paletteSelector.appendChild(customOption);
+    // Add custom option
+    const customOption = document.createElement('option');
+    customOption.value = 'custom';
+    customOption.textContent = 'Custom Palette';
+    paletteSelector.appendChild(customOption);
 
-if(currentMode === 'pixel') {
-paletteSelector.value = (activePalette === customPalette) ? 'custom' : 'built-in';
-} else {
-paletteSelector.value = (sketchActivePalette === sketchCustomPalette) ? 'custom' : 'built-in';
+    // Add user palettes
+    userPalettes.forEach(palette => {
+        const option = document.createElement('option');
+        option.value = palette.name;
+        option.textContent = palette.name;
+        paletteSelector.appendChild(option);
+    });
+
+    // Set current value
+    paletteSelector.value = currentPaletteName || 'default';
 }
+
+if(paletteSelector) {
+    paletteSelector.addEventListener('change', e => {
+        const name = e.target.value;
+        
+        try {
+            setPaletteByName(name);
+            
+            // Show color pickers for custom palettes
+            const isCustom = name === 'custom' || userPalettes.some(p => p.name === name);
+            if(colorPickersContainer) {
+                colorPickersContainer.style.display = isCustom ? 'flex' : 'none';
+            }
+        } catch(error) {
+            console.error("Error changing palette:", error);
+        }
+    });
 }
-
-paletteSelector.addEventListener('change', e => {
-    const name = e.target.value;
-
-    if(currentMode === 'pixel') {
-        setPaletteByName(name);
-    } else {
-        sketchActivePalette = (name === 'built-in') ? sketchBuiltInPalette : sketchCustomPalette;
-        renderPalette();
-    }
-
-    // show color pickers only for custom/user palettes
-    const isCustom = !!userPalettes.find(p => p.name === name) || name === 'custom';
-    colorPickersContainer.style.display = isCustom ? 'flex' : 'none';
-});
 
 
 
@@ -1475,6 +1666,16 @@ sketchLayers[activeLayer].opacity = opacity / 100;
 });
 }
 
+document.addEventListener('click', (e) => {
+    if(e.target.classList.contains('layer-visibility')) {
+        const layerIndex = parseInt(e.target.dataset.layer);
+        if(sketchLayers[layerIndex]) {
+            sketchLayers[layerIndex].visible = !sketchLayers[layerIndex].visible;
+            updateLayerList();
+        }
+    }
+});
+
 // =====================
 // EXPORT FUNCTIONALITY
 // =====================
@@ -1719,61 +1920,59 @@ break;
 // INITIALIZATION
 // =====================
 function initialize() {
-    // ---- 1. Create or reset canvas grid ----
-    if (typeof canvasGrid !== 'undefined') {
-        canvasGrid.innerHTML = ''; // clear existing grid if any
+    try {
+        // Ensure DOM is ready
+        if (!pixelCanvas) {
+            console.error("Canvas element not found");
+            return;
+        }
+
+        // Initialize palette references safely
+        if (!currentPalette && palettes && palettes.default) {
+            currentPalette = palettes.default;
+            activePalette = palettes.default;
+        }
+        
+        // Set initial colors safely
+        if (!primaryColor && activePalette && activePalette.length > 1) {
+            primaryColor = activePalette[1];
+            currentColor = primaryColor;
+        }
+
+        // Create canvas grid
+        createPixelGrid(canvasWidth, canvasHeight);
+        
+        // Update UI components
+        updateCanvasInfo();
+        renderPalette();
+        updatePaletteSelector();
+        updateColorSwatches();
+        updateModeDisplay();
+        updateBrushPreview();
+        updateSpriteSelector();
+        updateLayerList();
+        
+        // Set initial tool if none selected
+        const firstTool = document.querySelector('.tool-btn');
+        if(firstTool && !document.querySelector('.tool-btn.active')) {
+            firstTool.classList.add('active');
+            currentTool = firstTool.dataset.tool || 'pencil';
+        }
+        
+        // Set initial mode if none selected
+        const firstMode = document.querySelector('.mode-btn');
+        if(firstMode && !document.querySelector('.mode-btn.active')) {
+            firstMode.classList.add('active');
+            currentMode = firstMode.dataset.mode || 'pixel';
+        }
+
+        console.log("Editor initialized successfully.");
+    } catch(error) {
+        console.error("Initialization error:", error);
     }
-    createPixelGrid(canvasWidth, canvasHeight);
-
-    // ---- 2. Update canvas info ----
-    updateCanvasInfo();
-
-    // ---- 3. Render palettes and selectors ----
-    renderPalette();
-    updatePaletteSelector();
-    updateColorSwatches();
-
-    // ---- 4. Update mode display and brush preview ----
-    updateModeDisplay();
-    updateBrushPreview();
-
-    // ---- 5. Populate sprites and layers ----
-    updateSpriteSelector();
-    updateLayerList();
-
-    // ---- 6. Attach event listeners (if not already attached) ----
-    if (!initialize.listenersAttached) {
-        attachCanvasEventListeners();
-        attachPaletteEventListeners();
-        attachToolEventListeners();
-        initialize.listenersAttached = true; // flag to prevent double-binding
-    }
-
-    console.log("Editor initialized successfully.");
 }
 
 // Flag for listener attachment
-initialize.listenersAttached = false;
-
-// Example listener setup functions
-function attachCanvasEventListeners() {
-    canvas.addEventListener('mousedown', handleMouseDown);
-    canvas.addEventListener('mousemove', handleMouseMove);
-    canvas.addEventListener('mouseup', handleMouseUp);
-    canvas.addEventListener('touchstart', handleTouchStart, { passive: false });
-    canvas.addEventListener('touchmove', handleTouchMove, { passive: false });
-    canvas.addEventListener('touchend', handleTouchEnd, { passive: false });
-}
-
-function attachPaletteEventListeners() {
-    // example: color selection
-    paletteContainer.addEventListener('click', handleColorSelect);
-}
-
-function attachToolEventListeners() {
-    // example: tool selection
-    toolButtons.forEach(btn => btn.addEventListener('click', handleToolSelect));
-}
 
 
 // Service Worker registration
@@ -1799,4 +1998,4 @@ e.preventDefault();
 }, {passive: false});
 
 // Initialize the app
-initialize();
+window.addEventListener('DOMContentLoaded', initialize);
