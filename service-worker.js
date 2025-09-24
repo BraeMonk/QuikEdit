@@ -1,4 +1,4 @@
-const CACHE_NAME = "jerry-editor-v2";
+const CACHE_NAME = "jerry-editor-v3";
 const FILES_TO_CACHE = [
   "./",
   "./index.html",
