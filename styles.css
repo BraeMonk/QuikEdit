@@ -1003,10 +1003,17 @@ input:focus {
 
 @media (max-width: 768px) and (orientation: portrait) {
   .pixel-tools {
+    display: flex;
     flex-direction: row;
-    flex-wrap: wrap;
-    justify-content: flex-start;
-    align-items: center;
+    flex-wrap: nowrap;           /* prevent stacking */
+    overflow-x: auto;            /* enable horizontal scroll */
+    -webkit-overflow-scrolling: touch; /* smooth scrolling on iOS */
     width: 100%;
+    align-items: center;
+    gap: 8px; /* optional spacing between buttons */
+  }
+
+  .pixel-tools > * {
+    flex: 0 0 auto; /* prevent flex items from shrinking */
   }
 }
