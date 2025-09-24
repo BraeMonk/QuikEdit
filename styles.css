@@ -672,8 +672,16 @@ input[type="checkbox"] {
 }
 
 .sketch-tools {
-  display: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  overflow-y: auto;
 }
+.sketch-tools > * {
+  flex-shrink: 0; /* prevents buttons from shrinking */
+}
+
 
 .pixel-tools {
   display: flex;
@@ -1017,5 +1025,26 @@ input:focus {
 
   .pixel-tools > * {
     flex: 0 0 auto; /* prevent flex items from shrinking */
+  }
+
+  .sketch-tools {
+    flex-direction: row;
+    flex-wrap: nowrap;               /* keep buttons in one line */
+    overflow-x: auto;                /* allow horizontal scrolling */
+    overflow-y: visible;             /* disable vertical scroll */
+    width: 100%;
+    align-items: center;
+    gap: 6px;                        /* spacing between buttons */
+    padding: 4px 0;
+  }
+
+  .sketch-tools > * {
+    flex: 0 0 auto;                  /* prevent buttons from shrinking */
+  }
+
+  .tool-separator {
+    width: 1px;
+    height: 80%;
+    margin: 0 4px;
   }
 }
