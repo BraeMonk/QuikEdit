@@ -913,6 +913,29 @@ function drawSketchAtFixed(x, y, isStart) {
     sketchCtx.restore();
 }
 
+function drawSprayPaint(x, y) {
+    if (!sketchCtx) return;
+    
+    sketchCtx.save();
+    sketchCtx.globalAlpha = brushOpacity * 0.1;
+    sketchCtx.fillStyle = brushColor;
+    
+    // Create spray pattern
+    for (let i = 0; i < Math.floor(brushSize); i++) {
+        const angle = Math.random() * Math.PI * 2;
+        const distance = Math.random() * brushSize;
+        const sprayX = x + Math.cos(angle) * distance;
+        const sprayY = y + Math.sin(angle) * distance;
+        const dotSize = Math.random() * 3 + 1;
+        
+        sketchCtx.beginPath();
+        sketchCtx.arc(sprayX, sprayY, dotSize / 2, 0, Math.PI * 2);
+        sketchCtx.fill();
+    }
+    
+    sketchCtx.restore();
+}
+
 function drawSoftCircle(x, y, size, hardness = 1) {
     const radius = size / 2;
     
@@ -1057,48 +1080,143 @@ if (pixelCanvas) {
     });
 }
 
+  if (pixelCanvas) {
+    pixelCanvas.addEventListener('touchstart', e => {
+        if(currentMode !== 'pixel') return;
+        e.preventDefault();
+        const touch = e.touches[0];
+        const mouseEvent = new MouseEvent('mousedown', {
+            clientX: touch.clientX,
+            clientY: touch.clientY,
+            button: 0
+        });
+        pixelCanvas.dispatchEvent(mouseEvent);
+    });
+
+    pixelCanvas.addEventListener('touchmove', e => {
+        if(currentMode !== 'pixel') return;
+        e.preventDefault();
+        const touch = e.touches[0];
+        const mouseEvent = new MouseEvent('mousemove', {
+            clientX: touch.clientX,
+            clientY: touch.clientY
+        });
+        pixelCanvas.dispatchEvent(mouseEvent);
+    });
+
+    pixelCanvas.addEventListener('touchend', e => {
+        if(currentMode !== 'pixel') return;
+        e.preventDefault();
+        const mouseEvent = new MouseEvent('mouseup', {
+            button: 0
+        });
+        pixelCanvas.dispatchEvent(mouseEvent);
+    });
+}
+  
 // Prevent context menu on canvas
 pixelCanvas?.addEventListener('contextmenu', e => e.preventDefault());
 sketchCanvas?.addEventListener('contextmenu', e => e.preventDefault());
-  
+
+
 // =====================
 // MOUSE EVENTS FOR SKETCH CANVAS
 // =====================
-if (sketchCanvas) {
-    let isSketchDrawing = false;
-    let lastSketchPos = null;
+let sketchShapeStart = null;
+let isDrawingSketchShape = false;
 
-    sketchCanvas.addEventListener('mousedown', (e) => {
+// Add to sketch canvas mousedown handler
+if (sketchCanvas) {
+    // Replace existing mousedown handler with this expanded version
+    sketchCanvas.removeEventListener('mousedown', handleSketchMouseDown); // Remove if exists
+    
+    function handleSketchMouseDown(e) {
         if(currentMode !== 'sketch') return;
         e.preventDefault();
         
-        isSketchDrawing = true;
-        saveSketchState();
-
         const rect = sketchCanvas.getBoundingClientRect();
         const x = (e.clientX - rect.left) / zoomLevel;
         const y = (e.clientY - rect.top) / zoomLevel;
         
-        lastSketchPos = {x, y};
-        drawSketchAtFixed(x, y, true);
-    });
-
-    sketchCanvas.addEventListener('mousemove', (e) => {
-        if(currentMode !== 'sketch' || !isSketchDrawing) return;
+        if (['lineSketch', 'rectSketch', 'circleSketch'].includes(currentTool)) {
+            isDrawingSketchShape = true;
+            sketchShapeStart = {x, y};
+            saveSketchState();
+        } else {
+            isSketchDrawing = true;
+            saveSketchState();
+            lastSketchPos = {x, y};
+            drawSketchAtFixed(x, y, true);
+        }
+    }
+    
+    function handleSketchMouseMove(e) {
+        if(currentMode !== 'sketch') return;
         e.preventDefault();
 
         const rect = sketchCanvas.getBoundingClientRect();
         const x = (e.clientX - rect.left) / zoomLevel;
         const y = (e.clientY - rect.top) / zoomLevel;
 
-        drawSketchAtFixed(x, y, false);
-        lastSketchPos = {x, y};
-    });
-
-    sketchCanvas.addEventListener('mouseup', () => {
+        if (isDrawingSketchShape && sketchShapeStart) {
+            // Preview shape drawing (you'd need to implement preview for sketch)
+            // For now, just continue to mouseup
+        } else if (isSketchDrawing) {
+            drawSketchAtFixed(x, y, false);
+            lastSketchPos = {x, y};
+        }
+    }
+    
+    function handleSketchMouseUp(e) {
+        if(currentMode !== 'sketch') return;
+        e.preventDefault();
+        
+        if (isDrawingSketchShape && sketchShapeStart) {
+            const rect = sketchCanvas.getBoundingClientRect();
+            const x = (e.clientX - rect.left) / zoomLevel;
+            const y = (e.clientY - rect.top) / zoomLevel;
+            
+            sketchCtx.strokeStyle = brushColor;
+            sketchCtx.lineWidth = brushSize;
+            sketchCtx.globalAlpha = brushOpacity;
+            
+            switch(currentTool) {
+                case 'lineSketch':
+                    sketchCtx.beginPath();
+                    sketchCtx.moveTo(sketchShapeStart.x, sketchShapeStart.y);
+                    sketchCtx.lineTo(x, y);
+                    sketchCtx.stroke();
+                    break;
+                    
+                case 'rectSketch':
+                    const width = x - sketchShapeStart.x;
+                    const height = y - sketchShapeStart.y;
+                    sketchCtx.strokeRect(sketchShapeStart.x, sketchShapeStart.y, width, height);
+                    break;
+                    
+                case 'circleSketch':
+                    const radius = Math.sqrt(
+                        Math.pow(x - sketchShapeStart.x, 2) + Math.pow(y - sketchShapeStart.y, 2)
+                    );
+                    sketchCtx.beginPath();
+                    sketchCtx.arc(sketchShapeStart.x, sketchShapeStart.y, radius, 0, Math.PI * 2);
+                    sketchCtx.stroke();
+                    break;
+            }
+            
+            sketchCtx.globalAlpha = 1;
+            isDrawingSketchShape = false;
+            sketchShapeStart = null;
+        }
+        
         isSketchDrawing = false;
         lastSketchPos = null;
-    });
+    }
+  // Apply new handlers
+    sketchCanvas.addEventListener('mousedown', handleSketchMouseDown);
+    sketchCanvas.addEventListener('mousemove', handleSketchMouseMove);
+    sketchCanvas.addEventListener('mouseup', handleSketchMouseUp);
+}
 
     // Touch events for sketch canvas
     sketchCanvas.addEventListener('touchstart', e => {
@@ -1139,6 +1257,15 @@ document.querySelectorAll('.tool-btn').forEach(btn => {
         document.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
         currentTool = btn.dataset.tool;
+        
+        // Handle move tool specifically
+        if (currentTool === 'move' && !selectionData) {
+            // Auto-switch to select tool if no selection exists
+            currentTool = 'select';
+            document.querySelector('[data-tool="select"]').classList.add('active');
+            btn.classList.remove('active');
+        }
+        
         updateCanvasInfo();
         updateSymmetryInfo();
     });
@@ -1165,9 +1292,12 @@ function updateModeDisplay() {
         pixelControls.forEach(d => d.style.display = 'block');
         sketchControls.forEach(d => d.style.display = 'none');
 
-        paletteContainer.style.display = 'flex';
-        if(colorPickersContainer) {
-            colorPickersContainer.style.display = (currentPaletteName === 'custom') ? 'flex' : 'none';
+        // Reset to pixel-appropriate tool if current tool is sketch-only
+        const sketchOnlyTools = ['brush', 'pen', 'marker', 'pencilSketch', 'charcoal', 'smudge', 'blur', 'lineSketch', 'rectSketch', 'circleSketch', 'sprayPaint'];
+        if (sketchOnlyTools.includes(currentTool)) {
+            currentTool = 'pencil';
+            document.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('active'));
+            document.querySelector('[data-tool="pencil"]').classList.add('active');
         }
 
         primaryColor = activePalette[currentColorIndex] || palettes.default[1];
@@ -1180,17 +1310,26 @@ function updateModeDisplay() {
         pixelControls.forEach(d => d.style.display = 'none');
         sketchControls.forEach(d => d.style.display = 'block');
 
-        paletteContainer.style.display = 'flex';
-        if(colorPickersContainer) {
-            colorPickersContainer.style.display = (currentPaletteName === 'custom') ? 'flex' : 'none';
+        // Reset to sketch-appropriate tool if current tool is pixel-only
+        const pixelOnlyTools = ['symmetricPencil', 'symmetricEraser', 'symmetricFill', 'select', 'move'];
+        if (pixelOnlyTools.includes(currentTool)) {
+            currentTool = 'brush';
+            document.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('active'));
+            document.querySelector('[data-tool="brush"]').classList.add('active');
         }
 
         brushColor = sketchActivePalette[sketchColorIndex] || sketchBuiltInPalette[0];
+        
+        // Sync sketch color picker
+        if (sketchColorPicker) {
+            sketchColorPicker.value = brushColor;
+        }
     }
 
     renderPalette();
     renderCustomPalette();
     updateCanvasInfo();
+    updateColorSwatches();
 }
 
 document.querySelectorAll('.mode-btn').forEach(btn => {
@@ -1459,22 +1598,30 @@ if(clearBtn) {
 
 const resizeBtn = document.getElementById('resizeCanvas');
 if (resizeBtn) {
+    resizeBtn.removeEventListener('click', handleResize); // Remove existing if present
+    
     resizeBtn.addEventListener('click', () => {
         const widthInput = document.getElementById('canvasWidth');
         const heightInput = document.getElementById('canvasHeight');
 
         if (widthInput && heightInput) {
-            const w = parseInt(widthInput.value);
-            const h = parseInt(heightInput.value);
+            const w = Math.max(1, Math.min(512, parseInt(widthInput.value) || 16));
+            const h = Math.max(1, Math.min(512, parseInt(heightInput.value) || 16));
 
-            if (!isNaN(w) && !isNaN(h) && w > 0 && h > 0) {
+            // Update input values to clamped values
+            widthInput.value = w;
+            heightInput.value = h;
+
+            if (w !== canvasWidth || h !== canvasHeight) {
                 canvasWidth = w;
                 canvasHeight = h;
 
                 if (currentMode === 'pixel') {
+                    savePixelState();
                     createPixelGrid(canvasWidth, canvasHeight);
                     updatePixelCanvasTransform();
                 } else {
+                    saveSketchState();
                     sketchCanvas.width = canvasWidth * cellSize;
                     sketchCanvas.height = canvasHeight * cellSize;
                     updateSketchCanvasTransform();
@@ -1485,6 +1632,8 @@ if (resizeBtn) {
         }
     });
 }
+
+console.log("Critical fixes applied to editor.js");
 
   // Canvas size buttons for sketch mode
 document.querySelectorAll('[data-size]').forEach(btn => {
@@ -1561,11 +1710,23 @@ if(brushFlowSlider && flowLabel) {
     });
 }
 
+const sketchColorPicker = document.getElementById('sketchColor');
 if(sketchColorPicker) {
+    // Remove existing listener if present
+    sketchColorPicker.removeEventListener('input', existingHandler);
+    
     sketchColorPicker.addEventListener('input', e => {
         brushColor = e.target.value;
+        
+        // Update sketch palette if using custom
+        if (currentPaletteName === 'custom' || sketchActivePalette === sketchCustomPalette) {
+            sketchActivePalette[sketchColorIndex] = brushColor;
+            renderPalette();
+        }
+        
         updateCanvasInfo();
         updateBrushPreview();
+        updateColorSwatches();
     });
 }
 
@@ -2217,3 +2378,63 @@ document.body.addEventListener('touchmove', e => {
 
 // Initialize the app
 document.addEventListener('DOMContentLoaded', initialize);
+
+function renderLayersToCanvas() {
+    if (currentMode !== 'sketch' || !sketchCtx) return;
+    
+    // Clear canvas
+    sketchCtx.clearRect(0, 0, sketchCanvas.width, sketchCanvas.height);
+    
+    // Render all visible layers
+    sketchLayers.forEach((layer, index) => {
+        if (!layer.visible || !layer.data) return;
+        
+        const img = new Image();
+        img.onload = () => {
+            sketchCtx.save();
+            sketchCtx.globalAlpha = layer.opacity;
+            sketchCtx.drawImage(img, 0, 0);
+            sketchCtx.restore();
+        };
+        img.src = layer.data;
+    });
+}
+
+// Update layer switching
+if(document.getElementById('layerList')) {
+    document.addEventListener('click', (e) => {
+        if(e.target.classList.contains('layer-visibility')) {
+            const layerIndex = parseInt(e.target.dataset.layer);
+            if(sketchLayers[layerIndex]) {
+                sketchLayers[layerIndex].visible = !sketchLayers[layerIndex].visible;
+                updateLayerList();
+                renderLayersToCanvas();
+            }
+        } else if(e.target.closest('.layer-item')) {
+            // Save current layer data before switching
+            if (activeLayer >= 0 && sketchLayers[activeLayer]) {
+                sketchLayers[activeLayer].data = sketchCanvas.toDataURL();
+            }
+            
+            const layerItem = e.target.closest('.layer-item');
+            const newLayerIndex = Array.from(layerItem.parentNode.children).indexOf(layerItem);
+            
+            if (newLayerIndex !== activeLayer) {
+                activeLayer = newLayerIndex;
+                updateLayerList();
+                
+                // Load new layer data
+                if (sketchLayers[activeLayer] && sketchLayers[activeLayer].data) {
+                    const img = new Image();
+                    img.onload = () => {
+                        sketchCtx.clearRect(0, 0, sketchCanvas.width, sketchCanvas.height);
+                        sketchCtx.drawImage(img, 0, 0);
+                    };
+                    img.src = sketchLayers[activeLayer].data;
+                } else {
+                    sketchCtx.clearRect(0, 0, sketchCanvas.width, sketchCanvas.height);
+                }
+            }
+        }
+    });
+}
