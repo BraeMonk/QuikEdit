@@ -275,188 +275,84 @@ class CanvasManager {
   }
 }
 
-// =====================
-// DRAWING TOOLS
-// =====================
-class DrawingTools {
-  constructor(state, canvasManager) {
+// ===============================
+// Unified Drawing Manager
+// ===============================
+class DrawingManager {
+  constructor(state, canvas) {
     this.state = state;
-    this.canvas = canvasManager;
+    this.canvas = canvas;
+
+    this.prevX = null;
+    this.prevY = null;
+    this.isDrawing = false;
+
+    // Bind input handlers if you want
+    // Example: canvasElement.onmousedown = e => this.start(e.offsetX, e.offsetY)
   }
-  
-  getPixelCoords(e) {
-    const rect = this.canvas.elements.canvas.getBoundingClientRect();
-    const scaleX = this.state.pixel.width / rect.width;
-    const scaleY = this.state.pixel.height / rect.height;
-    const x = Math.floor((e.clientX - rect.left) * scaleX);
-    const y = Math.floor((e.clientY - rect.top) * scaleY);
-    return { x, y };
+
+  // -------------------------------
+  // General Input Handlers
+  // -------------------------------
+  start(x, y) {
+    this.isDrawing = true;
+    this.prevX = x;
+    this.prevY = y;
+
+    if (this.state.mode === 'sketch') this.handleSketchStart(x, y);
+    else if (this.state.mode === 'pixel') this.handlePixelStart(x, y);
   }
-  
-  getSketchCoords(e) {
-    const rect = this.canvas.elements.sketchCanvas.getBoundingClientRect();
-    const scaleX = this.state.sketch.width / rect.width;
-    const scaleY = this.state.sketch.height / rect.height;
-    const x = (e.clientX - rect.left) * scaleX;
-    const y = (e.clientY - rect.top) * scaleY;
-    return { x, y };
+
+  move(x, y) {
+    if (!this.isDrawing) return;
+
+    if (this.state.mode === 'sketch') this.handleSketchMove(x, y);
+    else if (this.state.mode === 'pixel') this.handlePixelMove(x, y);
+
+    this.prevX = x;
+    this.prevY = y;
   }
-  
-  handlePixelDraw(x, y, isPrimary = true) {
-    if (x < 0 || y < 0 || x >= this.state.pixel.width || y >= this.state.pixel.height) return;
-    
-    const { width, sprites, currentFrame, activeTool, primaryColor, secondaryColor } = this.state.pixel;
-    const color = isPrimary ? primaryColor : secondaryColor;
-    const spriteData = sprites[currentFrame]?.data || [];
-    const index = y * width + x;
-    
-    let newColor;
-    if (activeTool === 'eraser' || activeTool.includes('Eraser')) {
-      newColor = 'transparent';
-    } else if (activeTool === 'eyedropper') {
-      const pickedColor = spriteData[index];
-      if (pickedColor && pickedColor !== 'transparent') {
-        if (isPrimary) {
-          this.state.pixel.primaryColor = pickedColor;
-          this.canvas.elements.primaryColor.style.backgroundColor = pickedColor;
-        } else {
-          this.state.pixel.secondaryColor = pickedColor;
-          this.canvas.elements.secondaryColor.style.backgroundColor = pickedColor;
-        }
-      }
-      return;
-    } else {
-      newColor = color;
-    }
 
-    if (spriteData[index] === newColor) return;
-    spriteData[index] = newColor;
+  end() {
+    this.isDrawing = false;
+    this.prevX = null;
+    this.prevY = null;
 
-    // Apply symmetry for symmetric tools
-    if (activeTool.includes('symmetric') || activeTool.includes('Symmetric')) {
-      this.applySymmetry(x, y, newColor);
-    }
-
-    this.canvas.drawPixelCanvas();
+    if (this.state.mode === 'pixel') this.commitPixelTempLayer();
   }
-  
-  applySymmetry(x, y, color) {
-    const { width, height, symmetry, sprites, currentFrame } = this.state.pixel;
-    const spriteData = sprites[currentFrame]?.data || [];
 
-    if (symmetry === 'horizontal' || symmetry === 'both') {
-      const mirrorX = width - 1 - x;
-      if (mirrorX >= 0 && mirrorX < width) {
-        const mirrorIndex = y * width + mirrorX;
-        spriteData[mirrorIndex] = color;
-      }
-    }
-
-    if (symmetry === 'vertical' || symmetry === 'both') {
-      const mirrorY = height - 1 - y;
-      if (mirrorY >= 0 && mirrorY < height) {
-        const mirrorIndex = mirrorY * width + x;
-        spriteData[mirrorIndex] = color;
-      }
-    }
-
-    if (symmetry === 'both') {
-      const mirrorX = width - 1 - x;
-      const mirrorY = height - 1 - y;
-      if (mirrorX >= 0 && mirrorX < width && mirrorY >= 0 && mirrorY < height) {
-        const mirrorIndex = mirrorY * width + mirrorX;
-        spriteData[mirrorIndex] = color;
-      }
-    }
-  }
-  
-  handlePixelFill(startX, startY, isPrimary = true) {
-    const { width, height, sprites, currentFrame, primaryColor, secondaryColor } = this.state.pixel;
-    const spriteData = sprites[currentFrame]?.data || [];
-    const targetColor = spriteData[startY * width + startX];
-    const fillColor = isPrimary ? primaryColor : secondaryColor;
-    
-    if (targetColor === fillColor) return;
-
-    const stack = [[startX, startY]];
-    const visited = new Set();
-
-    while (stack.length) {
-      const [x, y] = stack.pop();
-      const key = `${x},${y}`;
-      
-      if (visited.has(key)) continue;
-      if (x < 0 || x >= width || y < 0 || y >= height) continue;
-      
-      const index = y * width + x;
-      if (spriteData[index] !== targetColor) continue;
-      
-      visited.add(key);
-      spriteData[index] = fillColor;
-
-      // Add adjacent cells
-      stack.push([x + 1, y], [x - 1, y], [x, y + 1], [x, y - 1]);
-    }
-
-    this.canvas.drawPixelCanvas();
-  }
-  
-  // =======================
-  // Sketch Drawing Handlers
-  // =======================
+  // ===============================
+  // Sketch Mode
+  // ===============================
   handleSketchStart(x, y) {
-    const { activeLayer, layers } = this.state.sketch;
+    const { activeLayer, layers, activeTool } = this.state.sketch;
     const layer = layers[activeLayer];
     if (!layer) return;
-  
-    this.state.isDrawing = true;
-    this.state.sketch.prevX = x;
-    this.state.sketch.prevY = y;
-  
-    // For tools that need immediate start
-    switch (this.state.sketch.activeTool) {
-      case 'sprayPaint':
-      case 'smudge':
-        this.drawWithBrush(layer.ctx, x, y, x, y, this.state.sketch.activeTool);
-        break;
-      default:
-        break;
+
+    // For tools like spray or smudge that draw immediately
+    if (['sprayPaint', 'smudge'].includes(activeTool)) {
+      this.drawSketchStroke(layer.ctx, x, y, x, y, activeTool);
     }
-  
+
     this.canvas.drawSketchCanvas();
   }
-  
+
   handleSketchMove(x, y) {
-    if (!this.state.isDrawing) return;
-  
-    const { activeLayer, layers, activeTool, prevX, prevY } = this.state.sketch;
+    const { activeLayer, layers, activeTool } = this.state.sketch;
     const layer = layers[activeLayer];
     if (!layer) return;
-  
-    this.drawWithBrush(layer.ctx, prevX, prevY, x, y, activeTool);
-  
-    this.state.sketch.prevX = x;
-    this.state.sketch.prevY = y;
-  
+
+    this.drawSketchStroke(layer.ctx, this.prevX, this.prevY, x, y, activeTool);
     this.canvas.drawSketchCanvas();
   }
-  
-  handleSketchEnd() {
-    this.state.isDrawing = false;
-    this.state.sketch.prevX = null;
-    this.state.sketch.prevY = null;
-  }
-  
-  // =======================
-  // Draw per-tool brush
-  // =======================
-  drawWithBrush(ctx, startX, startY, endX, endY, tool) {
+
+  drawSketchStroke(ctx, startX, startY, endX, endY, tool) {
     const { size, opacity, flow, color } = this.state.sketch;
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
     ctx.shadowBlur = 0;
     ctx.shadowColor = 'transparent';
-  
+
     switch (tool) {
       case 'brush':
         ctx.beginPath();
@@ -468,7 +364,7 @@ class DrawingTools {
         ctx.globalCompositeOperation = 'source-over';
         ctx.stroke();
         break;
-  
+
       case 'pen':
         ctx.beginPath();
         ctx.moveTo(startX, startY);
@@ -476,28 +372,28 @@ class DrawingTools {
         ctx.lineWidth = Math.max(1, size * 0.7);
         ctx.strokeStyle = color;
         ctx.globalAlpha = (opacity / 100) * (flow / 100);
-        ctx.globalCompositeOperation = 'source-over';
         ctx.lineCap = 'square';
+        ctx.globalCompositeOperation = 'source-over';
         ctx.stroke();
         break;
-  
+
       case 'marker':
         ctx.beginPath();
         ctx.moveTo(startX, startY);
         ctx.lineTo(endX, endY);
         ctx.lineWidth = size * 2;
         ctx.strokeStyle = color;
-        ctx.globalAlpha = 0.2; // semi-transparent
+        ctx.globalAlpha = 0.2;
         ctx.globalCompositeOperation = 'multiply';
         ctx.stroke();
         break;
-  
+
       case 'pencilSketch':
-        ctx.beginPath();
         const jitterStartX = startX + (Math.random() - 0.5) * 1.5;
         const jitterStartY = startY + (Math.random() - 0.5) * 1.5;
         const jitterEndX = endX + (Math.random() - 0.5) * 1.5;
         const jitterEndY = endY + (Math.random() - 0.5) * 1.5;
+        ctx.beginPath();
         ctx.moveTo(jitterStartX, jitterStartY);
         ctx.lineTo(jitterEndX, jitterEndY);
         ctx.lineWidth = Math.max(1, size * 0.6);
@@ -506,7 +402,7 @@ class DrawingTools {
         ctx.globalCompositeOperation = 'source-over';
         ctx.stroke();
         break;
-  
+
       case 'charcoal':
         ctx.beginPath();
         ctx.moveTo(startX, startY);
@@ -514,20 +410,20 @@ class DrawingTools {
         ctx.lineWidth = size * 1.5;
         ctx.strokeStyle = '#222';
         ctx.globalAlpha = 0.25;
-        ctx.globalCompositeOperation = 'multiply';
         ctx.shadowBlur = 6;
         ctx.shadowColor = '#000';
+        ctx.globalCompositeOperation = 'multiply';
         ctx.stroke();
         break;
-  
+
       case 'sprayPaint':
         this.drawSprayPaint(ctx, endX, endY);
         break;
-  
+
       case 'smudge':
         this.drawSmudge(ctx, endX, endY);
         break;
-  
+
       case 'blur':
         ctx.save();
         ctx.filter = 'blur(3px)';
@@ -543,127 +439,154 @@ class DrawingTools {
         break;
     }
   }
-  
-  // =======================
-  // Spray Paint
-  // =======================
+
   drawSprayPaint(ctx, x, y) {
     const { size, opacity, color } = this.state.sketch;
     const density = 25;
     ctx.globalAlpha = (opacity / 100) * 0.15;
     ctx.fillStyle = color;
     ctx.globalCompositeOperation = 'source-over';
-  
+
     for (let i = 0; i < density; i++) {
       const angle = Math.random() * Math.PI * 2;
       const distance = Math.random() * (size / 2);
       const sprayX = x + Math.cos(angle) * distance;
       const sprayY = y + Math.sin(angle) * distance;
-  
       ctx.beginPath();
       ctx.arc(sprayX, sprayY, Math.random() * 2 + 0.5, 0, Math.PI * 2);
       ctx.fill();
     }
   }
-  
-  // =======================
-  // Smudge
-  // =======================
+
   drawSmudge(ctx, x, y) {
     const size = this.state.sketch.size * 2;
     const imgData = ctx.getImageData(x - size / 2, y - size / 2, size, size);
-  
     for (let i = 0; i < imgData.data.length; i += 4) {
       const avg = (imgData.data[i] + imgData.data[i + 1] + imgData.data[i + 2]) / 3;
       imgData.data[i] = avg;
       imgData.data[i + 1] = avg;
       imgData.data[i + 2] = avg;
     }
-  
     ctx.putImageData(imgData, x - size / 2, y - size / 2);
   }
 
-  // Drawing tools for pixel mode
+  // ===============================
+  // Pixel Mode
+  // ===============================
+  handlePixelStart(x, y) {
+    const { currentTool, color } = this.state.pixel;
+    if (['pencil', 'eraser'].includes(currentTool)) {
+      this.drawPixelLine(x, y, x, y, color);
+    }
+  }
+
+  handlePixelMove(x, y) {
+    const { currentTool, color } = this.state.pixel;
+
+    switch (currentTool) {
+      case 'pencil':
+      case 'eraser':
+        this.drawPixelLine(this.prevX, this.prevY, x, y, color);
+        break;
+      case 'rect':
+        this.clearPixelTemp();
+        this.drawPixelRect(this.prevX, this.prevY, x, y, color, false);
+        break;
+      case 'rectFilled':
+        this.clearPixelTemp();
+        this.drawPixelRect(this.prevX, this.prevY, x, y, color, true);
+        break;
+      case 'circle':
+        this.clearPixelTemp();
+        this.drawPixelCircle(this.prevX, this.prevY, x, y, color, false);
+        break;
+      case 'circleFilled':
+        this.clearPixelTemp();
+        this.drawPixelCircle(this.prevX, this.prevY, x, y, color, true);
+        break;
+    }
+  }
+
+  commitPixelTempLayer() {
+    // Merge temp layer for rect/circle previews
+  }
+
+  clearPixelTemp() {
+    // Clear temporary preview layer
+  }
+
+  // ===============================
+  // Pixel Drawing Functions
+  // ===============================
   drawPixelLine(startX, startY, endX, endY, color) {
-    const { width, sprites, currentFrame } = this.state.pixel;
-    const spriteData = sprites[currentFrame].data;
-    
-    const dx = Math.abs(endX - startX);
-    const dy = Math.abs(endY - startY);
-    const sx = startX < endX ? 1 : -1;
-    const sy = startY < endY ? 1 : -1;
+    const { width, height, sprites, currentFrame } = this.state.pixel;
+    const data = sprites[currentFrame].data;
+
+    let dx = Math.abs(endX - startX);
+    let dy = Math.abs(endY - startY);
+    let sx = startX < endX ? 1 : -1;
+    let sy = startY < endY ? 1 : -1;
     let err = dx - dy;
-    
     let x = startX;
     let y = startY;
-    
+
     while (true) {
-      if (x >= 0 && x < width && y >= 0 && y < this.state.pixel.height) {
-        const index = y * width + x;
-        spriteData[index] = color;
+      if (x >= 0 && x < width && y >= 0 && y < height) {
+        const idx = y * width + x;
+        data[idx] = color;
       }
-      
       if (x === endX && y === endY) break;
-      
-      const e2 = 2 * err;
-      if (e2 > -dy) {
-        err -= dy;
-        x += sx;
-      }
-      if (e2 < dx) {
-        err += dx;
-        y += sy;
-      }
+      let e2 = 2 * err;
+      if (e2 > -dy) { err -= dy; x += sx; }
+      if (e2 < dx) { err += dx; y += sy; }
     }
-    
+
     this.canvas.drawPixelCanvas();
   }
-  
+
   drawPixelRect(startX, startY, endX, endY, color, filled = false) {
-    const { width, sprites, currentFrame } = this.state.pixel;
-    const spriteData = sprites[currentFrame].data;
-    
+    const { width, height, sprites, currentFrame } = this.state.pixel;
+    const data = sprites[currentFrame].data;
+
     const minX = Math.min(startX, endX);
     const maxX = Math.max(startX, endX);
     const minY = Math.min(startY, endY);
     const maxY = Math.max(startY, endY);
-    
+
     for (let y = minY; y <= maxY; y++) {
       for (let x = minX; x <= maxX; x++) {
         if (filled || x === minX || x === maxX || y === minY || y === maxY) {
-          if (x >= 0 && x < width && y >= 0 && y < this.state.pixel.height) {
-            const index = y * width + x;
-            spriteData[index] = color;
+          if (x >= 0 && x < width && y >= 0 && y < height) {
+            const idx = y * width + x;
+            data[idx] = color;
           }
         }
       }
     }
-    
+
     this.canvas.drawPixelCanvas();
   }
-  
+
   drawPixelCircle(centerX, centerY, endX, endY, color, filled = false) {
-    const { width, sprites, currentFrame } = this.state.pixel;
-    const spriteData = sprites[currentFrame].data;
-    
+    const { width, height, sprites, currentFrame } = this.state.pixel;
+    const data = sprites[currentFrame].data;
+
     const radius = Math.round(Math.sqrt(Math.pow(endX - centerX, 2) + Math.pow(endY - centerY, 2)));
-    
+
     for (let y = -radius; y <= radius; y++) {
       for (let x = -radius; x <= radius; x++) {
         const distance = Math.sqrt(x * x + y * y);
-        
         if ((filled && distance <= radius) || (!filled && Math.abs(distance - radius) < 0.5)) {
-          const pixelX = centerX + x;
-          const pixelY = centerY + y;
-          
-          if (pixelX >= 0 && pixelX < width && pixelY >= 0 && pixelY < this.state.pixel.height) {
-            const index = pixelY * width + pixelX;
-            spriteData[index] = color;
+          const px = centerX + x;
+          const py = centerY + y;
+          if (px >= 0 && px < width && py >= 0 && py < height) {
+            const idx = py * width + px;
+            data[idx] = color;
           }
         }
       }
     }
-    
+
     this.canvas.drawPixelCanvas();
   }
 }
