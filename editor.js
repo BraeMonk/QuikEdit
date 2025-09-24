@@ -277,36 +277,35 @@ class JerryEditor {
     switchMode(mode) {
         this.mode = mode;
         
-        // Show/hide relevant UI elements
-        document.querySelectorAll('.pixel-tools, .pixel-controls').forEach(el => {
+        // Show/hide pixel elements
+        const pixelElements = document.querySelectorAll('.pixel-tools, .pixel-controls');
+        pixelElements.forEach(el => {
             el.style.display = mode === 'pixel' ? 'block' : 'none';
         });
         
-        document.querySelectorAll('.sketch-tools, .sketch-controls').forEach(el => {
+        // Show/hide sketch elements
+        const sketchElements = document.querySelectorAll('.sketch-tools, .sketch-controls');
+        sketchElements.forEach(el => {
             el.style.display = mode === 'sketch' ? 'block' : 'none';
         });
         
         // Show/hide canvases
-        this.pixelCanvas.style.display = mode === 'pixel' ? 'block' : 'none';
+        this.pixelCanvas.style.display = mode === 'pixel' ? 'grid' : 'none';
         this.sketchCanvas.style.display = mode === 'sketch' ? 'block' : 'none';
-        this.canvasGrid.style.display = mode === 'pixel' && this.showGrid ? 'block' : 'none';
+        this.canvasGrid.style.display = (mode === 'pixel' && this.showGrid) ? 'grid' : 'none';
         this.selectionOverlay.style.display = mode === 'sketch' ? 'block' : 'none';
         
-        // Initialize mode-specific features
+        // Initialize mode
         if (mode === 'sketch') {
             this.initializeSketchMode();
             this.currentTool = 'brush';
         } else {
             this.currentTool = 'pencil';
             this.updatePixelCanvas();
+            this.updateGrid();
         }
         
-        // Update active tool button
-        const toolGroup = document.querySelector(`.${mode}-tools`);
-        toolGroup.querySelector('.tool-btn.active')?.classList.remove('active');
-        toolGroup.querySelector(`.tool-btn[data-tool="${this.currentTool}"]`)?.classList.add('active');
-        
-        this.updateCanvasInfo();
+        this.updateUI();
     }
     
     initializeCanvas() {
@@ -382,7 +381,10 @@ class JerryEditor {
         this.canvasGrid.innerHTML = '';
         if (!this.showGrid) return;
         
-        this.canvasGrid.style.gridTemplateColumns = `repeat(${this.canvasWidth}, ${this.pixelSize}px)`;
+        this.canvasGrid.style.gridTemplateColumns = `repeat(${this.canvasWidth}, 20px)`;
+        this.canvasGrid.style.gridTemplateRows = `repeat(${this.canvasHeight}, 20px)`;
+        this.canvasGrid.style.width = `${this.canvasWidth * 20}px`;
+        this.canvasGrid.style.height = `${this.canvasHeight * 20}px`;
         this.canvasGrid.style.gridTemplateRows = `repeat(${this.canvasHeight}, ${this.pixelSize}px)`;
         
         for (let i = 0; i < this.canvasWidth * this.canvasHeight; i++) {
@@ -401,11 +403,10 @@ class JerryEditor {
     }
     
     getPixelPos(e) {
-        const pos = this.getCanvasPos(e);
-        return {
-            x: Math.floor(pos.x / this.pixelSize),
-            y: Math.floor(pos.y / this.pixelSize)
-        };
+        const rect = this.pixelCanvas.getBoundingClientRect();
+        const x = Math.floor((e.clientX - rect.left) / 20);
+        const y = Math.floor((e.clientY - rect.top) / 20);
+        return { x, y };
     }
     
     startDrawing(e) {
@@ -1472,75 +1473,6 @@ class JerryEditor {
         ctx.stroke();
     }
     
-    // Layer management
-    addLayer() {
-        const canvas = document.createElement('canvas');
-        canvas.width = this.sketchCanvas.width;
-        canvas.height = this.sketchCanvas.height;
-        const ctx = canvas.getContext('2d');
-        
-        const layer = {
-            canvas: canvas,
-            ctx: ctx,
-            visible: true,
-            opacity: 1,
-            blendMode: 'source-over',
-            name: `Layer ${this.layers.length + 1}`
-        };
-        
-        this.layers.push(layer);
-        this.currentLayer = this.layers.length - 1;
-        this.updateLayerList();
-        this.redrawLayers();
-    }
-    
-    updateLayerList() {
-        if (!this.layerList) return;
-        
-        this.layerList.innerHTML = '';
-        
-        for (let i = this.layers.length - 1; i >= 0; i--) {
-            const layer = this.layers[i];
-            const layerEl = document.createElement('div');
-            layerEl.className = `layer-item ${i === this.currentLayer ? 'active' : ''}`;
-            layerEl.innerHTML = `
-                <span class="layer-name">${layer.name}</span>
-                <button class="layer-toggle ${layer.visible ? 'visible' : 'hidden'}" data-layer="${i}">👁</button>
-                <button class="layer-delete" data-layer="${i}">🗑</button>
-            `;
-            
-            layerEl.addEventListener('click', (e) => {
-                if (!e.target.classList.contains('layer-toggle') && !e.target.classList.contains('layer-delete')) {
-                    this.currentLayer = i;
-                    this.updateLayerList();
-                    this.updateLayerControls();
-                }
-            });
-            
-            layerEl.querySelector('.layer-toggle').addEventListener('click', (e) => {
-                e.stopPropagation();
-                layer.visible = !layer.visible;
-                this.updateLayerList();
-                this.redrawLayers();
-            });
-            
-            layerEl.querySelector('.layer-delete').addEventListener('click', (e) => {
-                e.stopPropagation();
-                if (this.layers.length > 1) {
-                    this.layers.splice(i, 1);
-                    if (this.currentLayer >= this.layers.length) {
-                        this.currentLayer = this.layers.length - 1;
-                    }
-                    this.updateLayerList();
-                    this.updateLayerControls();
-                    this.redrawLayers();
-                }
-            });
-            
-            this.layerList.appendChild(layerEl);
-        }
-    }
-    
     updateLayerControls() {
         if (!this.layers[this.currentLayer]) return;
         
@@ -1555,22 +1487,6 @@ class JerryEditor {
         }
     }
     
-    redrawLayers() {
-        // Clear main canvas
-        this.sketchCtx.clearRect(0, 0, this.sketchCanvas.width, this.sketchCanvas.height);
-        
-        // Composite all visible layers
-        for (let i = 0; i < this.layers.length; i++) {
-            const layer = this.layers[i];
-            if (layer.visible) {
-                this.sketchCtx.save();
-                this.sketchCtx.globalAlpha = layer.opacity;
-                this.sketchCtx.globalCompositeOperation = layer.blendMode;
-                this.sketchCtx.drawImage(layer.canvas, 0, 0);
-                this.sketchCtx.restore();
-            }
-        }
-    }
     
     mergeCurrentStroke() {
         // This would typically merge the current stroke to the layer
@@ -2069,12 +1985,22 @@ class JerryEditor {
     // Color palette management
     loadPalettes() {
         const palettes = {
-            'basic': ['#000000', '#ffffff', '#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff', '#00ffff'],
-            'grayscale': ['#000000', '#333333', '#666666', '#999999', '#cccccc', '#ffffff'],
-            'earth': ['#8B4513', '#A0522D', '#CD853F', '#D2B48C', '#F4A460', '#DEB887', '#D2691E', '#BC8F8F'],
-            'ocean': ['#000080', '#191970', '#4169E1', '#0000CD', '#1E90FF', '#00BFFF', '#87CEEB', '#ADD8E6'],
-            'sunset': ['#FF4500', '#FF6347', '#FF7F50', '#FFA500', '#FFD700', '#FFFF00', '#9ACD32', '#32CD32'],
-            'neon': ['#FF1493', '#00FF00', '#00FFFF', '#FF00FF', '#FFFF00', '#FF0000', '#0000FF', '#8A2BE2']
+            'default': ['transparent','#FFFFFF','#C0C0C0','#808080','#404040','#000000','#FF0000','#00FF00','#0000FF','#FFFF00','#FF00FF'],
+            'retro8bit': ['transparent','#F4F4F4','#E8E8E8','#BCBCBC','#7C7C7C','#A00000','#FF6A00','#FFD500','#00A844','#0047AB','#000000'],
+            'gameboyClassic': ['transparent','#E0F8D0','#88C070','#346856','#081820','#9BBB0F','#8BAC0F','#306230','#0F380F','#155015','#071821'],
+            'synthwave': ['transparent','#FF00FF','#FF0080','#FF4080','#FF8000','#FFFF00','#80FF00','#00FFFF','#0080FF','#8000FF','#2D1B69'],
+            'earthTones': ['transparent','#FFF8DC','#D2B48C','#CD853F','#A0522D','#8B4513','#654321','#556B2F','#8FBC8F','#2F4F4F','#191970'],
+            'crystalIce': ['transparent','#F0F8FF','#E6F3FF','#B3D9FF','#80BFFF','#4DA6FF','#1A8CFF','#0066CC','#004C99','#003366','#001A33'],
+            'moltenCore': ['transparent','#FFFACD','#FFE4B5','#FFA500','#FF6347','#FF4500','#DC143C','#B22222','#8B0000','#4B0000','#000000'],
+            'enchantedForest': ['transparent','#F0FFF0','#E6FFE6','#CCFFCC','#99FF99','#66CC66','#339933','#228B22','#006400','#004400','#002200'],
+            'nesClassic': ['transparent','#FFFFFF','#FCFCFC','#F8F8F8','#BCBCBC','#7C7C7C','#A4E4FC','#3CBCFC','#0078F8','#0000FC','#000000'],
+            'cyberpunk': ['transparent','#00FFFF','#00E6E6','#00CCCC','#00B3B3','#FF00FF','#E600E6','#CC00CC','#B300B3','#4D0080','#0D001A'],
+            'desertSands': ['transparent','#FFF8DC','#F5DEB3','#DEB887','#D2B48C','#BC9A6A','#A0522D','#8B4513','#654321','#3E2723','#2E1A14'],
+            'deepOcean': ['transparent','#E0F6FF','#B3E5FC','#4FC3F7','#29B6F6','#03A9F4','#0288D1','#0277BD','#01579B','#01447A','#002F5A'],
+            'cosmicVoid': ['transparent','#E1BEE7','#CE93D8','#BA68C8','#AB47BC','#8E24AA','#7B1FA2','#6A1B9A','#4A148C','#38006B','#1A0033'],
+            'inkWash': ['transparent','#FFFFFF','#F5F5F5','#E0E0E0','#BDBDBD','#9E9E9E','#757575','#424242','#212121','#FF5722','#000000'],
+            'autumnLeaves': ['transparent','#FFF8E7','#FFE0B3','#FFCC80','#FF8F65','#FF7043','#F4511E','#E65100','#BF360C','#8D2F00','#5D1F00'],
+            'sakuraBloom': ['transparent','#FFF0F5','#FFE4E1','#FFC0CB','#FFB6C1','#FF91A4','#FF69B4','#E91E63','#C2185B','#AD1457','#880E4F']
         };
         
         if (this.paletteSelector) {
@@ -2622,54 +2548,19 @@ class JerryEditor {
         }
     }
 
-    loadPalettes() {
-    const palettes = {
-        'default': ['transparent','#FFFFFF','#C0C0C0','#808080','#404040','#000000','#FF0000','#00FF00','#0000FF','#FFFF00','#FF00FF'],
-        'retro8bit': ['transparent','#F4F4F4','#E8E8E8','#BCBCBC','#7C7C7C','#A00000','#FF6A00','#FFD500','#00A844','#0047AB','#000000'],
-        'gameboyClassic': ['transparent','#E0F8D0','#88C070','#346856','#081820','#9BBB0F','#8BAC0F','#306230','#0F380F','#155015','#071821'],
-        'synthwave': ['transparent','#FF00FF','#FF0080','#FF4080','#FF8000','#FFFF00','#80FF00','#00FFFF','#0080FF','#8000FF','#2D1B69'],
-        'earthTones': ['transparent','#FFF8DC','#D2B48C','#CD853F','#A0522D','#8B4513','#654321','#556B2F','#8FBC8F','#2F4F4F','#191970'],
-        'crystalIce': ['transparent','#F0F8FF','#E6F3FF','#B3D9FF','#80BFFF','#4DA6FF','#1A8CFF','#0066CC','#004C99','#003366','#001A33'],
-        'moltenCore': ['transparent','#FFFACD','#FFE4B5','#FFA500','#FF6347','#FF4500','#DC143C','#B22222','#8B0000','#4B0000','#000000'],
-        'enchantedForest': ['transparent','#F0FFF0','#E6FFE6','#CCFFCC','#99FF99','#66CC66','#339933','#228B22','#006400','#004400','#002200'],
-        'nesClassic': ['transparent','#FFFFFF','#FCFCFC','#F8F8F8','#BCBCBC','#7C7C7C','#A4E4FC','#3CBCFC','#0078F8','#0000FC','#000000'],
-        'cyberpunk': ['transparent','#00FFFF','#00E6E6','#00CCCC','#00B3B3','#FF00FF','#E600E6','#CC00CC','#B300B3','#4D0080','#0D001A'],
-        'desertSands': ['transparent','#FFF8DC','#F5DEB3','#DEB887','#D2B48C','#BC9A6A','#A0522D','#8B4513','#654321','#3E2723','#2E1A14'],
-        'deepOcean': ['transparent','#E0F6FF','#B3E5FC','#4FC3F7','#29B6F6','#03A9F4','#0288D1','#0277BD','#01579B','#01447A','#002F5A'],
-        'cosmicVoid': ['transparent','#E1BEE7','#CE93D8','#BA68C8','#AB47BC','#8E24AA','#7B1FA2','#6A1B9A','#4A148C','#38006B','#1A0033'],
-        'inkWash': ['transparent','#FFFFFF','#F5F5F5','#E0E0E0','#BDBDBD','#9E9E9E','#757575','#424242','#212121','#FF5722','#000000'],
-        'autumnLeaves': ['transparent','#FFF8E7','#FFE0B3','#FFCC80','#FF8F65','#FF7043','#F4511E','#E65100','#BF360C','#8D2F00','#5D1F00'],
-        'sakuraBloom': ['transparent','#FFF0F5','#FFE4E1','#FFC0CB','#FFB6C1','#FF91A4','#FF69B4','#E91E63','#C2185B','#AD1457','#880E4F']
-    };
-    
-    if (this.paletteSelector) {
-        Object.keys(palettes).forEach(paletteName => {
-            const option = document.createElement('option');
-            option.value = paletteName;
-            option.textContent = paletteName.charAt(0).toUpperCase() + paletteName.slice(1);
-            this.paletteSelector.appendChild(option);
-        });
-    }
-    
-    this.palettes = palettes;
-    this.loadSavedPalettes();
-    this.loadPalette('default');
-    this.setupColorPickers();
-}
-
-// Initialize the editor when the page loads
-document.addEventListener('DOMContentLoaded', () => {
-    window.jerryEditor = new JerryEditor();
-});
-
-// Register service worker for PWA functionality
-if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js')
-            .then((registration) => {
-                console.log('SW registered: ', registration);
-            })
-            .catch((registrationError) => {
-                console.log('SW registration failed: ', registrationError);
-            });
+    // Initialize the editor when the page loads
+    document.addEventListener('DOMContentLoaded', () => {
+        window.jerryEditor = new JerryEditor();
     });
+    
+    // Register service worker for PWA functionality
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('./sw.js')
+                .then((registration) => {
+                    console.log('SW registered: ', registration);
+                })
+                .catch((registrationError) => {
+                    console.log('SW registration failed: ', registrationError);
+                });
+        });
