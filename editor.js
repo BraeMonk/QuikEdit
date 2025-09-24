@@ -401,36 +401,322 @@ class DrawingTools {
   }
   
   handleSketchDraw(x, y) {
-    const { activeLayer, layers, activeTool, color, size, opacity } = this.state.sketch;
+    const { activeLayer, layers, activeTool } = this.state.sketch;
     const layer = layers[activeLayer];
     if (!layer) return;
     
-    const ctx = layer.ctx;
-    
-    ctx.lineWidth = size;
-    ctx.lineCap = 'round';
-    ctx.lineJoin = 'round';
-    ctx.globalAlpha = opacity / 100;
-    
-    if (activeTool === 'eraser') {
-      ctx.globalCompositeOperation = 'destination-out';
-      ctx.strokeStyle = 'rgba(0,0,0,1)';
-    } else {
-      ctx.globalCompositeOperation = 'source-over';
-      ctx.strokeStyle = color;
-    }
-    
     if (!this.state.isDrawing) {
-      ctx.beginPath();
-      ctx.moveTo(x, y);
+      // Start new stroke
+      this.drawWithBrush(layer.ctx, x, y, activeTool, true);
     } else {
-      ctx.lineTo(x, y);
-      ctx.stroke();
+      // Continue stroke
+      this.drawWithBrush(layer.ctx, x, y, activeTool, false);
     }
     
     this.canvas.drawSketchCanvas();
   }
-}
+
+  drawWithBrush(ctx, x, y, tool, isStart = false) {
+    const { size, opacity, color, flow } = this.state.sketch;
+    
+    if (isStart) {
+      this.lastStrokePos = { x, y };
+      
+      // For tools that need continuous paths
+      if (['brush', 'pen', 'pencilSketch'].includes(tool)) {
+        ctx.beginPath();
+        ctx.moveTo(x, y);
+      }
+      
+      // Draw initial dot for some tools
+      if (['brush', 'marker', 'charcoal'].includes(tool)) {
+        this.drawBrushDot(ctx, x, y, tool);
+      }
+      
+      return;
+    }
+    
+    const lastX = this.lastStrokePos.x;
+    const lastY = this.lastStrokePos.y;
+    const distance = Math.sqrt((x - lastX) ** 2 + (y - lastY) ** 2);
+    
+    switch (tool) {
+      case 'brush':
+        this.drawBrushStroke(ctx, lastX, lastY, x, y);
+        break;
+        
+      case 'pen':
+        this.drawPenStroke(ctx, lastX, lastY, x, y);
+        break;
+        
+      case 'marker':
+        this.drawMarkerStroke(ctx, lastX, lastY, x, y);
+        break;
+        
+      case 'pencilSketch':
+        this.drawPencilStroke(ctx, lastX, lastY, x, y);
+        break;
+        
+      case 'charcoal':
+        this.drawCharcoalStroke(ctx, lastX, lastY, x, y);
+        break;
+        
+      case 'sprayPaint':
+        this.drawSprayPaint(ctx, x, y);
+        break;
+        
+      case 'eraser':
+        this.drawEraserStroke(ctx, lastX, lastY, x, y);
+        break;
+        
+      case 'smudge':
+        this.drawSmudge(ctx, lastX, lastY, x, y);
+        break;
+        
+      case 'blur':
+        this.drawBlur(ctx, lastX, lastY, x, y);
+        break;
+    }
+    
+    this.lastStrokePos = { x, y };
+  }
+  
+  drawBrushDot(ctx, x, y, tool) {
+    const { size, opacity, color } = this.state.sketch;
+    
+    ctx.save();
+    ctx.globalAlpha = opacity / 100;
+    
+    if (tool === 'brush') {
+      const gradient = ctx.createRadialGradient(x, y, 0, x, y, size / 2);
+      gradient.addColorStop(0, color);
+      gradient.addColorStop(0.7, color);
+      gradient.addColorStop(1, color + '00');
+      ctx.fillStyle = gradient;
+    } else if (tool === 'marker') {
+      ctx.globalAlpha = 0.3;
+      ctx.fillStyle = color;
+    } else if (tool === 'charcoal') {
+      ctx.fillStyle = '#2a2a2a';
+      ctx.globalAlpha = 0.6;
+    }
+    
+    ctx.beginPath();
+    ctx.arc(x, y, size / 2, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  }
+  
+  drawBrushStroke(ctx, x1, y1, x2, y2) {
+    const { size, opacity, color, flow } = this.state.sketch;
+    
+    ctx.save();
+    ctx.globalAlpha = (opacity / 100) * (flow / 100);
+    ctx.strokeStyle = color;
+    ctx.lineWidth = size;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.globalCompositeOperation = 'source-over';
+    
+    // Create soft brush effect with multiple strokes
+    for (let i = 0; i < 3; i++) {
+      ctx.globalAlpha = ((opacity / 100) * (flow / 100)) / (i + 1);
+      ctx.lineWidth = size - i;
+      
+      ctx.beginPath();
+      ctx.moveTo(x1, y1);
+      ctx.lineTo(x2, y2);
+      ctx.stroke();
+    }
+    
+    ctx.restore();
+  }
+  
+  drawPenStroke(ctx, x1, y1, x2, y2) {
+    const { size, opacity, color } = this.state.sketch;
+    
+    ctx.save();
+    ctx.globalAlpha = opacity / 100;
+    ctx.strokeStyle = color;
+    ctx.lineWidth = Math.max(1, size * 0.7);
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.globalCompositeOperation = 'source-over';
+    
+    ctx.beginPath();
+    ctx.moveTo(x1, y1);
+    ctx.lineTo(x2, y2);
+    ctx.stroke();
+    
+    ctx.restore();
+  }
+  
+  drawMarkerStroke(ctx, x1, y1, x2, y2) {
+    const { size, color } = this.state.sketch;
+    
+    ctx.save();
+    ctx.globalAlpha = 0.3;
+    ctx.strokeStyle = color;
+    ctx.lineWidth = size * 1.2;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.globalCompositeOperation = 'multiply';
+    
+    ctx.beginPath();
+    ctx.moveTo(x1, y1);
+    ctx.lineTo(x2, y2);
+    ctx.stroke();
+    
+    ctx.restore();
+  }
+  
+  drawPencilStroke(ctx, x1, y1, x2, y2) {
+    const { size, opacity, color } = this.state.sketch;
+    
+    ctx.save();
+    
+    // Create pencil texture with multiple thin lines
+    const steps = Math.max(3, Math.floor(size / 2));
+    
+    for (let i = 0; i < steps; i++) {
+      const offset = (Math.random() - 0.5) * size * 0.3;
+      const alpha = (0.1 + Math.random() * 0.2) * (opacity / 100);
+      
+      ctx.globalAlpha = alpha;
+      ctx.strokeStyle = color;
+      ctx.lineWidth = Math.max(0.5, size * 0.1);
+      ctx.lineCap = 'round';
+      
+      ctx.beginPath();
+      ctx.moveTo(x1 + offset, y1 + offset);
+      ctx.lineTo(x2 + offset, y2 + offset);
+      ctx.stroke();
+    }
+    
+    ctx.restore();
+  }
+  
+  drawCharcoalStroke(ctx, x1, y1, x2, y2) {
+    const { size, opacity } = this.state.sketch;
+    
+    ctx.save();
+    
+    // Create charcoal texture with scattered particles
+    const distance = Math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2);
+    const steps = Math.max(1, Math.floor(distance / 2));
+    
+    for (let i = 0; i <= steps; i++) {
+      const t = i / steps;
+      const x = x1 + (x2 - x1) * t;
+      const y = y1 + (y2 - y1) * t;
+      
+      // Multiple charcoal particles
+      for (let j = 0; j < 8; j++) {
+        const offsetX = (Math.random() - 0.5) * size;
+        const offsetY = (Math.random() - 0.5) * size;
+        const particleSize = Math.random() * size * 0.3;
+        const alpha = (Math.random() * 0.3 + 0.2) * (opacity / 100);
+        
+        ctx.globalAlpha = alpha;
+        ctx.fillStyle = `hsl(0, 0%, ${Math.random() * 20 + 10}%)`;
+        
+        ctx.beginPath();
+        ctx.arc(x + offsetX, y + offsetY, particleSize, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+    
+    ctx.restore();
+  }
+  
+  drawEraserStroke(ctx, x1, y1, x2, y2) {
+    const { size, opacity } = this.state.sketch;
+    
+    ctx.save();
+    ctx.globalAlpha = opacity / 100;
+    ctx.globalCompositeOperation = 'destination-out';
+    ctx.lineWidth = size;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    
+    ctx.beginPath();
+    ctx.moveTo(x1, y1);
+    ctx.lineTo(x2, y2);
+    ctx.stroke();
+    
+    ctx.restore();
+  }
+  
+  drawSmudge(ctx, x1, y1, x2, y2) {
+    const { size } = this.state.sketch;
+    
+    try {
+      const imageData = ctx.getImageData(
+        Math.max(0, x1 - size), 
+        Math.max(0, y1 - size), 
+        size * 2, 
+        size * 2
+      );
+      
+      const dx = x2 - x1;
+      const dy = y2 - y1;
+      
+      ctx.save();
+      ctx.globalAlpha = 0.5;
+      ctx.putImageData(
+        imageData, 
+        Math.max(0, x2 - size + dx * 0.3), 
+        Math.max(0, y2 - size + dy * 0.3)
+      );
+      ctx.restore();
+    } catch (e) {
+      // Fallback if getImageData fails
+      this.drawBrushStroke(ctx, x1, y1, x2, y2);
+    }
+  }
+  
+  drawBlur(ctx, x1, y1, x2, y2) {
+    const { size, opacity } = this.state.sketch;
+    
+    ctx.save();
+    ctx.filter = 'blur(3px)';
+    ctx.globalAlpha = opacity / 100 * 0.3;
+    ctx.strokeStyle = 'rgba(128, 128, 128, 0.5)';
+    ctx.lineWidth = size;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    
+    ctx.beginPath();
+    ctx.moveTo(x1, y1);
+    ctx.lineTo(x2, y2);
+    ctx.stroke();
+    
+    ctx.restore();
+  }
+  
+  drawSprayPaint(ctx, x, y) {
+    const { size, opacity, color } = this.state.sketch;
+    const density = Math.floor(size / 2) + 10;
+    
+    ctx.save();
+    ctx.globalAlpha = (opacity / 100) * 0.15;
+    ctx.fillStyle = color;
+    ctx.globalCompositeOperation = 'source-over';
+    
+    for (let i = 0; i < density; i++) {
+      const angle = Math.random() * Math.PI * 2;
+      const distance = Math.random() * (size / 2);
+      const sprayX = x + Math.cos(angle) * distance;
+      const sprayY = y + Math.sin(angle) * distance;
+      const particleSize = Math.random() * 2 + 0.5;
+      
+      ctx.beginPath();
+      ctx.arc(sprayX, sprayY, particleSize, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    
+    ctx.restore();
+  }
 
 // =====================
 // HISTORY MANAGEMENT
