@@ -34,6 +34,17 @@ class JerryEditor {
         // Selection properties
         this.selection = null;
         this.selectionData = null;
+        this.selectionStart = null;
+        this.selecting = false;
+        
+        // Shape drawing
+        this.shapeStartPos = null;
+        this.tempCanvas = null;
+        this.tempCtx = null;
+        
+        // Movement
+        this.movingSelection = false;
+        this.moveStartPos = null;
         
         this.init();
     }
@@ -197,9 +208,9 @@ class JerryEditor {
         });
         
         // Export/Import
-        document.getElementById('exportJSON').addEventListener('click', () => this.exportJSON());
-        document.getElementById('exportPNG2').addEventListener('click', () => this.exportPNG());
-        document.getElementById('importFile').addEventListener('change', (e) => this.importFile(e));
+        document.getElementById('exportJSON')?.addEventListener('click', () => this.exportJSON());
+        document.getElementById('exportPNG2')?.addEventListener('click', () => this.exportPNG());
+        document.getElementById('importFile')?.addEventListener('change', (e) => this.importFile(e));
         
         // Keyboard shortcuts
         document.addEventListener('keydown', (e) => this.handleKeyboard(e));
@@ -279,6 +290,7 @@ class JerryEditor {
         this.pixelCanvas.style.display = mode === 'pixel' ? 'block' : 'none';
         this.sketchCanvas.style.display = mode === 'sketch' ? 'block' : 'none';
         this.canvasGrid.style.display = mode === 'pixel' && this.showGrid ? 'block' : 'none';
+        this.selectionOverlay.style.display = mode === 'sketch' ? 'block' : 'none';
         
         // Initialize mode-specific features
         if (mode === 'sketch') {
@@ -320,13 +332,28 @@ class JerryEditor {
     initializeSketchMode() {
         this.sketchCanvas.width = 800;
         this.sketchCanvas.height = 600;
+        this.selectionOverlay.width = 800;
+        this.selectionOverlay.height = 600;
+        
+        // Configure canvas for smooth drawing
+        this.sketchCtx.lineCap = 'round';
+        this.sketchCtx.lineJoin = 'round';
+        this.sketchCtx.imageSmoothingEnabled = true;
         
         if (this.layers.length === 0) {
             this.addLayer();
             // Fill background with white
-            this.sketchCtx.fillStyle = '#ffffff';
-            this.sketchCtx.fillRect(0, 0, this.sketchCanvas.width, this.sketchCanvas.height);
+            this.layers[0].ctx.fillStyle = '#ffffff';
+            this.layers[0].ctx.fillRect(0, 0, this.sketchCanvas.width, this.sketchCanvas.height);
         }
+        
+        // Setup temporary canvas for shape previews
+        this.tempCanvas = document.createElement('canvas');
+        this.tempCanvas.width = this.sketchCanvas.width;
+        this.tempCanvas.height = this.sketchCanvas.height;
+        this.tempCtx = this.tempCanvas.getContext('2d');
+        this.tempCtx.lineCap = 'round';
+        this.tempCtx.lineJoin = 'round';
         
         this.updateLayerList();
         this.updateBrushPreview();
@@ -386,6 +413,25 @@ class JerryEditor {
         const pos = this.mode === 'pixel' ? this.getPixelPos(e) : this.getCanvasPos(e);
         this.lastPos = pos;
         
+        // Handle selection tool
+        if (this.currentTool === 'select') {
+            this.startSelection(pos);
+            return;
+        }
+        
+        // Handle move tool
+        if (this.currentTool === 'move') {
+            this.startMoving(pos);
+            return;
+        }
+        
+        // For shape tools in sketch mode, store the starting position
+        if (this.mode === 'sketch' && ['lineSketch', 'rectSketch', 'circleSketch'].includes(this.currentTool)) {
+            this.shapeStartPos = pos;
+            this.saveShapeState();
+            return;
+        }
+        
         this.saveState();
         
         if (this.mode === 'pixel') {
@@ -396,9 +442,33 @@ class JerryEditor {
     }
     
     draw(e) {
-        if (!this.isDrawing) return;
-        
         const pos = this.mode === 'pixel' ? this.getPixelPos(e) : this.getCanvasPos(e);
+        
+        if (!this.isDrawing) {
+            // Show brush preview for sketch mode
+            if (this.mode === 'sketch' && ['brush', 'pen', 'marker', 'pencilSketch', 'charcoal', 'eraser'].includes(this.currentTool)) {
+                this.showBrushPreview(pos);
+            }
+            return;
+        }
+        
+        // Handle selection dragging
+        if (this.currentTool === 'select' && this.selecting) {
+            this.updateSelection(pos);
+            return;
+        }
+        
+        // Handle moving selection
+        if (this.currentTool === 'move' && this.movingSelection) {
+            this.updateMove(pos);
+            return;
+        }
+        
+        // Handle shape preview for sketch mode
+        if (this.mode === 'sketch' && ['lineSketch', 'rectSketch', 'circleSketch'].includes(this.currentTool) && this.shapeStartPos) {
+            this.previewShape(this.shapeStartPos, pos);
+            return;
+        }
         
         if (this.mode === 'pixel') {
             this.handlePixelTool(pos, e.button === 2);
@@ -410,12 +480,137 @@ class JerryEditor {
     }
     
     stopDrawing() {
+        if (!this.isDrawing) return;
+        
+        // Finalize selection
+        if (this.currentTool === 'select' && this.selecting) {
+            this.finalizeSelection();
+            this.selecting = false;
+            return;
+        }
+        
+        // Finalize move
+        if (this.currentTool === 'move' && this.movingSelection) {
+            this.finalizeMove();
+            this.movingSelection = false;
+            return;
+        }
+        
+        // Finalize shape drawing for sketch mode
+        if (this.mode === 'sketch' && ['lineSketch', 'rectSketch', 'circleSketch'].includes(this.currentTool) && this.shapeStartPos) {
+            this.finalizeShape();
+            this.shapeStartPos = null;
+            this.clearShapePreview();
+        }
+        
         this.isDrawing = false;
         this.lastPos = null;
+    }
+    
+    // Selection functionality
+    startSelection(pos) {
+        this.selecting = true;
+        this.selectionStart = pos;
+        this.clearSelection();
+    }
+    
+    updateSelection(pos) {
+        this.clearSelection();
         
-        if (this.mode === 'sketch' && this.currentTool !== 'select') {
-            this.mergeCurrentStroke();
+        const x1 = Math.min(this.selectionStart.x, pos.x);
+        const y1 = Math.min(this.selectionStart.y, pos.y);
+        const x2 = Math.max(this.selectionStart.x, pos.x);
+        const y2 = Math.max(this.selectionStart.y, pos.y);
+        
+        this.selectionCtx.strokeStyle = '#fff';
+        this.selectionCtx.setLineDash([5, 5]);
+        this.selectionCtx.lineWidth = 1;
+        this.selectionCtx.strokeRect(x1, y1, x2 - x1, y2 - y1);
+    }
+    
+    finalizeSelection() {
+        if (!this.selectionStart || !this.lastPos) return;
+        
+        const x1 = Math.min(this.selectionStart.x, this.lastPos.x);
+        const y1 = Math.min(this.selectionStart.y, this.lastPos.y);
+        const x2 = Math.max(this.selectionStart.x, this.lastPos.x);
+        const y2 = Math.max(this.selectionStart.y, this.lastPos.y);
+        
+        if (x2 - x1 > 5 && y2 - y1 > 5) {
+            this.selection = { x: x1, y: y1, width: x2 - x1, height: y2 - y1 };
+            
+            if (this.mode === 'sketch' && this.layers[this.currentLayer]) {
+                // Copy selected area
+                this.selectionData = this.layers[this.currentLayer].ctx.getImageData(x1, y1, x2 - x1, y2 - y1);
+            }
         }
+    }
+    
+    clearSelection() {
+        this.selectionCtx.clearRect(0, 0, this.selectionOverlay.width, this.selectionOverlay.height);
+    }
+    
+    // Move functionality
+    startMoving(pos) {
+        if (!this.selection) return;
+        
+        // Check if click is within selection
+        if (pos.x >= this.selection.x && pos.x <= this.selection.x + this.selection.width &&
+            pos.y >= this.selection.y && pos.y <= this.selection.y + this.selection.height) {
+            this.movingSelection = true;
+            this.moveStartPos = pos;
+            this.saveState();
+        }
+    }
+    
+    updateMove(pos) {
+        if (!this.selection || !this.moveStartPos || !this.selectionData) return;
+        
+        const dx = pos.x - this.moveStartPos.x;
+        const dy = pos.y - this.moveStartPos.y;
+        
+        // Clear selection area and redraw at new position
+        if (this.layers[this.currentLayer]) {
+            // Clear original area
+            this.layers[this.currentLayer].ctx.clearRect(
+                this.selection.x, this.selection.y,
+                this.selection.width, this.selection.height
+            );
+            
+            // Draw at new position
+            this.layers[this.currentLayer].ctx.putImageData(
+                this.selectionData,
+                this.selection.x + dx,
+                this.selection.y + dy
+            );
+            
+            this.redrawLayers();
+        }
+        
+        // Update selection rectangle
+        this.clearSelection();
+        this.selectionCtx.strokeStyle = '#fff';
+        this.selectionCtx.setLineDash([5, 5]);
+        this.selectionCtx.lineWidth = 1;
+        this.selectionCtx.strokeRect(
+            this.selection.x + dx,
+            this.selection.y + dy,
+            this.selection.width,
+            this.selection.height
+        );
+    }
+    
+    finalizeMove() {
+        if (!this.selection || !this.moveStartPos || !this.lastPos) return;
+        
+        const dx = this.lastPos.x - this.moveStartPos.x;
+        const dy = this.lastPos.y - this.moveStartPos.y;
+        
+        // Update selection position
+        this.selection.x += dx;
+        this.selection.y += dy;
+        
+        this.clearSelection();
     }
     
     handlePixelTool(pos, rightClick = false) {
@@ -449,6 +644,7 @@ class JerryEditor {
                     } else {
                         this.primaryColor = pickedColor;
                         this.primaryColorEl.style.background = pickedColor;
+                        if (this.sketchColorPicker) this.sketchColorPicker.value = pickedColor;
                     }
                 }
                 break;
@@ -489,11 +685,14 @@ class JerryEditor {
     }
     
     handleSketchTool(pos, e) {
+        if (!this.layers[this.currentLayer]) return;
+        
         const ctx = this.layers[this.currentLayer].ctx;
         const color = this.primaryColor;
         
-        ctx.globalAlpha = this.brushOpacity / 100;
-        ctx.globalCompositeOperation = this.blendMode;
+        ctx.save();
+        ctx.globalAlpha = (this.brushOpacity / 100) * (this.brushFlow / 100);
+        ctx.globalCompositeOperation = this.currentTool === 'eraser' ? 'destination-out' : this.layers[this.currentLayer].blendMode;
         
         switch (this.currentTool) {
             case 'brush':
@@ -517,7 +716,6 @@ class JerryEditor {
                 break;
                 
             case 'eraser':
-                ctx.globalCompositeOperation = 'destination-out';
                 this.drawBrush(ctx, pos, color, 'soft');
                 break;
                 
@@ -529,30 +727,90 @@ class JerryEditor {
                 this.blur(ctx, pos);
                 break;
                 
-            case 'lineSketch':
-                if (this.lastPos && this.isDrawing) {
-                    this.drawSketchLine(ctx, this.lastPos, pos, color);
-                }
-                break;
-                
-            case 'rectSketch':
-                if (this.lastPos && this.isDrawing) {
-                    this.drawSketchRect(ctx, this.lastPos, pos, color);
-                }
-                break;
-                
-            case 'circleSketch':
-                if (this.lastPos && this.isDrawing) {
-                    this.drawSketchCircle(ctx, this.lastPos, pos, color);
-                }
-                break;
-                
             case 'sprayPaint':
                 this.drawSprayPaint(ctx, pos, color);
                 break;
         }
         
+        ctx.restore();
         this.redrawLayers();
+    }
+    
+    // Shape preview and finalization for sketch mode
+    saveShapeState() {
+        if (this.layers[this.currentLayer]) {
+            this.tempCtx.clearRect(0, 0, this.tempCanvas.width, this.tempCanvas.height);
+            this.tempCtx.drawImage(this.layers[this.currentLayer].canvas, 0, 0);
+        }
+    }
+    
+    previewShape(start, end) {
+        if (!this.layers[this.currentLayer]) return;
+        
+        // Restore original layer state
+        this.layers[this.currentLayer].ctx.clearRect(0, 0, this.layers[this.currentLayer].canvas.width, this.layers[this.currentLayer].canvas.height);
+        this.layers[this.currentLayer].ctx.drawImage(this.tempCanvas, 0, 0);
+        
+        // Draw preview shape
+        const ctx = this.layers[this.currentLayer].ctx;
+        ctx.save();
+        ctx.strokeStyle = this.primaryColor;
+        ctx.lineWidth = this.brushSize;
+        ctx.lineCap = 'round';
+        ctx.globalAlpha = this.brushOpacity / 100;
+        
+        switch (this.currentTool) {
+            case 'lineSketch':
+                ctx.beginPath();
+                ctx.moveTo(start.x, start.y);
+                ctx.lineTo(end.x, end.y);
+                ctx.stroke();
+                break;
+                
+            case 'rectSketch':
+                ctx.strokeRect(
+                    Math.min(start.x, end.x),
+                    Math.min(start.y, end.y),
+                    Math.abs(end.x - start.x),
+                    Math.abs(end.y - start.y)
+                );
+                break;
+                
+            case 'circleSketch':
+                const radius = Math.sqrt(Math.pow(end.x - start.x, 2) + Math.pow(end.y - start.y, 2));
+                ctx.beginPath();
+                ctx.arc(start.x, start.y, radius, 0, 2 * Math.PI);
+                ctx.stroke();
+                break;
+        }
+        
+        ctx.restore();
+        this.redrawLayers();
+    }
+    
+    finalizeShape() {
+        // Shape is already drawn in preview, just clear the temp canvas
+        this.tempCtx.clearRect(0, 0, this.tempCanvas.width, this.tempCanvas.height);
+    }
+    
+    clearShapePreview() {
+        // Already handled in finalizeShape
+    }
+    
+    showBrushPreview(pos) {
+        // Clear previous preview
+        this.selectionCtx.clearRect(0, 0, this.selectionOverlay.width, this.selectionOverlay.height);
+        
+        // Draw brush preview
+        this.selectionCtx.save();
+        this.selectionCtx.strokeStyle = '#ffffff';
+        this.selectionCtx.setLineDash([2, 2]);
+        this.selectionCtx.lineWidth = 1;
+        this.selectionCtx.globalAlpha = 0.8;
+        this.selectionCtx.beginPath();
+        this.selectionCtx.arc(pos.x, pos.y, this.brushSize / 2, 0, 2 * Math.PI);
+        this.selectionCtx.stroke();
+        this.selectionCtx.restore();
     }
     
     drawPixel(x, y, color) {
@@ -699,167 +957,490 @@ class JerryEditor {
         }
     }
     
-    // Sketch drawing methods
+    // Professional sketch drawing methods with smooth natural textures
     drawBrush(ctx, pos, color, type = 'soft') {
-        if (!this.lastPos || !this.isDrawing) {
+        const currentAlpha = ctx.globalAlpha;
+        
+        if (type === 'soft') {
+            // Soft brush with natural pressure simulation
+            const gradient = ctx.createRadialGradient(pos.x, pos.y, 0, pos.x, pos.y, this.brushSize / 2);
+            const alpha = (this.brushHardness / 100);
+            gradient.addColorStop(0, this.hexToRgba(color, currentAlpha));
+            gradient.addColorStop(alpha, this.hexToRgba(color, currentAlpha * 0.7));
+            gradient.addColorStop(1, this.hexToRgba(color, 0));
+            
+            ctx.fillStyle = gradient;
             ctx.beginPath();
             ctx.arc(pos.x, pos.y, this.brushSize / 2, 0, 2 * Math.PI);
-            ctx.fillStyle = color;
             ctx.fill();
-            return;
-        }
-        
-        const distance = Math.sqrt(
-            Math.pow(pos.x - this.lastPos.x, 2) + 
-            Math.pow(pos.y - this.lastPos.y, 2)
-        );
-        
-        const steps = Math.max(1, Math.floor(distance));
-        
-        for (let i = 0; i <= steps; i++) {
-            const t = i / steps;
-            const x = this.lastPos.x + (pos.x - this.lastPos.x) * t;
-            const y = this.lastPos.y + (pos.y - this.lastPos.y) * t;
             
-            if (type === 'soft') {
-                const gradient = ctx.createRadialGradient(x, y, 0, x, y, this.brushSize / 2);
-                const alpha = this.brushOpacity / 100 * (this.brushHardness / 100);
-                gradient.addColorStop(0, this.hexToRgba(color, alpha));
-                gradient.addColorStop(1, this.hexToRgba(color, 0));
+            // Smooth connecting strokes
+            if (this.lastPos && this.isDrawing) {
+                const distance = Math.sqrt(
+                    Math.pow(pos.x - this.lastPos.x, 2) + 
+                    Math.pow(pos.y - this.lastPos.y, 2)
+                );
                 
-                ctx.fillStyle = gradient;
-            } else {
-                ctx.fillStyle = color;
+                if (distance > 1) {
+                    const steps = Math.max(1, Math.ceil(distance / 3));
+                    for (let i = 0; i <= steps; i++) {
+                        const t = i / steps;
+                        const x = this.lastPos.x + (pos.x - this.lastPos.x) * t;
+                        const y = this.lastPos.y + (pos.y - this.lastPos.y) * t;
+                        
+                        const grad = ctx.createRadialGradient(x, y, 0, x, y, this.brushSize / 2);
+                        grad.addColorStop(0, this.hexToRgba(color, currentAlpha));
+                        grad.addColorStop(alpha, this.hexToRgba(color, currentAlpha * 0.7));
+                        grad.addColorStop(1, this.hexToRgba(color, 0));
+                        
+                        ctx.fillStyle = grad;
+                        ctx.beginPath();
+                        ctx.arc(x, y, this.brushSize / 2, 0, 2 * Math.PI);
+                        ctx.fill();
+                    }
+                }
             }
-            
+        } else {
+            // Hard brush - pen-like with smooth lines
+            ctx.fillStyle = color;
             ctx.beginPath();
-            ctx.arc(x, y, this.brushSize / 2, 0, 2 * Math.PI);
+            ctx.arc(pos.x, pos.y, this.brushSize / 2, 0, 2 * Math.PI);
             ctx.fill();
+            
+            // Smooth connecting line
+            if (this.lastPos && this.isDrawing) {
+                ctx.strokeStyle = color;
+                ctx.lineWidth = this.brushSize;
+                ctx.lineCap = 'round';
+                ctx.lineJoin = 'round';
+                ctx.beginPath();
+                ctx.moveTo(this.lastPos.x, this.lastPos.y);
+                ctx.lineTo(pos.x, pos.y);
+                ctx.stroke();
+            }
         }
     }
     
     drawMarker(ctx, pos, color) {
-        ctx.globalAlpha = 0.3;
-        ctx.fillStyle = color;
-        ctx.beginPath();
+        const currentAlpha = ctx.globalAlpha;
+        ctx.globalAlpha = currentAlpha * 0.6; // Marker transparency
         
         if (this.lastPos && this.isDrawing) {
-            ctx.moveTo(this.lastPos.x, this.lastPos.y);
-            ctx.lineTo(pos.x, pos.y);
+            // Create smooth marker strokes
+            ctx.strokeStyle = color;
             ctx.lineWidth = this.brushSize;
             ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+            
+            // Add slight variation for marker texture
+            const jitter = this.brushSize * 0.1;
+            const x1 = this.lastPos.x + (Math.random() - 0.5) * jitter;
+            const y1 = this.lastPos.y + (Math.random() - 0.5) * jitter;
+            const x2 = pos.x + (Math.random() - 0.5) * jitter;
+            const y2 = pos.y + (Math.random() - 0.5) * jitter;
+            
+            ctx.beginPath();
+            ctx.moveTo(x1, y1);
+            ctx.lineTo(x2, y2);
             ctx.stroke();
         } else {
+            // Initial marker dot
+            ctx.fillStyle = color;
+            ctx.beginPath();
             ctx.arc(pos.x, pos.y, this.brushSize / 2, 0, 2 * Math.PI);
             ctx.fill();
         }
+        
+        ctx.globalAlpha = currentAlpha;
     }
     
-    drawPencil(ctx, pos, color) {
-        ctx.globalAlpha = 0.7;
-        ctx.strokeStyle = color;
-        ctx.lineWidth = this.brushSize * 0.5;
+    // Layer management
+    addLayer() {
+        const canvas = document.createElement('canvas');
+        canvas.width = this.sketchCanvas.width;
+        canvas.height = this.sketchCanvas.height;
+        const ctx = canvas.getContext('2d');
         ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        ctx.imageSmoothingEnabled = true;
         
-        // Add texture by drawing multiple thin lines
-        const jitter = this.brushSize * 0.1;
-        for (let i = 0; i < 3; i++) {
-            ctx.beginPath();
-            const offsetX = (Math.random() - 0.5) * jitter;
-            const offsetY = (Math.random() - 0.5) * jitter;
+        const layer = {
+            canvas: canvas,
+            ctx: ctx,
+            visible: true,
+            opacity: 1,
+            blendMode: 'source-over',
+            name: `Layer ${this.layers.length + 1}`
+        };
+        
+        this.layers.push(layer);
+        this.currentLayer = this.layers.length - 1;
+        this.updateLayerList();
+        this.redrawLayers();
+    }
+    
+    updateLayerList() {
+        if (!this.layerList) return;
+        
+        this.layerList.innerHTML = '';
+        
+        for (let i = this.layers.length - 1; i >= 0; i--) {
+            const layer = this.layers[i];
+            const layerEl = document.createElement('div');
+            layerEl.className = `layer-item ${i === this.currentLayer ? 'active' : ''}`;
+            layerEl.innerHTML = `
+                <span class="layer-name">${layer.name}</span>
+                <button class="layer-toggle ${layer.visible ? 'visible' : 'hidden'}" data-layer="${i}">👁</button>
+                <button class="layer-delete" data-layer="${i}">🗑</button>
+            `;
             
-            if (this.lastPos && this.isDrawing) {
-                ctx.moveTo(this.lastPos.x + offsetX, this.lastPos.y + offsetY);
-                ctx.lineTo(pos.x + offsetX, pos.y + offsetY);
-            } else {
-                ctx.moveTo(pos.x + offsetX, pos.y + offsetY);
-                ctx.lineTo(pos.x + offsetX + 1, pos.y + offsetY + 1);
-            }
-            ctx.stroke();
+            layerEl.addEventListener('click', (e) => {
+                if (!e.target.classList.contains('layer-toggle') && !e.target.classList.contains('layer-delete')) {
+                    this.currentLayer = i;
+                    this.updateLayerList();
+                    this.updateLayerControls();
+                }
+            });
+            
+            layerEl.querySelector('.layer-toggle').addEventListener('click', (e) => {
+                e.stopPropagation();
+                layer.visible = !layer.visible;
+                this.updateLayerList();
+                this.redrawLayers();
+            });
+            
+            layerEl.querySelector('.layer-delete').addEventListener('click', (e) => {
+                e.stopPropagation();
+                if (this.layers.length > 1) {
+                    this.layers.splice(i, 1);
+                    if (this.currentLayer >= this.layers.length) {
+                        this.currentLayer = this.layers.length - 1;
+                    }
+                    this.updateLayerList();
+                    this.updateLayerControls();
+                    this.redrawLayers();
+                }
+            });
+            
+            this.layerList.appendChild(layerEl);
         }
     }
     
+    updateLayerControls() {
+        if (!this.layers[this.currentLayer]) return;
+        
+        const layer = this.layers[this.currentLayer];
+        if (this.layerOpacitySlider) {
+            this.layerOpacitySlider.value = layer.opacity * 100;
+            document.getElementById('layerOpacityLabel').textContent = Math.round(layer.opacity * 100);
+        }
+        
+        if (this.blendModeSelect) {
+            this.blendModeSelect.value = layer.blendMode;
+        }
+    }
+    
+    redrawLayers() {
+        // Clear main canvas
+        this.sketchCtx.clearRect(0, 0, this.sketchCanvas.width, this.sketchCanvas.height);
+        
+        // Composite all visible layers
+        for (let i = 0; i < this.layers.length; i++) {
+            const layer = this.layers[i];
+            if (layer.visible) {
+                this.sketchCtx.save();
+                this.sketchCtx.globalAlpha = layer.opacity;
+                this.sketchCtx.globalCompositeOperation = layer.blendMode;
+                this.sketchCtx.drawImage(layer.canvas, 0, 0);
+                this.sketchCtx.restore();
+            }
+        }
+    }
+    
+    // Transform operations
+    rotate(degrees) {
+        if (this.mode === 'pixel') {
+            this.rotatePixelCanvas(degrees);
+        } else {
+            this.rotateSketchCanvas(degrees);
+        }
+    }
+    
+    rotatePixelCanvas(degrees) {
+        const newGrid = [];
+        
+        // For 90-degree rotations, we can do exact pixel rotation
+        if (degrees === 90 || degrees === -270) {
+            for (let x = 0; x < this.canvasWidth; x++) {
+                newGrid[x] = [];
+                for (let y = 0; y < this.canvasHeight; y++) {
+                    newGrid[x][y] = this.grid[this.canvasHeight - 1 - y][x];
+                }
+            }
+        } else if (degrees === -90 || degrees === 270) {
+            for (let x = 0; x < this.canvasWidth; x++) {
+                newGrid[x] = [];
+                for (let y = 0; y < this.canvasHeight; y++) {
+                    newGrid[x][y] = this.grid[y][this.canvasWidth - 1 - x];
+                }
+            }
+        } else if (degrees === 180 || degrees === -180) {
+            for (let y = 0; y < this.canvasHeight; y++) {
+                newGrid[y] = [];
+                for (let x = 0; x < this.canvasWidth; x++) {
+                    newGrid[y][x] = this.grid[this.canvasHeight - 1 - y][this.canvasWidth - 1 - x];
+                }
+            }
+        }
+        
+        this.grid = newGrid;
+        this.saveState();
+        this.updatePixelCanvas();
+    }
+    
+    rotateSketchCanvas(degrees) {
+        const layer = this.layers[this.currentLayer];
+        if (!layer) return;
+        
+        this.saveState();
+        
+        const tempCanvas = document.createElement('canvas');
+        tempCanvas.width = layer.canvas.width;
+        tempCanvas.height = layer.canvas.height;
+        const tempCtx = tempCanvas.getContext('2d');
+        
+        tempCtx.save();
+        tempCtx.translate(tempCanvas.width / 2, tempCanvas.height / 2);
+        tempCtx.rotate((degrees * Math.PI) / 180);
+        tempCtx.translate(-tempCanvas.width / 2, -tempCanvas.height / 2);
+        tempCtx.drawImage(layer.canvas, 0, 0);
+        tempCtx.restore();
+        
+        layer.ctx.clearRect(0, 0, layer.canvas.width, layer.canvas.height);
+        layer.ctx.drawImage(tempCanvas, 0, 0);
+        
+        this.redrawLayers();
+    }
+    
+    drawPencil(ctx, pos, color) {
+        const currentAlpha = ctx.globalAlpha;
+        ctx.globalAlpha = currentAlpha * 0.8;
+        
+        // Create pencil texture with multiple fine strokes
+        const strokeWidth = Math.max(0.5, this.brushSize * 0.2);
+        const jitterAmount = this.brushSize * 0.2;
+        const strokes = Math.max(3, Math.floor(this.brushSize / 5));
+        
+        ctx.strokeStyle = color;
+        ctx.lineWidth = strokeWidth;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        
+        for (let i = 0; i < strokes; i++) {
+            const offsetX = (Math.random() - 0.5) * jitterAmount;
+            const offsetY = (Math.random() - 0.5) * jitterAmount;
+            const alpha = 0.3 + Math.random() * 0.4;
+            
+            ctx.globalAlpha = currentAlpha * alpha;
+            
+            ctx.beginPath();
+            if (this.lastPos && this.isDrawing) {
+                ctx.moveTo(this.lastPos.x + offsetX, this.lastPos.y + offsetY);
+                ctx.lineTo(pos.x + offsetX, pos.y + offsetY);
+                ctx.stroke();
+            } else {
+                ctx.arc(pos.x + offsetX, pos.y + offsetY, strokeWidth / 2, 0, 2 * Math.PI);
+                ctx.fill();
+            }
+        }
+        
+        ctx.globalAlpha = currentAlpha;
+    }
+    
     drawCharcoal(ctx, pos, color) {
-        ctx.globalAlpha = 0.4;
+        const currentAlpha = ctx.globalAlpha;
+        
+        // Charcoal creates rough, scattered texture
+        const density = Math.floor(this.brushSize * 2);
+        const spread = this.brushSize * 0.9;
+        
         ctx.fillStyle = color;
         
-        // Charcoal has rough, scattered texture
-        const particles = Math.floor(this.brushSize / 2);
-        for (let i = 0; i < particles; i++) {
+        // Main charcoal texture
+        for (let i = 0; i < density; i++) {
             const angle = Math.random() * Math.PI * 2;
-            const distance = Math.random() * this.brushSize / 2;
+            const distance = Math.random() * spread;
             const x = pos.x + Math.cos(angle) * distance;
             const y = pos.y + Math.sin(angle) * distance;
             const size = Math.random() * 3 + 1;
+            const alpha = currentAlpha * (Math.random() * 0.4 + 0.3);
             
+            ctx.globalAlpha = alpha;
             ctx.beginPath();
             ctx.arc(x, y, size, 0, 2 * Math.PI);
             ctx.fill();
         }
-    }
-    
-    drawSprayPaint(ctx, pos, color) {
-        ctx.fillStyle = color;
-        ctx.globalAlpha = 0.1;
         
-        const sprayDensity = this.brushSize;
-        for (let i = 0; i < sprayDensity; i++) {
-            const angle = Math.random() * Math.PI * 2;
-            const distance = Math.random() * this.brushSize;
-            const x = pos.x + Math.cos(angle) * distance;
-            const y = pos.y + Math.sin(angle) * distance;
+        // Connecting strokes for movement
+        if (this.lastPos && this.isDrawing) {
+            const distance = Math.sqrt(
+                Math.pow(pos.x - this.lastPos.x, 2) + 
+                Math.pow(pos.y - this.lastPos.y, 2)
+            );
             
-            ctx.beginPath();
-            ctx.arc(x, y, 1, 0, 2 * Math.PI);
-            ctx.fill();
-        }
-    }
-    
-    smudge(ctx, pos) {
-        if (!this.lastPos) return;
-        
-        const radius = this.brushSize / 2;
-        const imageData = ctx.getImageData(pos.x - radius, pos.y - radius, radius * 2, radius * 2);
-        
-        // Simple smudge effect by shifting pixels
-        const dx = (pos.x - this.lastPos.x) * 0.5;
-        const dy = (pos.y - this.lastPos.y) * 0.5;
-        
-        ctx.putImageData(imageData, pos.x - radius + dx, pos.y - radius + dy);
-    }
-    
-    blur(ctx, pos) {
-        const radius = this.brushSize / 2;
-        const imageData = ctx.getImageData(pos.x - radius, pos.y - radius, radius * 2, radius * 2);
-        const data = imageData.data;
-        
-        // Simple box blur
-        const blurRadius = 2;
-        for (let y = blurRadius; y < radius * 2 - blurRadius; y++) {
-            for (let x = blurRadius; x < radius * 2 - blurRadius; x++) {
-                let r = 0, g = 0, b = 0, a = 0, count = 0;
+            const steps = Math.ceil(distance / 5);
+            for (let i = 0; i < steps; i++) {
+                const t = i / steps;
+                const x = this.lastPos.x + (pos.x - this.lastPos.x) * t;
+                const y = this.lastPos.y + (pos.y - this.lastPos.y) * t;
                 
-                for (let dy = -blurRadius; dy <= blurRadius; dy++) {
-                    for (let dx = -blurRadius; dx <= blurRadius; dx++) {
-                        const idx = ((y + dy) * radius * 2 + (x + dx)) * 4;
-                        r += data[idx];
-                        g += data[idx + 1];
-                        b += data[idx + 2];
-                        a += data[idx + 3];
-                        count++;
-                    }
+                // Add smaller particles along the path
+                for (let j = 0; j < 5; j++) {
+                    const offsetX = (Math.random() - 0.5) * spread;
+                    const offsetY = (Math.random() - 0.5) * spread;
+                    const size = Math.random() * 2 + 0.5;
+                    
+                    ctx.globalAlpha = currentAlpha * (Math.random() * 0.3 + 0.2);
+                    ctx.beginPath();
+                    ctx.arc(x + offsetX, y + offsetY, size, 0, 2 * Math.PI);
+                    ctx.fill();
                 }
-                
-                const idx = (y * radius * 2 + x) * 4;
-                data[idx] = r / count;
-                data[idx + 1] = g / count;
-                data[idx + 2] = b / count;
-                data[idx + 3] = a / count;
             }
         }
         
-        ctx.putImageData(imageData, pos.x - radius, pos.y - radius);
+        ctx.globalAlpha = currentAlpha;
     }
+    
+    drawSprayPaint(ctx, pos, color) {
+        const currentAlpha = ctx.globalAlpha;
+        
+        // Spray paint creates a cloud of varied-sized dots
+        const sprayDensity = Math.floor(this.brushSize * 3);
+        const sprayRadius = this.brushSize * 1.5;
+        
+        ctx.fillStyle = color;
+        
+        for (let i = 0; i < sprayDensity; i++) {
+            // Gaussian distribution for more natural spray pattern
+            const angle = Math.random() * Math.PI * 2;
+            const distance = this.gaussianRandom() * sprayRadius;
+            const x = pos.x + Math.cos(angle) * distance;
+            const y = pos.y + Math.sin(angle) * distance;
+            
+            // Varying dot sizes and opacity
+            const dotSize = Math.random() * 2.5 + 0.5;
+            const opacity = currentAlpha * 0.15 * (Math.random() * 0.8 + 0.2);
+            
+            ctx.globalAlpha = opacity;
+            ctx.beginPath();
+            ctx.arc(x, y, dotSize, 0, 2 * Math.PI);
+            ctx.fill();
+        }
+        
+        ctx.globalAlpha = currentAlpha;
+    }
+    
+    gaussianRandom() {
+        // Box-Muller transform for gaussian distribution
+        let u = 0, v = 0;
+        while(u === 0) u = Math.random(); // Converting [0,1) to (0,1)
+        while(v === 0) v = Math.random();
+        return Math.sqrt(-2.0 * Math.log(u)) * Math.cos(2.0 * Math.PI * v);
+    }
+    
+    smudge(ctx, pos) {
+        if (!this.lastPos || !this.isDrawing) return;
+        
+        const radius = Math.floor(this.brushSize / 2);
+        if (radius < 2) return;
+        
+        try {
+            // Get image data from around the current position
+            const imageData = ctx.getImageData(
+                Math.max(0, pos.x - radius), 
+                Math.max(0, pos.y - radius), 
+                Math.min(ctx.canvas.width - Math.max(0, pos.x - radius), radius * 2), 
+                Math.min(ctx.canvas.height - Math.max(0, pos.y - radius), radius * 2)
+            );
+            
+            // Calculate smudge direction and distance
+            const dx = (pos.x - this.lastPos.x) * 0.5;
+            const dy = (pos.y - this.lastPos.y) * 0.5;
+            
+            const smudgeStrength = this.brushOpacity / 100;
+            ctx.globalAlpha = smudgeStrength * 0.7;
+            ctx.globalCompositeOperation = 'source-over';
+            
+            // Create smooth smudging with multiple offset copies
+            for (let i = 1; i <= 4; i++) {
+                const offsetX = dx * (i / 4);
+                const offsetY = dy * (i / 4);
+                const alpha = smudgeStrength * (1 - i / 5);
+                
+                ctx.globalAlpha = alpha;
+                ctx.putImageData(
+                    imageData, 
+                    Math.max(0, pos.x - radius) + offsetX, 
+                    Math.max(0, pos.y - radius) + offsetY
+                );
+            }
+        } catch (e) {
+            console.warn('Smudge tool failed:', e);
+        }
+    }
+    
+    blur(ctx, pos) {
+        const radius = Math.floor(this.brushSize / 3);
+        if (radius < 2) return;
+        
+        try {
+            const imageData = ctx.getImageData(
+                Math.max(0, pos.x - radius), 
+                Math.max(0, pos.y - radius), 
+                Math.min(ctx.canvas.width - Math.max(0, pos.x - radius), radius * 2), 
+                Math.min(ctx.canvas.height - Math.max(0, pos.y - radius), radius * 2)
+            );
+            
+            const data = imageData.data;
+            const width = imageData.width;
+            const height = imageData.height;
+            
+            // Apply gaussian blur
+            const blurRadius = Math.min(4, radius);
+            const outputData = new Uint8ClampedArray(data);
+            
+            // Horizontal pass
+            for (let y = 0; y < height; y++) {
+                for (let x = blurRadius; x < width - blurRadius; x++) {
+                    let r = 0, g = 0, b = 0, a = 0;
+                    let totalWeight = 0;
+                    
+                    for (let dx = -blurRadius; dx <= blurRadius; dx++) {
+                        const weight = Math.exp(-(dx * dx) / (2 * blurRadius * blurRadius));
+                        const idx = (y * width + (x + dx)) * 4;
+                        
+                        r += data[idx] * weight;
+                        g += data[idx + 1] * weight;
+                        b += data[idx + 2] * weight;
+                        a += data[idx + 3] * weight;
+                        totalWeight += weight;
+                    }
+                    
+                    const idx = (y * width + x) * 4;
+                    outputData[idx] = r / totalWeight;
+                    outputData[idx + 1] = g / totalWeight;
+                    outputData[idx + 2] = b / totalWeight;
+                    outputData[idx + 3] = a / totalWeight;
+                }
+            }
+            
+            const blurredImageData = new ImageData(outputData, width, height);
+            ctx.putImageData(blurredImageData, Math.max(0, pos.x - radius), Math.max(0, pos.y - radius));
+        } catch (e) {
+            console.warn('Blur tool failed:', e);
+        }
+    }
+
     
     drawSketchLine(ctx, start, end, color) {
         ctx.strokeStyle = color;
@@ -1486,8 +2067,32 @@ class JerryEditor {
     }
     
     // Color palette management
+    loadPalettes() {
+        const palettes = {
+            'basic': ['#000000', '#ffffff', '#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff', '#00ffff'],
+            'grayscale': ['#000000', '#333333', '#666666', '#999999', '#cccccc', '#ffffff'],
+            'earth': ['#8B4513', '#A0522D', '#CD853F', '#D2B48C', '#F4A460', '#DEB887', '#D2691E', '#BC8F8F'],
+            'ocean': ['#000080', '#191970', '#4169E1', '#0000CD', '#1E90FF', '#00BFFF', '#87CEEB', '#ADD8E6'],
+            'sunset': ['#FF4500', '#FF6347', '#FF7F50', '#FFA500', '#FFD700', '#FFFF00', '#9ACD32', '#32CD32'],
+            'neon': ['#FF1493', '#00FF00', '#00FFFF', '#FF00FF', '#FFFF00', '#FF0000', '#0000FF', '#8A2BE2']
+        };
+        
+        if (this.paletteSelector) {
+            Object.keys(palettes).forEach(paletteName => {
+                const option = document.createElement('option');
+                option.value = paletteName;
+                option.textContent = paletteName.charAt(0).toUpperCase() + paletteName.slice(1);
+                this.paletteSelector.appendChild(option);
+            });
+        }
+        
+        this.palettes = palettes;
+        this.loadSavedPalettes();
+        this.loadPalette('basic');
+        this.setupColorPickers();
+    }
     loadPalette(paletteName) {
-        const colors = this.palettes[paletteName] || this.palettes.basic;
+        const colors = this.palettes[paletteName] || this.palettes.default;
         
         if (this.swatchesContainer) {
             this.swatchesContainer.innerHTML = '';
@@ -1497,11 +2102,9 @@ class JerryEditor {
                 swatch.style.backgroundColor = color;
                 swatch.title = color;
                 swatch.addEventListener('click', (e) => {
-                    if (e.button === 0) {
-                        this.primaryColor = color;
-                        this.primaryColorEl.style.background = color;
-                        if (this.sketchColorPicker) this.sketchColorPicker.value = color;
-                    }
+                    this.primaryColor = color;
+                    this.primaryColorEl.style.background = color;
+                    if (this.sketchColorPicker) this.sketchColorPicker.value = color;
                 });
                 swatch.addEventListener('contextmenu', (e) => {
                     e.preventDefault();
@@ -2019,40 +2622,39 @@ class JerryEditor {
         }
     }
 
-  loadPalettes() {
-      const palettes = {
-          'default': ['transparent','#FFFFFF','#C0C0C0','#808080','#404040','#000000','#FF0000','#00FF00','#0000FF','#FFFF00','#FF00FF'],
-          'retro8bit': ['transparent','#F4F4F4','#E8E8E8','#BCBCBC','#7C7C7C','#A00000','#FF6A00','#FFD500','#00A844','#0047AB','#000000'],
-          'gameboyClassic': ['transparent','#E0F8D0','#88C070','#346856','#081820','#9BBB0F','#8BAC0F','#306230','#0F380F','#155015','#071821'],
-          'synthwave': ['transparent','#FF00FF','#FF0080','#FF4080','#FF8000','#FFFF00','#80FF00','#00FFFF','#0080FF','#8000FF','#2D1B69'],
-          'earthTones': ['transparent','#FFF8DC','#D2B48C','#CD853F','#A0522D','#8B4513','#654321','#556B2F','#8FBC8F','#2F4F4F','#191970'],
-          'crystalIce': ['transparent','#F0F8FF','#E6F3FF','#B3D9FF','#80BFFF','#4DA6FF','#1A8CFF','#0066CC','#004C99','#003366','#001A33'],
-          'moltenCore': ['transparent','#FFFACD','#FFE4B5','#FFA500','#FF6347','#FF4500','#DC143C','#B22222','#8B0000','#4B0000','#000000'],
-          'enchantedForest': ['transparent','#F0FFF0','#E6FFE6','#CCFFCC','#99FF99','#66CC66','#339933','#228B22','#006400','#004400','#002200'],
-          'nesClassic': ['transparent','#FFFFFF','#FCFCFC','#F8F8F8','#BCBCBC','#7C7C7C','#A4E4FC','#3CBCFC','#0078F8','#0000FC','#000000'],
-          'cyberpunk': ['transparent','#00FFFF','#00E6E6','#00CCCC','#00B3B3','#FF00FF','#E600E6','#CC00CC','#B300B3','#4D0080','#0D001A'],
-          'desertSands': ['transparent','#FFF8DC','#F5DEB3','#DEB887','#D2B48C','#BC9A6A','#A0522D','#8B4513','#654321','#3E2723','#2E1A14'],
-          'deepOcean': ['transparent','#E0F6FF','#B3E5FC','#4FC3F7','#29B6F6','#03A9F4','#0288D1','#0277BD','#01579B','#01447A','#002F5A'],
-          'cosmicVoid': ['transparent','#E1BEE7','#CE93D8','#BA68C8','#AB47BC','#8E24AA','#7B1FA2','#6A1B9A','#4A148C','#38006B','#1A0033'],
-          'inkWash': ['transparent','#FFFFFF','#F5F5F5','#E0E0E0','#BDBDBD','#9E9E9E','#757575','#424242','#212121','#FF5722','#000000'],
-          'autumnLeaves': ['transparent','#FFF8E7','#FFE0B3','#FFCC80','#FF8F65','#FF7043','#F4511E','#E65100','#BF360C','#8D2F00','#5D1F00'],
-          'sakuraBloom': ['transparent','#FFF0F5','#FFE4E1','#FFC0CB','#FFB6C1','#FF91A4','#FF69B4','#E91E63','#C2185B','#AD1457','#880E4F']
-      };
-      
-      if (this.paletteSelector) {
-          Object.keys(palettes).forEach(paletteName => {
-              const option = document.createElement('option');
-              option.value = paletteName;
-              option.textContent = paletteName.charAt(0).toUpperCase() + paletteName.slice(1);
-              this.paletteSelector.appendChild(option);
-          });
-      }
-      
-      this.palettes = palettes;
-      this.loadSavedPalettes();
-      this.loadPalette('default');
-      this.setupColorPickers();
-  }
+    loadPalettes() {
+    const palettes = {
+        'default': ['transparent','#FFFFFF','#C0C0C0','#808080','#404040','#000000','#FF0000','#00FF00','#0000FF','#FFFF00','#FF00FF'],
+        'retro8bit': ['transparent','#F4F4F4','#E8E8E8','#BCBCBC','#7C7C7C','#A00000','#FF6A00','#FFD500','#00A844','#0047AB','#000000'],
+        'gameboyClassic': ['transparent','#E0F8D0','#88C070','#346856','#081820','#9BBB0F','#8BAC0F','#306230','#0F380F','#155015','#071821'],
+        'synthwave': ['transparent','#FF00FF','#FF0080','#FF4080','#FF8000','#FFFF00','#80FF00','#00FFFF','#0080FF','#8000FF','#2D1B69'],
+        'earthTones': ['transparent','#FFF8DC','#D2B48C','#CD853F','#A0522D','#8B4513','#654321','#556B2F','#8FBC8F','#2F4F4F','#191970'],
+        'crystalIce': ['transparent','#F0F8FF','#E6F3FF','#B3D9FF','#80BFFF','#4DA6FF','#1A8CFF','#0066CC','#004C99','#003366','#001A33'],
+        'moltenCore': ['transparent','#FFFACD','#FFE4B5','#FFA500','#FF6347','#FF4500','#DC143C','#B22222','#8B0000','#4B0000','#000000'],
+        'enchantedForest': ['transparent','#F0FFF0','#E6FFE6','#CCFFCC','#99FF99','#66CC66','#339933','#228B22','#006400','#004400','#002200'],
+        'nesClassic': ['transparent','#FFFFFF','#FCFCFC','#F8F8F8','#BCBCBC','#7C7C7C','#A4E4FC','#3CBCFC','#0078F8','#0000FC','#000000'],
+        'cyberpunk': ['transparent','#00FFFF','#00E6E6','#00CCCC','#00B3B3','#FF00FF','#E600E6','#CC00CC','#B300B3','#4D0080','#0D001A'],
+        'desertSands': ['transparent','#FFF8DC','#F5DEB3','#DEB887','#D2B48C','#BC9A6A','#A0522D','#8B4513','#654321','#3E2723','#2E1A14'],
+        'deepOcean': ['transparent','#E0F6FF','#B3E5FC','#4FC3F7','#29B6F6','#03A9F4','#0288D1','#0277BD','#01579B','#01447A','#002F5A'],
+        'cosmicVoid': ['transparent','#E1BEE7','#CE93D8','#BA68C8','#AB47BC','#8E24AA','#7B1FA2','#6A1B9A','#4A148C','#38006B','#1A0033'],
+        'inkWash': ['transparent','#FFFFFF','#F5F5F5','#E0E0E0','#BDBDBD','#9E9E9E','#757575','#424242','#212121','#FF5722','#000000'],
+        'autumnLeaves': ['transparent','#FFF8E7','#FFE0B3','#FFCC80','#FF8F65','#FF7043','#F4511E','#E65100','#BF360C','#8D2F00','#5D1F00'],
+        'sakuraBloom': ['transparent','#FFF0F5','#FFE4E1','#FFC0CB','#FFB6C1','#FF91A4','#FF69B4','#E91E63','#C2185B','#AD1457','#880E4F']
+    };
+    
+    if (this.paletteSelector) {
+        Object.keys(palettes).forEach(paletteName => {
+            const option = document.createElement('option');
+            option.value = paletteName;
+            option.textContent = paletteName.charAt(0).toUpperCase() + paletteName.slice(1);
+            this.paletteSelector.appendChild(option);
+        });
+    }
+    
+    this.palettes = palettes;
+    this.loadSavedPalettes();
+    this.loadPalette('default');
+    this.setupColorPickers();
 }
 
 // Initialize the editor when the page loads
@@ -2071,4 +2673,3 @@ if ('serviceWorker' in navigator) {
                 console.log('SW registration failed: ', registrationError);
             });
     });
-}
