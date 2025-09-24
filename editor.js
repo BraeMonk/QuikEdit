@@ -630,7 +630,7 @@ sketchCtx.globalAlpha = opacity * flow;
 sketchCtx.fillStyle = color;
 sketchCtx.beginPath();
 
-if(hardness < 1) {
+if(hardness < 100) {
 // Soft brush
 const gradient = sketchCtx.createRadialGradient(x, y, 0, x, y, size / 2);
 gradient.addColorStop(0, color);
@@ -1258,13 +1258,13 @@ let rotated;
 
 switch(degrees) {
 case 90:
-rotated = data[0].map((*, i) => data.map(row => row[i]).reverse());
+rotated = data[0].map((_, i) => data.map(row => row[i]).reverse());
 break;
 case 180:
 rotated = data.slice().reverse().map(row => row.slice().reverse());
 break;
 case 270:
-rotated = data[0].map((*, i) => data.map(row => row[row.length - 1 - i]));
+rotated = data[0].map((_, i) => data.map(row => row[row.length - 1 - i]));
 break;
 }
 
