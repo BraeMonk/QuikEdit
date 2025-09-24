@@ -617,6 +617,102 @@ function getSketchCoords(e) {
     return { x, y };
 }
 
+// ... [rest of the PIXEL DRAWING LOGIC functions] ...
+
+// --- NEW SHAPE DRAWING ALGORITHMS ---
+
+function drawBresenhamLine(x0, y0, x1, y1, isPrimary) {
+    const dx = Math.abs(x1 - x0);
+    const dy = Math.abs(y1 - y0);
+    const sx = (x0 < x1) ? 1 : -1;
+    const sy = (y0 < y1) ? 1 : -1;
+    let err = dx - dy;
+    let x = x0;
+    let y = y0;
+
+    while (true) {
+        // Use handlePixelDraw to apply color, symmetry, and boundary checks
+        handlePixelDraw(x, y, isPrimary);
+        if (x === x1 && y === y1) break;
+        const e2 = 2 * err;
+        if (e2 > -dy) {
+            err -= dy;
+            x += sx;
+        }
+        if (e2 < dx) {
+            err += dx;
+            y += sy;
+        }
+    }
+}
+
+function drawRectangle(x0, y0, x1, y1, isPrimary) {
+    const minX = Math.min(x0, x1);
+    const maxX = Math.max(x0, x1);
+    const minY = Math.min(y0, y1);
+    const maxY = Math.max(y0, y1);
+
+    for (let x = minX; x <= maxX; x++) {
+        // Top and Bottom lines
+        handlePixelDraw(x, minY, isPrimary);
+        handlePixelDraw(x, maxY, isPrimary);
+    }
+    for (let y = minY; y <= maxY; y++) {
+        // Left and Right lines (don't re-draw corners to avoid performance hit)
+        handlePixelDraw(minX, y, isPrimary);
+        handlePixelDraw(maxX, y, isPrimary);
+    }
+}
+
+function drawMidpointCircle(x0, y0, x1, y1, isPrimary) {
+    // Determine the center and radius based on the bounding box
+    const minX = Math.min(x0, x1);
+    const minY = Math.min(y0, y1);
+    const maxX = Math.max(x0, x1);
+    const maxY = Math.max(y0, y1);
+
+    const centerX = minX + Math.floor((maxX - minX) / 2);
+    const centerY = minY + Math.floor((maxY - minY) / 2);
+    // Use max dimension for radius to ensure it touches the farthest edge
+    const radius = Math.floor(Math.max(maxX - minX, maxY - minY) / 2);
+
+    let x = radius;
+    let y = 0;
+    let err = 0;
+
+    // Helper to draw 8 symmetrical points
+    function drawCirclePoints(xc, yc, x, y) {
+        handlePixelDraw(xc + x, yc + y, isPrimary);
+        handlePixelDraw(xc - x, yc + y, isPrimary);
+        handlePixelDraw(xc + x, yc - y, isPrimary);
+        handlePixelDraw(xc - x, yc - y, isPrimary);
+        handlePixelDraw(xc + y, yc + x, isPrimary);
+        handlePixelDraw(xc - y, yc + x, isPrimary);
+        handlePixelDraw(xc + y, yc - x, isPrimary);
+        handlePixelDraw(xc - y, yc - x, isPrimary);
+    }
+
+    while (x >= y) {
+        drawCirclePoints(centerX, centerY, x, y);
+
+        y++;
+        err += 1 + 2 * y;
+        if (2 * (err - x) + 1 > 0) {
+            x--;
+            err += 1 - 2 * x;
+        }
+    }
+}
+
+function drawFinalShape(start, end, tool, isPrimary) {
+    if (tool === 'line') {
+        drawBresenhamLine(start.x, start.y, end.x, end.y, isPrimary);
+    } else if (tool === 'rect') {
+        drawRectangle(start.x, start.y, end.x, end.y, isPrimary);
+    } else if (tool === 'circle') {
+        drawMidpointCircle(start.x, start.y, end.x, end.y, isPrimary);
+    }
+}
 // =====================
 // EVENT HANDLERS
 // =====================
@@ -723,6 +819,548 @@ function attachEventListeners() {
     window.addEventListener('keyup', handleKeyUp);
 }
 
+// =====================
+// UTILITY FUNCTIONS & HISTORY (Crucial missing parts)
+// =====================
+
+/**
+ * Captures a snapshot of the current state and pushes it to history.
+ * @param {string} action - A label for the history entry (e.g., 'Pixel Stroke', 'Resize').
+ */
+function pushHistory(action) {
+    const HISTORY_LIMIT = 50;
+
+    if (state.mode === 'pixel') {
+        const pixelState = state.pixel;
+        // Clear redo history
+        pixelState.history.splice(pixelState.historyIndex + 1);
+        
+        // Deep copy the current sprite data
+        const currentData = pixelState.sprites.map(sprite => ({ ...sprite, data: [...sprite.data] }));
+        
+        pixelState.history.push({
+            sprites: currentData,
+            currentFrame: pixelState.currentFrame,
+            action: action,
+        });
+        
+        // Limit history size
+        if (pixelState.history.length > HISTORY_LIMIT) {
+            pixelState.history.shift();
+        }
+        
+        pixelState.historyIndex = pixelState.history.length - 1;
+    } else if (state.mode === 'sketch') {
+        const sketchState = state.sketch;
+        sketchState.history.splice(sketchState.historyIndex + 1);
+
+        // Capture layers by creating data URLs for undo/redo
+        const currentLayersData = sketchState.layers.map(layer => ({
+            id: layer.id,
+            name: layer.name,
+            opacity: layer.opacity,
+            blendMode: layer.blendMode,
+            visible: layer.visible,
+            dataUrl: layer.canvas.toDataURL(), 
+        }));
+
+        sketchState.history.push({
+            layersData: currentLayersData,
+            activeLayer: sketchState.activeLayer,
+            action: action,
+        });
+
+        if (sketchState.history.length > HISTORY_LIMIT) {
+            sketchState.history.shift();
+        }
+        sketchState.historyIndex = sketchState.history.length - 1;
+    }
+}
+
+function popHistory() {
+    // Used to discard the temporary 'Draw Action' snapshot before pushing the final shape
+    if (state.mode === 'pixel' && state.pixel.historyIndex >= 0) {
+        state.pixel.history.pop();
+        state.pixel.historyIndex--;
+    } else if (state.mode === 'sketch' && state.sketch.historyIndex >= 0) {
+        state.sketch.history.pop();
+        state.sketch.historyIndex--;
+    }
+}
+
+function applyHistoryState(historyEntry) {
+    if (state.mode === 'pixel') {
+        const pixelState = state.pixel;
+        pixelState.sprites = historyEntry.sprites.map(sprite => ({ ...sprite, data: [...sprite.data] }));
+        pixelState.currentFrame = historyEntry.currentFrame;
+        drawPixelCanvas();
+        // Update sprite selector UI
+        elements.spriteSelector.value = pixelState.currentFrame; 
+    } else if (state.mode === 'sketch') {
+        const sketchState = state.sketch;
+        // Restore layers from data URLs
+        sketchState.layers = historyEntry.layersData.map(data => {
+            // Create a new layer object/canvas
+            const layerCanvas = document.createElement('canvas');
+            layerCanvas.width = sketchState.width;
+            layerCanvas.height = sketchState.height;
+            const layer = {
+                id: data.id,
+                name: data.name,
+                canvas: layerCanvas,
+                ctx: layerCanvas.getContext('2d'),
+                opacity: data.opacity,
+                blendMode: data.blendMode,
+                visible: data.visible,
+            };
+
+            // Load image data onto the layer canvas
+            if (data.dataUrl) {
+                const img = new Image();
+                img.onload = () => {
+                    layer.ctx.drawImage(img, 0, 0);
+                    drawSketchCanvas(); // Redraw main canvas after image loads
+                };
+                img.src = data.dataUrl;
+            }
+            return layer;
+        });
+        sketchState.activeLayer = historyEntry.activeLayer;
+        drawSketchCanvas();
+        renderLayerList();
+    }
+    updateCanvasInfo();
+}
+
+function undo() {
+    const historyState = state[state.mode];
+    if (historyState.historyIndex > 0) {
+        historyState.historyIndex--;
+        applyHistoryState(historyState.history[historyState.historyIndex]);
+    }
+}
+
+function redo() {
+    const historyState = state[state.mode];
+    if (historyState.historyIndex < historyState.history.length - 1) {
+        historyState.historyIndex++;
+        applyHistoryState(historyState.history[historyState.historyIndex]);
+    }
+}
+
+function clearHistory() {
+    state.pixel.history = [];
+    state.pixel.historyIndex = -1;
+    state.sketch.history = [];
+    state.sketch.historyIndex = -1;
+}
+
+function clearCanvas() {
+    if (state.mode === 'pixel') {
+        state.pixel.sprites[state.pixel.currentFrame].data.fill('transparent');
+        drawPixelCanvas();
+        pushHistory('Clear Canvas');
+    } else if (state.mode === 'sketch') {
+        const ctx = getLayerContext(state.sketch.activeLayer);
+        if (ctx) {
+            ctx.clearRect(0, 0, state.sketch.width, state.sketch.height);
+            drawSketchCanvas();
+            pushHistory('Clear Layer');
+        }
+    }
+}
+
+// --- IO & UTILITY IMPLEMENTATIONS ---
+
+function loadCustomPalette() {
+    // This is already handled in state initialization, but the function exists for completeness.
+}
+
+function populatePaletteSelector() {
+    elements.paletteSelector.innerHTML = Object.keys(BUILT_IN_PALETTES).map(key => 
+        `<option value="${key}">${capitalize(key)}</option>`
+    ).join('');
+    elements.paletteSelector.innerHTML += `<option value="custom">Custom</option>`;
+}
+
+function renderCustomPalette() {
+    // Display the colors in the custom color picker inputs
+    elements.colorPickers.innerHTML = state.customPalette.map((color, index) => 
+        `<input type="color" value="${color}" data-index="${index}">`
+    ).join('');
+}
+
+function renderPaletteSwatches() {
+    const selectedKey = elements.paletteSelector.value;
+    const palette = selectedKey === 'custom' ? state.customPalette : BUILT_IN_PALETTES[selectedKey];
+    
+    elements.swatches.innerHTML = palette.map(color => 
+        `<div class="color-swatch" style="background-color: ${color};" data-color="${color}"></div>`
+    ).join('');
+}
+
+function updateToolControls() {
+    // Updates UI elements based on state, e.g., active tool button
+    document.querySelectorAll(`.${state.mode}-tools .tool-btn`).forEach(t => {
+        t.classList.remove('active');
+        if (t.dataset.tool === state[state.mode].activeTool) {
+            t.classList.add('active');
+        }
+    });
+}
+
+function updateSketchControls() {
+    const sketchState = state.sketch;
+    
+    sketchState.size = parseInt(elements.brushSize.value);
+    sketchState.opacity = parseInt(elements.brushOpacity.value);
+    sketchState.hardness = parseInt(elements.brushHardness.value);
+    sketchState.flow = parseInt(elements.brushFlow.value);
+
+    elements.brushSizeLabel.textContent = sketchState.size;
+    elements.opacityLabel.textContent = sketchState.opacity;
+    elements.hardnessLabel.textContent = sketchState.hardness;
+    elements.flowLabel.textContent = sketchState.flow;
+
+    // Update brush preview
+    const ctx = elements.brushPreview.getContext('2d');
+    const size = elements.brushPreview.width;
+    ctx.clearRect(0, 0, size, size);
+    ctx.fillStyle = sketchState.color;
+    ctx.globalAlpha = sketchState.opacity / 100;
+    
+    // Simple preview logic: centered circle
+    ctx.beginPath();
+    ctx.arc(size / 2, size / 2, sketchState.size / 2, 0, 2 * Math.PI);
+    ctx.fill();
+    ctx.globalAlpha = 1.0;
+}
+
+function togglePrimarySecondary() {
+    // Swap primary/secondary colors
+    [state.pixel.primaryColor, state.pixel.secondaryColor] = [state.pixel.secondaryColor, state.pixel.primaryColor];
+    elements.primaryColor.style.background = state.pixel.primaryColor;
+    elements.secondaryColor.style.background = state.pixel.secondaryColor;
+    updateCanvasInfo();
+}
+
+function updateCustomPalette(inputElement) {
+    const index = parseInt(inputElement.dataset.index);
+    state.customPalette[index] = inputElement.value;
+    renderPaletteSwatches();
+}
+
+function saveCustomPalette() {
+    localStorage.setItem(CUSTOM_PALETTE_KEY, JSON.stringify(state.customPalette));
+    alert('Custom palette saved to browser storage!');
+}
+
+function newSprite() {
+    const { width, height, sprites } = state.pixel;
+    const newId = sprites.length + 1;
+    sprites.push({ id: newId, data: new Array(width * height).fill('transparent') });
+    state.pixel.currentFrame = sprites.length - 1;
+    
+    elements.spriteSelector.innerHTML += `<option value="${state.pixel.currentFrame}">Frame ${newId}</option>`;
+    elements.spriteSelector.value = state.pixel.currentFrame;
+    
+    drawPixelCanvas();
+    pushHistory('New Sprite');
+}
+
+function duplicateSprite() {
+    const { width, height, sprites, currentFrame } = state.pixel;
+    const currentData = sprites[currentFrame].data;
+    const newId = sprites.length + 1;
+    
+    // Deep copy of data
+    const newSpriteData = { id: newId, data: [...currentData] };
+    sprites.splice(currentFrame + 1, 0, newSpriteData);
+    state.pixel.currentFrame = currentFrame + 1;
+    
+    // Re-render the selector to update indices
+    // (A more robust app would use a list/draggable UI, but this is the dropdown implementation)
+    elements.spriteSelector.innerHTML = sprites.map((s, i) => 
+        `<option value="${i}">Frame ${s.id}</option>`
+    ).join('');
+    elements.spriteSelector.value = state.pixel.currentFrame;
+
+    drawPixelCanvas();
+    pushHistory('Duplicate Sprite');
+}
+
+function deleteSprite() {
+    const { sprites, currentFrame } = state.pixel;
+    if (sprites.length <= 1) {
+        alert("Cannot delete the last remaining sprite.");
+        return;
+    }
+    
+    sprites.splice(currentFrame, 1);
+    state.pixel.currentFrame = Math.max(0, currentFrame - 1);
+
+    elements.spriteSelector.innerHTML = sprites.map((s, i) => 
+        `<option value="${i}">Frame ${s.id}</option>`
+    ).join('');
+    elements.spriteSelector.value = state.pixel.currentFrame;
+
+    drawPixelCanvas();
+    pushHistory('Delete Sprite');
+}
+
+function addLayer() {
+    const { width, height, layers } = state.sketch;
+    const newLayer = createLayer(width, height, `Layer ${layers.length + 1}`);
+    layers.push(newLayer);
+    state.sketch.activeLayer = layers.length - 1;
+    renderLayerList();
+    pushHistory('Add Layer');
+}
+
+function renderLayerList() {
+    const { layers, activeLayer } = state.sketch;
+    elements.layerList.innerHTML = layers.map((layer, index) => 
+        `<li class="${index === activeLayer ? 'active' : ''}" data-index="${index}">
+            <span>${layer.name}</span>
+            <button class="layer-toggle-visibility" data-index="${index}">${layer.visible ? '👁️' : '🔒'}</button>
+        </li>`
+    ).reverse().join(''); // Display top layer first
+    
+    // Update opacity/blend mode controls for active layer
+    const layer = layers[activeLayer];
+    elements.layerOpacity.value = layer.opacity;
+    elements.layerOpacityLabel.textContent = layer.opacity;
+    elements.blendMode.value = layer.blendMode;
+}
+
+function handleLayerClick(e) {
+    const li = e.target.closest('li');
+    if (!li) return;
+    const index = state.sketch.layers.length - 1 - parseInt(li.dataset.index); // Reverse index due to display order
+
+    if (e.target.classList.contains('layer-toggle-visibility')) {
+        state.sketch.layers[index].visible = !state.sketch.layers[index].visible;
+        drawSketchCanvas();
+        pushHistory('Toggle Layer Visibility');
+    } else {
+        state.sketch.activeLayer = index;
+        renderLayerList(); // Rerender to show new active layer
+    }
+}
+
+function updateLayerOpacity() {
+    const { layers, activeLayer } = state.sketch;
+    const opacity = parseInt(elements.layerOpacity.value);
+    layers[activeLayer].opacity = opacity;
+    elements.layerOpacityLabel.textContent = opacity;
+    drawSketchCanvas();
+    pushHistory('Change Layer Opacity');
+}
+
+function updateLayerBlendMode() {
+    const { layers, activeLayer } = state.sketch;
+    layers[activeLayer].blendMode = elements.blendMode.value;
+    drawSketchCanvas();
+    pushHistory('Change Layer Blend Mode');
+}
+
+function setSymmetryMode(mode) {
+    state.pixel.symmetry = mode;
+    updateSymmetryDisplay();
+}
+
+function updateSymmetryDisplay() {
+    document.querySelectorAll('.symmetry-btn').forEach(btn => 
+        btn.classList.toggle('active', btn.dataset.symmetry === state.pixel.symmetry)
+    );
+    elements.symmetryInfo.textContent = `Symmetry: ${capitalize(state.pixel.symmetry)}`;
+}
+
+function transformSelection(type, value) {
+    if (state.mode === 'pixel') {
+        const { width, height, sprites, currentFrame } = state.pixel;
+        const currentData = sprites[currentFrame].data;
+        const newData = new Array(width * height).fill('transparent');
+
+        // Simple Transform (applied to whole sprite for now, selection would be more complex)
+        for (let y = 0; y < height; y++) {
+            for (let x = 0; x < width; x++) {
+                const oldIndex = y * width + x;
+                let newX = x;
+                let newY = y;
+
+                if (type === 'flip') {
+                    if (value === 'H') newX = width - 1 - x;
+                    if (value === 'V') newY = height - 1 - y;
+                } 
+                // Rotation logic is complex for non-square and is omitted for brevity but is where the logic goes
+
+                const newIndex = newY * width + newX;
+                if (currentData[oldIndex] && newIndex >= 0 && newIndex < newData.length) {
+                    newData[newIndex] = currentData[oldIndex];
+                }
+            }
+        }
+        
+        sprites[currentFrame].data = newData;
+        drawPixelCanvas();
+        pushHistory(`Transform: ${type} ${value}`);
+
+    } else if (state.mode === 'sketch') {
+        // Transformations on sketch layers (e.g., using ctx.save/restore and transform methods)
+        // Omitted for brevity but the principle is similar.
+    }
+}
+
+function adjustZoom(amount) {
+    const stateObj = state[state.mode];
+    let newZoom = stateObj.zoom;
+
+    if (amount === 'reset') {
+        newZoom = 100;
+    } else {
+        newZoom = Math.max(10, Math.min(400, newZoom + amount));
+    }
+
+    stateObj.zoom = newZoom;
+    updateCanvasDisplay();
+}
+
+function handleZoomScroll(e) {
+    e.preventDefault();
+    const delta = e.deltaY > 0 ? -25 : 25;
+    adjustZoom(delta);
+}
+
+function newProject() {
+    if (confirm('Start a new project? All unsaved work will be lost.')) {
+        initializePixelLayers();
+        initializeSketchLayers(); // Reset sketch layers too
+        setMode('pixel'); // Default back to pixel mode
+        clearHistory();
+        pushHistory('New Project');
+    }
+}
+
+function exportJSON() {
+    const projectData = {
+        mode: state.mode,
+        pixel: {
+            width: state.pixel.width,
+            height: state.pixel.height,
+            sprites: state.pixel.sprites.map(s => ({ id: s.id, data: s.data })),
+            customPalette: state.customPalette,
+        },
+        // Sketch state can be added here if full vector/layer data is needed
+    };
+    
+    const json = JSON.stringify(projectData);
+    const blob = new Blob([json], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'jerry_project.json';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+}
+
+function exportPNG(canvasElement) {
+    if (state.mode === 'pixel') {
+        // For pixel mode, the canvas is already the right size
+        const url = canvasElement.toDataURL('image/png');
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'jerry_pixel_art.png';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+    } else if (state.mode === 'sketch') {
+        // Sketch mode requires merging all layers to the main canvas first (which drawSketchCanvas does)
+        const url = elements.sketchCanvas.toDataURL('image/png');
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'jerry_sketch.png';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+    }
+}
+
+function importProject(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = function(event) {
+        try {
+            const data = JSON.parse(event.target.result);
+            if (data.pixel && data.pixel.sprites) {
+                // Load pixel data
+                state.pixel.width = data.pixel.width;
+                state.pixel.height = data.pixel.height;
+                state.pixel.sprites = data.pixel.sprites;
+                state.pixel.currentFrame = 0;
+
+                // Load custom palette
+                if (data.pixel.customPalette) {
+                    state.customPalette = data.pixel.customPalette;
+                    renderCustomPalette();
+                    renderPaletteSwatches();
+                }
+
+                // Update canvas and UI
+                setMode('pixel');
+                updateCanvasSize(state.pixel.width, state.pixel.height);
+                drawPixelCanvas();
+                clearHistory();
+                pushHistory('Import Project');
+            } else {
+                alert('Invalid project file format.');
+            }
+        } catch (error) {
+            alert('Error reading project file: ' + error.message);
+        }
+    };
+    reader.readAsText(file);
+}
+
+function handleKeyDown(e) {
+    state.isShiftPressed = e.shiftKey;
+    state.isCtrlPressed = e.ctrlKey || e.metaKey; // Cmd key on Mac
+
+    if (e.ctrlKey || e.metaKey) {
+        if (e.key === 'z') { e.preventDefault(); undo(); }
+        if (e.key === 'y') { e.preventDefault(); redo(); }
+        if (e.key === 's') { e.preventDefault(); exportJSON(); }
+        if (e.key === 'o') { e.preventDefault(); elements.importFile.click(); }
+        if (e.key === 'n') { e.preventDefault(); newProject(); }
+    }
+    
+    // Quick tool switching (simplified)
+    if (state.mode === 'pixel') {
+        if (e.key === 'p') state.pixel.activeTool = 'pencil';
+        if (e.key === 'e') state.pixel.activeTool = 'eraser';
+        if (e.key === 'f') state.pixel.activeTool = 'fill';
+        if (e.key === 'i') state.pixel.activeTool = 'eyedropper';
+        if (e.key === 'l') state.pixel.activeTool = 'line';
+    } else if (state.mode === 'sketch') {
+        if (e.key === 'b') state.sketch.activeTool = 'brush';
+        if (e.key === 'e') state.sketch.activeTool = 'eraser';
+    }
+    updateToolControls();
+    updateCanvasInfo();
+}
+
+function handleKeyUp(e) {
+    state.isShiftPressed = e.shiftKey;
+    state.isCtrlPressed = e.ctrlKey || e.metaKey;
+}
+
+
+// ... [Your code for handlePointerDown, handlePointerMove, handlePointerUp follows] ...
+
 function handlePointerDown(e) {
     if (e.button !== 0 && e.button !== 2) return; // Only L/R mouse buttons
 
@@ -736,15 +1374,18 @@ function handlePointerDown(e) {
         const isPrimary = e.button === 0;
         const { activeTool } = state.pixel;
 
+        // Start of a new action, push initial state to history for rollback
         pushHistory('Draw Action');
 
         if (activeTool === 'fill' || activeTool === 'symmetricFill') {
             handlePixelFill(x, y, isPrimary);
+            state.isDrawing = false; // Fill is an instant action
         } else if (activeTool === 'eyedropper') {
             handlePixelEyedropper(x, y);
             state.isDrawing = false; // Eyedropper is a single action
             popHistory(); // Remove the history snapshot if eyedropper was used
         } else if (activeTool !== 'select' && activeTool !== 'move') {
+            // Pencil, Eraser, Symmetric, and the start of Shape tools
             handlePixelDraw(x, y, isPrimary);
         }
     } else if (state.mode === 'sketch') {
@@ -772,8 +1413,8 @@ function handlePointerMove(e) {
         // Boundary check
         if (x < 0 || y < 0 || x >= width || y >= height) return;
 
-        // Continuous drawing
-        if (activeTool === 'pencil' || activeTool === 'eraser' || activeTool === 'symmetricPencil' || activeTool === 'symmetricEraser') {
+        // Continuous drawing (Pencil/Eraser/Symmetric)
+        if (activeTool.includes('pencil') || activeTool.includes('eraser')) {
             // Bresenham's line algorithm for smooth drawing between cells
             const dx = Math.abs(x - state.lastPos.x);
             const dy = Math.abs(y - state.lastPos.y);
@@ -798,7 +1439,56 @@ function handlePointerMove(e) {
             }
             state.lastPos = { x, y };
         } else if (activeTool === 'line' || activeTool === 'rect' || activeTool === 'circle') {
-            // Temporary canvas for drawing shape previews (not implemented here for brevity, but needed for a polished app)
+            // SHAPE PREVIEW LOGIC
+            const startX = state.toolStartPos.x;
+            const startY = state.toolStartPos.y;
+            const overlayCtx = elements.selectionCtx;
+            const { cell } = state.pixel;
+
+            // 1. Clear the previous preview and redraw the base image below the overlay (using drawPixelCanvas in the end)
+            // For now, we only need to clear the overlay
+            overlayCtx.clearRect(0, 0, elements.selectionOverlay.width, elements.selectionOverlay.height);
+            
+            // Re-size the overlay context to match the zoomed canvas size
+            elements.selectionOverlay.style.width = elements.canvas.style.width;
+            elements.selectionOverlay.style.height = elements.canvas.style.height;
+            elements.selectionOverlay.width = state.pixel.width * state.pixel.cell;
+            elements.selectionOverlay.height = state.pixel.height * state.pixel.cell;
+
+            // 2. Set style for the preview drawing on the selection overlay
+            overlayCtx.strokeStyle = e.buttons === 1 ? state.pixel.primaryColor : state.pixel.secondaryColor;
+            overlayCtx.lineWidth = 2; // Thicker line for visibility
+            overlayCtx.setLineDash([4, 2]); // Dotted line for preview
+            overlayCtx.fillStyle = 'transparent';
+
+            // 3. Draw the shape preview
+            overlayCtx.beginPath();
+            if (activeTool === 'line') {
+                // Coordinates need to be scaled by cell size for the overlay
+                overlayCtx.moveTo(startX * cell + cell / 2, startY * cell + cell / 2);
+                overlayCtx.lineTo(x * cell + cell / 2, y * cell + cell / 2);
+            } else if (activeTool === 'rect') {
+                const width_px = (x - startX + (x >= startX ? 1 : -1)) * cell;
+                const height_px = (y - startY + (y >= startY ? 1 : -1)) * cell;
+                overlayCtx.strokeRect(startX * cell, startY * cell, width_px, height_px);
+            } else if (activeTool === 'circle') {
+                // Use the bounding box for the radius calculation on the grid
+                const minX = Math.min(startX, x);
+                const minY = Math.min(startY, y);
+                const maxX = Math.max(startX, x);
+                const maxY = Math.max(startY, y);
+
+                const boxWidth = (maxX - minX + 1) * cell;
+                const boxHeight = (maxY - minY + 1) * cell;
+                const radius = Math.max(boxWidth, boxHeight) / 2;
+
+                const centerX = minX * cell + boxWidth / 2;
+                const centerY = minY * cell + boxHeight / 2;
+
+                overlayCtx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
+            }
+            overlayCtx.stroke();
+            overlayCtx.setLineDash([]); // Reset dash
         }
     } else if (state.mode === 'sketch') {
         const { x, y } = getSketchCoords(e);
@@ -811,22 +1501,39 @@ function handlePointerUp(e) {
     state.isDrawing = false;
 
     if (state.mode === 'pixel') {
-        const { x, y } = getPixelCoords(e);
         const { activeTool } = state.pixel;
 
+        // Clear the preview overlay for all tools
+        elements.selectionCtx.clearRect(0, 0, elements.selectionOverlay.width, elements.selectionOverlay.height);
+
         if (activeTool === 'line' || activeTool === 'rect' || activeTool === 'circle') {
-            // Finalize shape
-            // (Implementation for final shape drawing and pushHistory would go here)
-            // For now, let's assume continuous draw tools are used, and the initial pushHistory covers it.
+            const endPos = getPixelCoords(e);
+            const isPrimary = e.button === 0;
+
+            // 1. Remove the temporary 'Draw Action' snapshot
+            popHistory(); 
+
+            // 2. Draw the final shape to the sprite data using the shape algorithms
+            drawFinalShape(state.toolStartPos, endPos, activeTool, isPrimary);
+
+            // 3. Redraw the canvas and push the final state to history
+            drawPixelCanvas();
+            pushHistory('Shape Tool');
+        } else if (activeTool.includes('pencil') || activeTool.includes('eraser')) {
+            // Continuous tools (pencil/eraser) rename the initial 'Draw Action' snapshot
+            state.pixel.history[state.pixel.historyIndex].action = 'Pixel Stroke';
         } else if (activeTool === 'select' || activeTool === 'move') {
-            // Finalize selection/move (implementation omitted for brevity)
-        } else if (activeTool === 'pencil' || activeTool === 'eraser' || activeTool.includes('symmetric')) {
-            // Already handled by handlePixelDraw which is fine for the simplified pixel tools
+            // Selection/Move tools will have their own dedicated history push, so clean up the initial one if no action was taken
+            popHistory();
+        } else if (activeTool.includes('fill')) {
+             // Fill tool already pushed history in pointerDown
+             // No action needed here
         }
     } else if (state.mode === 'sketch') {
         finishSketchStroke();
     }
 }
+// ... [rest of the code (popHistory, loadCustomPalette, etc.) - should be added after the functions above] ...
 
 function handleKeyDown(e) {
     state.isShiftPressed = e.shiftKey;
