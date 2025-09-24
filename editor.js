@@ -1371,8 +1371,14 @@ class JerryEditor {
   constructor() {
     this.state = new EditorState();
     this.canvas = new CanvasManager(this.state);
-    this.ui = new UIManager(this.state, this.canvas, this.history);
+    
+    // 💡 CRITICAL FIX: Initialize HistoryManager BEFORE UIManager.
+    // The UIManager constructor calls updateUI(), which immediately
+    // tries to access this.history.
     this.history = new HistoryManager(this.state, this.canvas);
+    
+    this.ui = new UIManager(this.state, this.canvas, this.history);
+    
     this.tools = new DrawingTools(this.state, this.canvas, this.ui);
     
     this.drawingManager = new DrawingManager(this.state, this.canvas);
@@ -1380,11 +1386,16 @@ class JerryEditor {
     this.attachEventListeners();
     this.setMode('pixel');
     
-    // 👇 FIX #1 GOES HERE (Missing Initialization Call)
-    this.updateCanvasDisplay(); // Ensure the canvas size and zoom are calculated and applied immediately.
+    // This is Fix #1: Ensures the canvas display runs correctly.
+    // It should run *after* all managers are set up.
+    this.updateCanvasDisplay(); 
     
     // Initial history snapshot
     this.history.pushHistory('Initial');
+    
+    // PWA registration... (rest of the constructor)
+    // ...
+
     
     // PWA registration
     if ('serviceWorker' in navigator) {
