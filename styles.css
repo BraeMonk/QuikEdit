@@ -300,6 +300,13 @@ body {
   100% { opacity: 0.8; }
 }
 
+#selectionOverlay {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    pointer-events: none;
+    z-index: 10;
+}
 /* ============================= */
 /* Right Panels                  */
 /* ============================= */
