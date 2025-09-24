@@ -2639,6 +2639,109 @@ sketchUI.forEach(el => {
   }
 }
 
+let currentTool = 'brush';
+
+function setTool(tool) {
+  currentTool = tool;
+}
+
+function draw(ctx, x, y, prevX, prevY) {
+  switch(currentTool) {
+    case 'brush':
+      ctx.strokeStyle = 'black';
+      ctx.lineWidth = 5;
+      ctx.lineCap = 'round';
+      ctx.globalAlpha = 1;
+      ctx.shadowBlur = 0;
+      break;
+    case 'pen':
+      ctx.strokeStyle = 'black';
+      ctx.lineWidth = 2;
+      ctx.lineCap = 'butt';
+      ctx.globalAlpha = 1;
+      ctx.shadowBlur = 0;
+      break;
+    case 'marker':
+      ctx.strokeStyle = 'rgba(0,0,0,0.5)';
+      ctx.lineWidth = 15;
+      ctx.lineCap = 'round';
+      ctx.shadowBlur = 0;
+      break;
+    case 'pencilSketch':
+      ctx.strokeStyle = 'rgba(0,0,0,0.3)';
+      ctx.lineWidth = 1.5;
+      ctx.lineCap = 'round';
+      ctx.shadowBlur = 0;
+      break;
+    case 'charcoal':
+      ctx.strokeStyle = 'rgba(0,0,0,0.7)';
+      ctx.lineWidth = 10;
+      ctx.lineCap = 'round';
+      ctx.shadowColor = 'rgba(0,0,0,0.2)';
+      ctx.shadowBlur = 2;
+      break;
+    case 'sprayPaint':
+      for (let i = 0; i < 30; i++) {
+        let offsetX = (Math.random() - 0.5) * 20;
+        let offsetY = (Math.random() - 0.5) * 20;
+        ctx.fillStyle = 'rgba(0,0,0,0.3)';
+        ctx.beginPath();
+        ctx.arc(x + offsetX, y + offsetY, 1, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      return; // spray handled, skip normal stroke
+    case 'eraser':
+      ctx.strokeStyle = 'white';
+      ctx.lineWidth = 20;
+      ctx.lineCap = 'round';
+      ctx.shadowBlur = 0;
+      break;
+    case 'smudge':
+      {
+        // Get small patch around previous position
+        const size = 10;
+        const imageData = ctx.getImageData(x - size/2, y - size/2, size, size);
+        // Apply a very basic smear by shifting pixels slightly toward cursor movement
+        const dx = x - prevX;
+        const dy = y - prevY;
+        for (let i = 0; i < imageData.data.length; i += 4) {
+          let r = imageData.data[i];
+          let g = imageData.data[i+1];
+          let b = imageData.data[i+2];
+          let a = imageData.data[i+3];
+          let shift = ((Math.random()*2-1) * 1); // small random smudge
+          imageData.data[i] = r;
+          imageData.data[i+1] = g;
+          imageData.data[i+2] = b;
+          imageData.data[i+3] = a;
+        }
+        ctx.putImageData(imageData, x - size/2 + dx*0.2, y - size/2 + dy*0.2);
+      }
+      return; // smudge handled, skip normal stroke
+    case 'blur':
+      {
+        ctx.save();
+        ctx.filter = 'blur(3px)';
+        ctx.beginPath();
+        ctx.moveTo(prevX, prevY);
+        ctx.lineTo(x, y);
+        ctx.strokeStyle = 'black';
+        ctx.lineWidth = 5;
+        ctx.lineCap = 'round';
+        ctx.stroke();
+        ctx.restore();
+      }
+      return;
+  }
+
+  // Normal stroke for other tools
+  ctx.beginPath();
+  ctx.moveTo(prevX, prevY);
+  ctx.lineTo(x, y);
+  ctx.stroke();
+}
+
+
 // =====================
 // INITIALIZE APPLICATION
 // =====================
