@@ -1375,10 +1375,13 @@ class JerryEditor {
     this.history = new HistoryManager(this.state, this.canvas);
     this.tools = new DrawingTools(this.state, this.canvas, this.ui);
     
-    this.drawingManager = new DrawingManager(this.state, this.canvas); // Pass the correct 'this' and dependencies
+    this.drawingManager = new DrawingManager(this.state, this.canvas);
     
     this.attachEventListeners();
     this.setMode('pixel');
+    
+    // 👇 FIX #1 GOES HERE (Missing Initialization Call)
+    this.updateCanvasDisplay(); // Ensure the canvas size and zoom are calculated and applied immediately.
     
     // Initial history snapshot
     this.history.pushHistory('Initial');
@@ -1977,21 +1980,22 @@ class JerryEditor {
         let offsetY = clientY - rect.top;
 
         if (this.state.mode === 'pixel') {
-            const zoomFactor = this.state.pixel.zoom / 100;
-            const cellSize = this.state.pixel.cellSize;
+          // FIX: Remove redundant division by zoomFactor.
+          // cellSize already incorporates the zoom for correct display scaling.
+          const cellSize = this.state.pixel.cellSize;
             
-            // Adjust for the cell size and zoom to get the actual pixel index
-            const pixelX = Math.floor(offsetX / (cellSize * zoomFactor));
-            const pixelY = Math.floor(offsetY / (cellSize * zoomFactor));
-            return { x: pixelX, y: pixelY, button: e.button };
+          // Calculate the pixel index using the current display cell size
+          const pixelX = Math.floor(offsetX / cellSize); 
+          const pixelY = Math.floor(offsetY / cellSize);
+          return { x: pixelX, y: pixelY, button: e.button };
         } else {
-            const zoomFactor = this.state.sketch.zoom / 100;
-            // Sketch is a direct pixel-to-pixel map with scaling applied via CSS transform
-            const sketchX = offsetX / zoomFactor;
-            const sketchY = offsetY / zoomFactor;
-            return { x: sketchX, y: sketchY, button: e.button };
+          const zoomFactor = this.state.sketch.zoom / 100;
+          // Sketch is a direct pixel-to-pixel map with scaling applied via CSS transform
+          const sketchX = offsetX / zoomFactor;
+          const sketchY = offsetY / zoomFactor;
+          return { x: sketchX, y: sketchY, button: e.button };
         }
-    };
+
 
     // Pointer events (desktop + stylus)
     canvasContainer.onpointerdown = (e) => {
