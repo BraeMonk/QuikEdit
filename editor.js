@@ -237,6 +237,8 @@ function createPixelGrid(width, height) {
     pixelData = [];
     pixelCanvas.style.gridTemplateColumns = `repeat(${width}, ${cellSize}px)`;
     pixelCanvas.style.gridTemplateRows = `repeat(${height}, ${cellSize}px)`;
+    pixelCanvas.style.position = 'relative';
+    pixelCanvas.style.zIndex = '1';
 
     for (let y = 0; y < height; y++) {
         pixelData[y] = [];
@@ -248,8 +250,9 @@ function createPixelGrid(width, height) {
             cell.style.width = `${cellSize}px`;
             cell.style.height = `${cellSize}px`;
             cell.style.backgroundColor = 'transparent';
-            cell.style.border = showGrid ? '1px solid rgba(128,128,128,0.2)' : 'none';
+            cell.style.border = showGrid ? '1px solid rgba(128,128,128,0.3)' : '1px solid transparent';
             cell.style.boxSizing = 'border-box';
+            cell.style.position = 'relative';
             pixelCanvas.appendChild(cell);
             pixelData[y][x] = 'transparent';
         }
@@ -368,7 +371,9 @@ function setPixel(x, y, color) {
     if(x < 0 || y < 0 || x >= canvasWidth || y >= canvasHeight) return;
     pixelData[y][x] = color;
     const cell = pixelCanvas.querySelector(`.cell[data-x="${x}"][data-y="${y}"]`);
-    if(cell) cell.style.backgroundColor = color;
+    if(cell) {
+        cell.style.backgroundColor = color;
+    }
 }
 
 // =====================
@@ -773,14 +778,23 @@ function drawSketchAtFixed(x, y, isStart) {
 
     switch(currentTool) {
         case 'brush':
+            // Smooth brush with variable opacity
             sketchCtx.globalAlpha = brushOpacity * brushFlow;
             sketchCtx.fillStyle = brushColor;
+            if(brushHardness < 100) {
+                const gradient = sketchCtx.createRadialGradient(x, y, 0, x, y, brushSize / 2);
+                gradient.addColorStop(0, brushColor);
+                gradient.addColorStop(brushHardness / 100, brushColor);
+                gradient.addColorStop(1, 'rgba(0,0,0,0)');
+                sketchCtx.fillStyle = gradient;
+            }
             sketchCtx.beginPath();
             sketchCtx.arc(x, y, brushSize / 2, 0, Math.PI * 2);
             sketchCtx.fill();
             break;
 
         case 'pen':
+            // Hard edge, precise lines
             sketchCtx.globalAlpha = 1;
             sketchCtx.strokeStyle = brushColor;
             sketchCtx.lineWidth = brushSize;
@@ -797,40 +811,48 @@ function drawSketchAtFixed(x, y, isStart) {
             break;
 
         case 'marker':
-            sketchCtx.globalAlpha = 0.3;
+            // Semi-transparent, wide strokes
+            sketchCtx.globalAlpha = 0.4;
             sketchCtx.fillStyle = brushColor;
             sketchCtx.beginPath();
-            sketchCtx.arc(x, y, brushSize, 0, Math.PI * 2);
+            sketchCtx.ellipse(x, y, brushSize, brushSize * 0.6, 0, 0, Math.PI * 2);
             sketchCtx.fill();
             break;
 
         case 'pencilSketch':
-            sketchCtx.globalAlpha = brushOpacity;
+            // Textured, variable opacity
+            sketchCtx.globalAlpha = brushOpacity * 0.8;
             sketchCtx.strokeStyle = brushColor;
-            sketchCtx.lineWidth = Math.max(1, brushSize / 2);
+            sketchCtx.lineWidth = Math.max(1, brushSize / 3);
+            sketchCtx.lineCap = 'round';
             
             if (isStart) {
                 sketchCtx.beginPath();
                 sketchCtx.moveTo(x, y);
             } else {
-                // Add slight randomness for pencil texture
-                const jitterX = (Math.random() - 0.5) * 2;
-                const jitterY = (Math.random() - 0.5) * 2;
-                sketchCtx.lineTo(x + jitterX, y + jitterY);
-                sketchCtx.stroke();
+                // Add texture with multiple thin lines
+                for(let i = 0; i < 3; i++) {
+                    const jitterX = (Math.random() - 0.5) * 2;
+                    const jitterY = (Math.random() - 0.5) * 2;
+                    sketchCtx.beginPath();
+                    sketchCtx.moveTo(x + jitterX, y + jitterY);
+                    sketchCtx.lineTo(x + jitterX + 1, y + jitterY + 1);
+                    sketchCtx.stroke();
+                }
             }
             break;
 
         case 'charcoal':
-            sketchCtx.globalAlpha = 0.2;
+            // Multiple overlapping soft circles
+            sketchCtx.globalAlpha = 0.15;
             sketchCtx.fillStyle = brushColor;
             
-            // Draw multiple overlapping circles for texture
-            for (let i = 0; i < 3; i++) {
+            for (let i = 0; i < 8; i++) {
                 const offsetX = (Math.random() - 0.5) * brushSize;
                 const offsetY = (Math.random() - 0.5) * brushSize;
+                const size = brushSize * (0.5 + Math.random() * 0.5);
                 sketchCtx.beginPath();
-                sketchCtx.arc(x + offsetX, y + offsetY, brushSize / 2, 0, Math.PI * 2);
+                sketchCtx.arc(x + offsetX, y + offsetY, size / 2, 0, Math.PI * 2);
                 sketchCtx.fill();
             }
             break;
@@ -845,29 +867,45 @@ function drawSketchAtFixed(x, y, isStart) {
             break;
 
         case 'sprayPaint':
+            // Random spray pattern
             sketchCtx.globalAlpha = 0.1;
             sketchCtx.fillStyle = brushColor;
             
-            // Spray pattern
-            for (let i = 0; i < 10; i++) {
+            for (let i = 0; i < 20; i++) {
                 const angle = Math.random() * Math.PI * 2;
                 const distance = Math.random() * brushSize;
                 const sprayX = x + Math.cos(angle) * distance;
                 const sprayY = y + Math.sin(angle) * distance;
-                sketchCtx.fillRect(sprayX, sprayY, 1, 1);
+                const dotSize = Math.random() * 3 + 1;
+                sketchCtx.beginPath();
+                sketchCtx.arc(sprayX, sprayY, dotSize / 2, 0, Math.PI * 2);
+                sketchCtx.fill();
             }
             break;
 
         case 'smudge':
-            // Simple smudge effect
+            // Get and redistribute pixels
             const imageData = sketchCtx.getImageData(x - brushSize/2, y - brushSize/2, brushSize, brushSize);
-            sketchCtx.putImageData(imageData, x - brushSize/2 + 2, y - brushSize/2 + 2);
+            const data = imageData.data;
+            
+            for(let i = 0; i < data.length; i += 4) {
+                const offset = Math.floor((Math.random() - 0.5) * 16) * 4;
+                const targetIndex = Math.max(0, Math.min(data.length - 4, i + offset));
+                
+                data[i] = (data[i] + data[targetIndex]) / 2;
+                data[i + 1] = (data[i + 1] + data[targetIndex + 1]) / 2;
+                data[i + 2] = (data[i + 2] + data[targetIndex + 2]) / 2;
+            }
+            
+            sketchCtx.putImageData(imageData, x - brushSize/2, y - brushSize/2);
             break;
 
         case 'blur':
-            sketchCtx.filter = 'blur(2px)';
-            sketchCtx.drawImage(sketchCanvas, x - brushSize, y - brushSize, brushSize * 2, brushSize * 2, 
-                              x - brushSize, y - brushSize, brushSize * 2, brushSize * 2);
+            const blurSize = Math.floor(brushSize);
+            sketchCtx.filter = `blur(${Math.max(1, blurSize/4)}px)`;
+            sketchCtx.drawImage(sketchCanvas, 
+                x - blurSize/2, y - blurSize/2, blurSize, blurSize,
+                x - blurSize/2, y - blurSize/2, blurSize, blurSize);
             sketchCtx.filter = 'none';
             break;
     }
@@ -1418,15 +1456,15 @@ if (resizeBtn) {
 // Grid toggle
 const gridToggle = document.getElementById('gridToggle');
 if (gridToggle) {
-    gridToggle.checked = showGrid; // Set initial state
+    gridToggle.checked = showGrid;
     gridToggle.addEventListener('change', (e) => {
         showGrid = e.target.checked;
-        console.log('Grid toggle:', showGrid); // Debug log
         
-        // Update all existing cells
         const cells = document.querySelectorAll('#canvas .cell');
         cells.forEach(cell => {
-            cell.style.border = showGrid ? '1px solid rgba(128,128,128,0.2)' : 'none';
+            cell.style.border = showGrid ? 
+                '1px solid rgba(128,128,128,0.3)' : 
+                '1px solid transparent';
         });
     });
 }
@@ -1657,7 +1695,24 @@ const flipVerticalBtn = document.getElementById('flipVertical');
 
 function rotatePixelData(degrees) {
     if(!selectionData) {
-        alert('Please select an area first using the select tool');
+        // If no selection, rotate entire canvas
+        savePixelState();
+        let rotated;
+        
+        switch(degrees) {
+            case 90:
+                rotated = pixelData[0].map((_, i) => pixelData.map(row => row[i]).reverse());
+                break;
+            case 180:
+                rotated = pixelData.slice().reverse().map(row => row.slice().reverse());
+                break;
+            case 270:
+                rotated = pixelData[0].map((_, i) => pixelData.map(row => row[row.length - 1 - i]));
+                break;
+        }
+        
+        pixelData = rotated;
+        renderPixelCanvas();
         return;
     }
 
@@ -1677,12 +1732,21 @@ function rotatePixelData(degrees) {
     }
 
     selectionData.data = rotated;
-    moveSelection(0, 0); // Refresh display
+    moveSelection(0, 0);
 }
 
 function flipPixelData(direction) {
     if(!selectionData) {
-        alert('Please select an area first using the select tool');
+        // If no selection, flip entire canvas
+        savePixelState();
+        
+        if(direction === 'horizontal') {
+            pixelData = pixelData.map(row => row.slice().reverse());
+        } else {
+            pixelData = pixelData.slice().reverse();
+        }
+        
+        renderPixelCanvas();
         return;
     }
 
@@ -1694,7 +1758,7 @@ function flipPixelData(direction) {
         selectionData.data = data.slice().reverse();
     }
 
-    moveSelection(0, 0); // Refresh display
+    moveSelection(0, 0);
 }
 
 if(rotateLeftBtn) rotateLeftBtn.addEventListener('click', () => rotatePixelData(270));
