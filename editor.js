@@ -1515,8 +1515,38 @@ class JerryEditor {
     this.updateCanvasDisplay();
     this.history.pushHistory('Import Project');
   }
+
+  function autoSave() {
+  if (pixelCanvas) {
+    localStorage.setItem('jerryPixelSave', pixelCanvas.toDataURL());
+  }
+  if (sketchCanvas) {
+    localStorage.setItem('jerrySketchSave', sketchCanvas.toDataURL());
+  }
+}
+
+setInterval(autoSave, 5000); // run every 5 seconds
+
+function restoreSave() {
+  const pixelData = localStorage.getItem('jerryPixelSave');
+  const sketchData = localStorage.getItem('jerrySketchSave');
+
+  if (pixelData) {
+    const img = new Image();
+    img.onload = () => pixelCtx.drawImage(img, 0, 0);
+    img.src = pixelData;
+  }
+
+  if (sketchData) {
+    const img = new Image();
+    img.onload = () => sketchCtx.drawImage(img, 0, 0);
+    img.src = sketchData;
+  }
+}
   
-  attachEventListeners() {
+window.addEventListener('load', restoreSave);
+  
+attachEventListeners() {
   this.attachModeControls();
   this.attachToolControls();
   this.attachCanvasControls();
@@ -2924,7 +2954,6 @@ sketchUI.forEach(el => {
     this.state.isDrawing = false;
   }
 }
-
 
 // =====================
 // INITIALIZE APPLICATION
