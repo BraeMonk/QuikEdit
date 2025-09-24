@@ -227,8 +227,6 @@ function createPixelGrid(width, height) {
     if (!pixelCanvas) return;
     
     pixelCanvas.innerHTML = '';
-    if (canvasGrid) canvasGrid.innerHTML = '';
-    
     pixelData = [];
     pixelCanvas.style.gridTemplateColumns = `repeat(${width}, ${cellSize}px)`;
     pixelCanvas.style.gridTemplateRows = `repeat(${height}, ${cellSize}px)`;
@@ -243,11 +241,43 @@ function createPixelGrid(width, height) {
             cell.style.width = `${cellSize}px`;
             cell.style.height = `${cellSize}px`;
             cell.style.backgroundColor = 'transparent';
+            // Add grid border for visual grid
+            cell.style.border = '1px solid rgba(128,128,128,0.2)';
+            cell.style.boxSizing = 'border-box';
             pixelCanvas.appendChild(cell);
             pixelData[y][x] = 'transparent';
         }
     }
 
+    // Update preview canvas size safely
+    if (previewCanvas) {
+        previewCanvas.width = width * cellSize;
+        previewCanvas.height = height * cellSize;
+    }
+
+    // Apply current grid toggle state
+    updateGridDisplay();
+}
+
+function updateGridDisplay() {
+    const gridToggle = document.getElementById('gridToggle');
+    const cells = pixelCanvas.querySelectorAll('.cell');
+    
+    if (gridToggle && cells.length > 0) {
+        const showGrid = gridToggle.checked;
+        cells.forEach(cell => {
+            cell.style.border = showGrid ? '1px solid rgba(128,128,128,0.2)' : 'none';
+        });
+    }
+}
+
+// Update the grid toggle event listener
+const gridToggle = document.getElementById('gridToggle');
+if(gridToggle) {
+    gridToggle.addEventListener('change', e => {
+        updateGridDisplay();
+    });
+}
 // Update preview canvas size safely
     if (previewCanvas) {
         previewCanvas.width = width * cellSize;
@@ -485,37 +515,39 @@ let isMovingSelection = false;
 let moveOffset = {x: 0, y: 0};
 
 function startSelection(x, y) {
-isSelecting = true;
-selectionStart = {x, y};
+    isSelecting = true;
+    selectionStart = {x, y};
+    updateTransformInfo();
 }
 
 function endSelection(x, y) {
-if(!isSelecting) return;
-isSelecting = false;
-const x0 = Math.min(selectionStart.x, x);
-const y0 = Math.min(selectionStart.y, y);
-const x1 = Math.max(selectionStart.x, x);
-const y1 = Math.max(selectionStart.y, y);
-selectionData = {x0, y0, x1, y1, data: []};
+    if(!isSelecting) return;
+    isSelecting = false;
+    const x0 = Math.min(selectionStart.x, x);
+    const y0 = Math.min(selectionStart.y, y);
+    const x1 = Math.max(selectionStart.x, x);
+    const y1 = Math.max(selectionStart.y, y);
+    selectionData = {x0, y0, x1, y1, data: []};
 
-for(let yy = y0; yy <= y1; yy++) {
-let row = [];
-for(let xx = x0; xx <= x1; xx++) {
-row.push(pixelData[yy][xx]);
-}
-selectionData.data.push(row);
-}
+    for(let yy = y0; yy <= y1; yy++) {
+        let row = [];
+        for(let xx = x0; xx <= x1; xx++) {
+            row.push(pixelData[yy][xx]);
+        }
+        selectionData.data.push(row);
+    }
 
-// Clear selected area
-for(let yy = y0; yy <= y1; yy++) {
-for(let xx = x0; xx <= x1; xx++) {
-pixelData[yy][xx] = 'transparent';
-}
-}
+    // Clear selected area
+    for(let yy = y0; yy <= y1; yy++) {
+        for(let xx = x0; xx <= x1; xx++) {
+            pixelData[yy][xx] = 'transparent';
+        }
+    }
 
-renderPixelCanvas();
-isMovingSelection = true;
-moveOffset = {x: 0, y: 0};
+    renderPixelCanvas();
+    isMovingSelection = true;
+    moveOffset = {x: 0, y: 0};
+    updateTransformInfo();
 }
 
 function moveSelection(dx, dy) {
@@ -542,71 +574,72 @@ function moveSelection(dx, dy) {
 
 
 function finalizeSelection() {
-if(!selectionData) return;
-const {x0, y0, data} = selectionData;
-for(let yy = 0; yy < data.length; yy++) {
-for(let xx = 0; xx < data[0].length; xx++) {
-const px = x0 + xx + moveOffset.x;
-const py = y0 + yy + moveOffset.y;
-if(px >= 0 && py >= 0 && px < canvasWidth && py < canvasHeight) {
-pixelData[py][px] = data[yy][xx];
-}
-}
-}
-selectionData = null;
-isMovingSelection = false;
-moveOffset = {x: 0, y: 0};
-renderPixelCanvas();
+    if(!selectionData) return;
+    const {x0, y0, data} = selectionData;
+    for(let yy = 0; yy < data.length; yy++) {
+        for(let xx = 0; xx < data[0].length; xx++) {
+            const px = x0 + xx + moveOffset.x;
+            const py = y0 + yy + moveOffset.y;
+            if(px >= 0 && py >= 0 && px < canvasWidth && py < canvasHeight) {
+                pixelData[py][px] = data[yy][xx];
+            }
+        }
+    }
+    selectionData = null;
+    isMovingSelection = false;
+    moveOffset = {x: 0, y: 0};
+    renderPixelCanvas();
+    updateTransformInfo();
 }
 
 // =====================
 // PIXEL TOOL HANDLERS
 // =====================
 function handlePixelPaint(e) {
-if(!e || currentMode !== 'pixel') return;
+    if(!e || currentMode !== 'pixel') return;
 
-const {x, y} = getCellFromEvent(e);
-if(x < 0 || y < 0 || x >= canvasWidth || y >= canvasHeight) return;
+    const {x, y} = getCellFromEvent(e);
+    if(x < 0 || y < 0 || x >= canvasWidth || y >= canvasHeight) return;
 
-let color = e.button === 2 ? secondaryColor : primaryColor;
+    let color = e.button === 2 ? secondaryColor : primaryColor;
 
-switch(currentTool) {
-case 'pencil':
-paintPixel(x, y, color);
-break;
-case 'eraser':
-paintPixel(x, y, 'transparent');
-break;
-case 'symmetricPencil':
-getSymmetricPoints(x, y).forEach(p => paintPixel(p.x, p.y, color));
-break;
-case 'symmetricEraser':
-getSymmetricPoints(x, y).forEach(p => paintPixel(p.x, p.y, 'transparent'));
-break;
-case 'fill':
-savePixelState();
-floodFill(x, y, color);
-break;
-case 'symmetricFill':
-savePixelState();
-getSymmetricPoints(x, y).forEach(p => {
-if(p.x >= 0 && p.y >= 0 && p.x < canvasWidth && p.y < canvasHeight) {
-floodFill(p.x, p.y, color);
-}
-});
-break;
-case 'eyedropper':
-if(pixelData[y] && pixelData[y][x]) {
-if(e.button === 2) {
-secondaryColor = pixelData[y][x];
-} else {
-primaryColor = pixelData[y][x];
-}
-updateCanvasInfo();
-updateColorSwatches();
-}
-break;
-}
+    switch(currentTool) {
+        case 'pencil':
+            setPixel(x, y, color); // Use setPixel for real-time visual update
+            break;
+        case 'eraser':
+            setPixel(x, y, 'transparent'); // Real-time erase
+            break;
+        case 'symmetricPencil':
+            getSymmetricPoints(x, y).forEach(p => setPixel(p.x, p.y, color));
+            break;
+        case 'symmetricEraser':
+            getSymmetricPoints(x, y).forEach(p => setPixel(p.x, p.y, 'transparent'));
+            break;
+        case 'fill':
+            floodFill(x, y, color);
+            renderPixelCanvas(); // Update after fill
+            break;
+        case 'symmetricFill':
+            getSymmetricPoints(x, y).forEach(p => {
+                if(p.x >= 0 && p.y >= 0 && p.x < canvasWidth && p.y < canvasHeight) {
+                    floodFill(p.x, p.y, color);
+                }
+            });
+            renderPixelCanvas(); // Update after fill
+            break;
+        case 'eyedropper':
+            if(pixelData[y] && pixelData[y][x]) {
+                if(e.button === 2) {
+                    secondaryColor = pixelData[y][x];
+                } else {
+                    primaryColor = pixelData[y][x];
+                }
+                updateCanvasInfo();
+                updateColorSwatches();
+            }
+            break;
+    }
 }
 
 function handleMouseDown(e) {
@@ -749,11 +782,38 @@ function handleColorSelect(e) {
 }
 
 function handleToolSelect(e) {
-    document.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('active'));
-    e.target.classList.add('active');
-    currentTool = e.target.dataset.tool;
-    updateCanvasInfo();
+    document.querySelectorAll('.tool-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        document.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        currentTool = btn.dataset.tool;
+        
+        // Update symmetry info based on tool selection
+        updateSymmetryInfo();
+        updateCanvasInfo();
+    });
+});
 }
+
+function updateSymmetryInfo() {
+    const symmetryInfo = document.getElementById('symmetryInfo');
+    if (symmetryInfo) {
+        const isSymmetricTool = currentTool.includes('symmetric');
+        const hasSymmetry = symmetryMode !== 'none';
+        
+        if (isSymmetricTool && hasSymmetry) {
+            symmetryInfo.textContent = `Active: ${currentTool} with ${symmetryMode} symmetry`;
+            symmetryInfo.style.color = '#4CAF50';
+        } else if (isSymmetricTool && !hasSymmetry) {
+            symmetryInfo.textContent = 'Select a symmetry mode to use symmetric tools';
+            symmetryInfo.style.color = '#FF9800';
+        } else {
+            symmetryInfo.textContent = 'Use symmetric tools (⚌) to draw with active symmetry mode';
+            symmetryInfo.style.color = '#666';
+        }
+    }
+}
+  
 // =====================
 // MOUSE EVENTS
 // =====================
@@ -959,25 +1019,33 @@ const settings = getBrushSettings();
 drawBrushStroke(x, y, settings);
 });
 
-sketchCanvas.addEventListener('mousemove', e => {
-if(currentMode !== 'sketch' || !sketchPainting) return;
-e.preventDefault();
+function updateSketchDrawing() {
+    sketchCanvas.addEventListener('mousemove', e => {
+        if(currentMode !== 'sketch' || !sketchPainting) return;
+        e.preventDefault();
 
-const rect = sketchCanvas.getBoundingClientRect();
-const x = (e.clientX - rect.left) / zoomLevel;
-const y = (e.clientY - rect.top) / zoomLevel;
+        const rect = sketchCanvas.getBoundingClientRect();
+        const x = (e.clientX - rect.left) / zoomLevel;
+        const y = (e.clientY - rect.top) / zoomLevel;
 
-const settings = getBrushSettings();
+        const settings = getBrushSettings();
 
-sketchCtx.globalAlpha = settings.opacity * settings.flow;
-sketchCtx.strokeStyle = settings.color;
-sketchCtx.lineWidth = settings.size;
-sketchCtx.lineCap = 'round';
-sketchCtx.lineJoin = 'round';
+        // More responsive drawing
+        sketchCtx.globalAlpha = settings.opacity * settings.flow;
+        sketchCtx.strokeStyle = settings.color;
+        sketchCtx.lineWidth = settings.size;
+        sketchCtx.lineCap = 'round';
+        sketchCtx.lineJoin = 'round';
+        sketchCtx.globalCompositeOperation = 'source-over';
 
-sketchCtx.lineTo(x, y);
-sketchCtx.stroke();
-});
+        sketchCtx.lineTo(x, y);
+        sketchCtx.stroke();
+        
+        // Continue path for smooth lines
+        sketchCtx.beginPath();
+        sketchCtx.moveTo(x, y);
+    });
+}
 
 sketchCanvas.addEventListener('mouseup', () => {
 if(currentMode !== 'sketch') return;
@@ -1258,11 +1326,12 @@ input.click();
 // SYMMETRY CONTROLS
 // =====================
 document.querySelectorAll('.symmetry-btn').forEach(btn => {
-btn.addEventListener('click', () => {
-document.querySelectorAll('.symmetry-btn').forEach(b => b.classList.remove('active'));
-btn.classList.add('active');
-symmetryMode = btn.dataset.symmetry;
-});
+    btn.addEventListener('click', () => {
+        document.querySelectorAll('.symmetry-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        symmetryMode = btn.dataset.symmetry;
+        updateSymmetryInfo();
+    });
 });
 
 // =====================
@@ -1570,39 +1639,45 @@ const flipHorizontalBtn = document.getElementById('flipHorizontal');
 const flipVerticalBtn = document.getElementById('flipVertical');
 
 function rotatePixelData(degrees) {
-if(!selectionData) return;
+    if(!selectionData) {
+        alert('Please select an area first using the select tool');
+        return;
+    }
 
-const { data } = selectionData;
-let rotated;
+    const { data } = selectionData;
+    let rotated;
 
-switch(degrees) {
-case 90:
-rotated = data[0].map((_, i) => data.map(row => row[i]).reverse());
-break;
-case 180:
-rotated = data.slice().reverse().map(row => row.slice().reverse());
-break;
-case 270:
-rotated = data[0].map((_, i) => data.map(row => row[row.length - 1 - i]));
-break;
-}
+    switch(degrees) {
+        case 90:
+            rotated = data[0].map((_, i) => data.map(row => row[i]).reverse());
+            break;
+        case 180:
+            rotated = data.slice().reverse().map(row => row.slice().reverse());
+            break;
+        case 270:
+            rotated = data[0].map((_, i) => data.map(row => row[row.length - 1 - i]));
+            break;
+    }
 
-selectionData.data = rotated;
-moveSelection(0, 0); // Refresh display
+    selectionData.data = rotated;
+    moveSelection(0, 0); // Refresh display
 }
 
 function flipPixelData(direction) {
-if(!selectionData) return;
+    if(!selectionData) {
+        alert('Please select an area first using the select tool');
+        return;
+    }
 
-const { data } = selectionData;
+    const { data } = selectionData;
 
-if(direction === 'horizontal') {
-selectionData.data = data.map(row => row.slice().reverse());
-} else {
-selectionData.data = data.slice().reverse();
-}
+    if(direction === 'horizontal') {
+        selectionData.data = data.map(row => row.slice().reverse());
+    } else {
+        selectionData.data = data.slice().reverse();
+    }
 
-moveSelection(0, 0); // Refresh display
+    moveSelection(0, 0); // Refresh display
 }
 
 if(rotateLeftBtn) rotateLeftBtn.addEventListener('click', () => rotatePixelData(270));
@@ -1611,6 +1686,18 @@ if(rotateRightBtn) rotateRightBtn.addEventListener('click', () => rotatePixelDat
 if(flipHorizontalBtn) flipHorizontalBtn.addEventListener('click', () => flipPixelData('horizontal'));
 if(flipVerticalBtn) flipVerticalBtn.addEventListener('click', () => flipPixelData('vertical'));
 
+function updateTransformInfo() {
+    const transformInfo = document.querySelector('.transform-info small');
+    if (transformInfo) {
+        if (selectionData) {
+            transformInfo.textContent = `Selection: ${selectionData.x1 - selectionData.x0 + 1}×${selectionData.y1 - selectionData.y0 + 1} pixels`;
+            transformInfo.style.color = '#4CAF50';
+        } else {
+            transformInfo.textContent = 'Select an area first to use transform tools';
+            transformInfo.style.color = '#666';
+        }
+    }
+}
 // =====================
 // LAYERS HANDLING (SKETCH)
 // =====================
@@ -1916,6 +2003,51 @@ break;
 }
 });
 
+function initializeImprovements() {
+    // Apply grid display
+    updateGridDisplay();
+    
+    // Set up symmetry info
+    updateSymmetryInfo();
+    
+    // Set up transform info
+    updateTransformInfo();
+    
+    // Initialize sketch drawing improvements
+    updateSketchDrawing();
+    
+    // Add keyboard shortcuts for transform tools
+    document.addEventListener('keydown', e => {
+        if (e.ctrlKey) {
+            switch(e.key) {
+                case 'h':
+                case 'H':
+                    e.preventDefault();
+                    flipPixelData('horizontal');
+                    break;
+                case 'j':
+                case 'J':
+                    e.preventDefault();
+                    flipPixelData('vertical');
+                    break;
+            }
+        } else {
+            switch(e.key) {
+                case '[':
+                    rotatePixelData(270);
+                    break;
+                case ']':
+                    rotatePixelData(90);
+                    break;
+            }
+        }
+    });
+}
+
+// Call initialization after DOM is loaded
+document.addEventListener('DOMContentLoaded', () => {
+    initializeImprovements();
+});
 // =====================
 // INITIALIZATION
 // =====================
@@ -1951,6 +2083,10 @@ function initialize() {
         updateBrushPreview();
         updateSpriteSelector();
         updateLayerList();
+        updateGridDisplay();
+        updateSymmetryInfo();
+        updateTransformInfo();
+        initializeImprovements();
         
         // Set initial tool if none selected
         const firstTool = document.querySelector('.tool-btn');
