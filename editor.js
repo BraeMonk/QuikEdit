@@ -55,7 +55,6 @@ class JerryEditor {
         this.loadPalettes();
         this.initializeCanvas();
         this.loadProject();
-        this.switchMode('pixel');
         this.updateUI();
         this.initializePanels();
     }
@@ -106,14 +105,12 @@ class JerryEditor {
         document.querySelectorAll('.tool-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 const toolGroup = btn.closest('.tool-group');
-                const activeBtn = toolGroup.querySelector('.tool-btn.active');
-                if (activeBtn) activeBtn.classList.remove('active');
+                toolGroup.querySelector('.tool-btn.active')?.classList.remove('active');
                 btn.classList.add('active');
                 this.currentTool = btn.dataset.tool;
                 this.updateCanvasInfo();
             });
         });
-
 
         document.querySelectorAll('.panel-header').forEach(header => {
             header.addEventListener('click', (e) => {
@@ -178,106 +175,71 @@ class JerryEditor {
         document.getElementById('newSprite').addEventListener('click', () => this.newSprite());
         document.getElementById('duplicateSprite').addEventListener('click', () => this.duplicateSprite());
         document.getElementById('deleteSprite').addEventListener('click', () => this.deleteSprite());
-        if (this.spriteSelector) {
-            this.spriteSelector.addEventListener('change', (e) => {
-                this.switchSprite(parseInt(e.target.value));
-            });
-        }
-
+        this.spriteSelector?.addEventListener('change', (e) => {
+            this.switchSprite(parseInt(e.target.value));
+        });
         
         // Color controls
         this.primaryColorEl.addEventListener('click', () => this.openColorPicker('primary'));
         this.secondaryColorEl.addEventListener('click', () => this.openColorPicker('secondary'));
-        if (this.paletteSelector) {
-            this.paletteSelector.addEventListener('change', (e) => {
-                this.loadPalette(e.target.value);
-            });
-        }
-
+        this.paletteSelector?.addEventListener('change', (e) => this.loadPalette(e.target.value));
         
         // Sketch controls
-        if (this.brushSizeSlider) {
-            this.brushSizeSlider.addEventListener('input', (e) => {
-                this.brushSize = parseInt(e.target.value);
-                const label = document.getElementById('brushSizeLabel');
-                if (label) label.textContent = this.brushSize;
-                this.updateBrushPreview();
-            });
-        }
+        this.brushSizeSlider?.addEventListener('input', (e) => {
+            this.brushSize = parseInt(e.target.value);
+            document.getElementById('brushSizeLabel').textContent = this.brushSize;
+            this.updateBrushPreview();
+        });
         
-        if (this.brushOpacitySlider) {
-            this.brushOpacitySlider.addEventListener('input', (e) => {
-                this.brushOpacity = parseInt(e.target.value);
-                const label = document.getElementById('opacityLabel');
-                if (label) label.textContent = this.brushOpacity;
-                this.updateBrushPreview();
-            });
-        }
+        this.brushOpacitySlider?.addEventListener('input', (e) => {
+            this.brushOpacity = parseInt(e.target.value);
+            document.getElementById('opacityLabel').textContent = this.brushOpacity;
+            this.updateBrushPreview();
+        });
         
-        if (this.brushHardnessSlider) {
-            this.brushHardnessSlider.addEventListener('input', (e) => {
-                this.brushHardness = parseInt(e.target.value);
-                const label = document.getElementById('hardnessLabel');
-                if (label) label.textContent = this.brushHardness;
-                this.updateBrushPreview();
-            });
-        }
+        this.brushHardnessSlider?.addEventListener('input', (e) => {
+            this.brushHardness = parseInt(e.target.value);
+            document.getElementById('hardnessLabel').textContent = this.brushHardness;
+            this.updateBrushPreview();
+        });
         
-        if (this.brushFlowSlider) {
-            this.brushFlowSlider.addEventListener('input', (e) => {
-                this.brushFlow = parseInt(e.target.value);
-                const label = document.getElementById('flowLabel');
-                if (label) label.textContent = this.brushFlow;
-            });
-        }
+        this.brushFlowSlider?.addEventListener('input', (e) => {
+            this.brushFlow = parseInt(e.target.value);
+            document.getElementById('flowLabel').textContent = this.brushFlow;
+        });
         
-        if (this.sketchColorPicker) {
-            this.sketchColorPicker.addEventListener('change', (e) => {
-                this.primaryColor = e.target.value;
-                if (this.primaryColorEl) this.primaryColorEl.style.background = this.primaryColor;
-            });
-        }
+        this.sketchColorPicker?.addEventListener('change', (e) => {
+            this.primaryColor = e.target.value;
+            this.primaryColorEl.style.background = this.primaryColor;
+        });
         
         // Layer controls
-        const addLayerBtn = document.getElementById('addLayer');
-        if (addLayerBtn) addLayerBtn.addEventListener('click', () => this.addLayer());
+        document.getElementById('addLayer')?.addEventListener('click', () => this.addLayer());
+        this.layerOpacitySlider?.addEventListener('input', (e) => {
+            if (this.layers[this.currentLayer]) {
+                this.layers[this.currentLayer].opacity = parseInt(e.target.value) / 100;
+                document.getElementById('layerOpacityLabel').textContent = e.target.value;
+                this.redrawLayers();
+            }
+        });
         
-        if (this.layerOpacitySlider) {
-            this.layerOpacitySlider.addEventListener('input', (e) => {
-                if (this.layers[this.currentLayer]) {
-                    this.layers[this.currentLayer].opacity = parseInt(e.target.value) / 100;
-                    const label = document.getElementById('layerOpacityLabel');
-                    if (label) label.textContent = e.target.value;
-                    this.redrawLayers();
-                }
-            });
-        }
+        this.blendModeSelect?.addEventListener('change', (e) => {
+            if (this.layers[this.currentLayer]) {
+                this.layers[this.currentLayer].blendMode = e.target.value;
+                this.redrawLayers();
+            }
+        });
         
-        if (this.blendModeSelect) {
-            this.blendModeSelect.addEventListener('change', (e) => {
-                if (this.layers[this.currentLayer]) {
-                    this.layers[this.currentLayer].blendMode = e.target.value;
-                    this.redrawLayers();
-                }
-            });
-        }
-
-        
-        const exportJSONBtn = document.getElementById('exportJSON');
-        if (exportJSONBtn) exportJSONBtn.addEventListener('click', () => this.exportJSON());
-        
-        const exportPNG2Btn = document.getElementById('exportPNG2');
-        if (exportPNG2Btn) exportPNG2Btn.addEventListener('click', () => this.exportPNG());
-        
-        const importFileInput = document.getElementById('importFile');
-        if (importFileInput) importFileInput.addEventListener('change', (e) => this.importFile(e));
+        // Export/Import
+        document.getElementById('exportJSON')?.addEventListener('click', () => this.exportJSON());
+        document.getElementById('exportPNG2')?.addEventListener('click', () => this.exportPNG());
+        document.getElementById('importFile')?.addEventListener('change', (e) => this.importFile(e));
         
         // Keyboard shortcuts
         document.addEventListener('keydown', (e) => this.handleKeyboard(e));
         
         // Palette management
-        const saveCustomPaletteBtn = document.getElementById('saveCustomPalette');
-        if (saveCustomPaletteBtn) saveCustomPaletteBtn.addEventListener('click', () => this.saveCustomPalette());
+        document.getElementById('saveCustomPalette')?.addEventListener('click', () => this.saveCustomPalette());
         
         // Canvas size presets for sketch mode
         document.querySelectorAll('[data-size]').forEach(btn => {
@@ -286,7 +248,6 @@ class JerryEditor {
                 this.resizeSketchCanvas(width, height);
             });
         });
-
         
         // Auto-save
         setInterval(() => this.autoSave(), 30000);
@@ -476,58 +437,35 @@ class JerryEditor {
     
     switchMode(mode) {
         this.mode = mode;
-    
-        // 1️⃣ Remove active-mode from all tool/control containers
-        document.querySelectorAll('.pixel-tools, .pixel-controls, .sketch-tools, .sketch-controls')
-            .forEach(el => el.classList.remove('active-mode'));
-    
-        // 2️⃣ Hide both canvases and overlays first
-        this.pixelCanvas.classList.remove('active-mode');
-        this.sketchCanvas.classList.remove('active-mode');
-        this.selectionOverlay.classList.remove('active-mode');
-        this.canvasGrid.classList.remove('active-mode');
-    
-        // 3️⃣ Activate the correct mode
-        let activeToolGroup;
-        if (mode === 'pixel') {
-            document.querySelectorAll('.pixel-tools, .pixel-controls')
-                .forEach(el => el.classList.add('active-mode'));
-            this.pixelCanvas.classList.add('active-mode');
-            if (this.showGrid) this.canvasGrid.classList.add('active-mode');
+        
+        // Show/hide pixel elements
+        const pixelElements = document.querySelectorAll('.pixel-tools, .pixel-controls');
+        pixelElements.forEach(el => {
+            el.style.display = mode === 'pixel' ? 'block' : 'none';
+        });
+        
+        // Show/hide sketch elements
+        const sketchElements = document.querySelectorAll('.sketch-tools, .sketch-controls');
+        sketchElements.forEach(el => {
+            el.style.display = mode === 'sketch' ? 'block' : 'none';
+        });
+        
+        // Show/hide canvases
+        this.pixelCanvas.style.display = mode === 'pixel' ? 'grid' : 'none';
+        this.sketchCanvas.style.display = mode === 'sketch' ? 'block' : 'none';
+        this.canvasGrid.style.display = (mode === 'pixel' && this.showGrid) ? 'grid' : 'none';
+        this.selectionOverlay.style.display = mode === 'sketch' ? 'block' : 'none';
+        
+        // Initialize mode
+        if (mode === 'sketch') {
+            this.initializeSketchMode();
+            this.currentTool = 'brush';
+        } else {
             this.currentTool = 'pencil';
             this.updatePixelCanvas();
             this.updateGrid();
-            activeToolGroup = '.pixel-tools';
-        } else if (mode === 'sketch') {
-            document.querySelectorAll('.sketch-tools, .sketch-controls')
-                .forEach(el => el.classList.add('active-mode'));
-            this.sketchCanvas.classList.add('active-mode');
-            this.selectionOverlay.classList.add('active-mode');
-            if (!this.layers || this.layers.length === 0) {
-                this.initializeSketchMode();
-            }
-            this.currentTool = 'brush';
-            activeToolGroup = '.sketch-tools';
         }
-    
-        // 4️⃣ Update active tool button
-        document.querySelectorAll('.tool-btn').forEach(btn => btn.classList.remove('active'));
-        const activeToolBtn = document.querySelector(`${activeToolGroup} .tool-btn[data-tool="${this.currentTool}"]`);
-        if (activeToolBtn) {
-            activeToolBtn.classList.add('active');
-    
-            // 5️⃣ Scroll active tool into view for horizontal toolbars (mobile)
-            const container = activeToolBtn.closest(activeToolGroup);
-            if (container && container.scrollWidth > container.clientWidth) {
-                const offsetLeft = activeToolBtn.offsetLeft;
-                const offsetWidth = activeToolBtn.offsetWidth;
-                const containerWidth = container.clientWidth;
-                const scrollPos = offsetLeft - (containerWidth / 2) + (offsetWidth / 2);
-                container.scrollTo({ left: scrollPos, behavior: 'smooth' });
-            }
-        }
-    
-        // 6️⃣ Update UI
+        
         this.updateUI();
     }
     
@@ -776,42 +714,46 @@ class JerryEditor {
         
         const color = rightClick ? this.secondaryColor : this.primaryColor;
         
-        // For all drawing tools, draw immediately and interpolate if needed
-        if (['pencil', 'symmetricPencil', 'eraser', 'symmetricEraser'].includes(this.currentTool)) {
-            // Draw at current position immediately
-            const drawColor = ['eraser', 'symmetricEraser'].includes(this.currentTool) ? 'transparent' : color;
-            this.drawPixel(pos.x, pos.y, drawColor);
-            
+        // For continuous drawing tools, interpolate between last position and current
+        if (
+            this.lastPos && this.isDrawing &&
+            ['pencil', 'symmetricPencil', 'eraser', 'symmetricEraser'].includes(this.currentTool)
+        ) {
+            this.drawPixelLine(this.lastPos.x, this.lastPos.y, pos.x, pos.y, color);
+    
             if (this.currentTool.includes('symmetric')) {
-                this.applySymmetry(pos.x, pos.y, drawColor);
+                const symmetryPositions = this.getSymmetryPositions(pos.x, pos.y);
+                const lastSymmetryPositions = this.getSymmetryPositions(this.lastPos.x, this.lastPos.y);
+    
+                symmetryPositions.forEach((sPos, index) => {
+                    if (lastSymmetryPositions[index]) {
+                        this.drawPixelLine(
+                            lastSymmetryPositions[index].x, lastSymmetryPositions[index].y,
+                            sPos.x, sPos.y,
+                            color
+                        );
+                    }
+                });
             }
-            
-            // Interpolate between last position and current for smooth lines
-            if (this.lastPos && this.isDrawing) {
-                this.drawPixelLine(this.lastPos.x, this.lastPos.y, pos.x, pos.y, drawColor);
-                
-                if (this.currentTool.includes('symmetric')) {
-                    const symmetryPositions = this.getSymmetryPositions(pos.x, pos.y);
-                    const lastSymmetryPositions = this.getSymmetryPositions(this.lastPos.x, this.lastPos.y);
-                    
-                    symmetryPositions.forEach((sPos, index) => {
-                        if (lastSymmetryPositions[index]) {
-                            this.drawPixelLine(
-                                lastSymmetryPositions[index].x, lastSymmetryPositions[index].y,
-                                sPos.x, sPos.y,
-                                drawColor
-                            );
-                        }
-                    });
-                }
-            }
-            
-            // Update canvas immediately
-            this.updatePixelCanvas();
-            
         } else {
-            // Handle other tools (eyedropper, fill, etc.)
+            // Handle other tools
             switch (this.currentTool) {
+                case 'pencil':
+                case 'symmetricPencil':
+                    this.drawPixel(pos.x, pos.y, color);
+                    if (this.currentTool === 'symmetricPencil') {
+                        this.applySymmetry(pos.x, pos.y, color);
+                    }
+                    break;
+    
+                case 'eraser':
+                case 'symmetricEraser':
+                    this.drawPixel(pos.x, pos.y, 'transparent');
+                    if (this.currentTool === 'symmetricEraser') {
+                        this.applySymmetry(pos.x, pos.y, 'transparent');
+                    }
+                    break;
+    
                 case 'eyedropper': {
                     const pickedColor = this.grid[pos.y][pos.x];
                     if (pickedColor !== 'transparent') {
@@ -826,7 +768,7 @@ class JerryEditor {
                     }
                     break;
                 }
-                
+    
                 case 'fill':
                 case 'symmetricFill':
                     this.floodFill(pos.x, pos.y, color);
@@ -836,11 +778,11 @@ class JerryEditor {
                             this.floodFill(sPos.x, sPos.y, color);
                         });
                     }
-                    this.updatePixelCanvas();
                     break;
             }
         }
-        
+    
+        this.updatePixelCanvas();
         this.lastPos = pos;
     }
 
@@ -2878,12 +2820,8 @@ class JerryEditor {
                     toolMap[key] + 'Filled' : toolMap[key]);
             
             const toolGroup = document.querySelector(`.${this.mode}-tools`);
-            const activeBtn = toolGroup.querySelector('.tool-btn.active');
-            if (activeBtn) activeBtn.classList.remove('active');
-            
-            const currentBtn = toolGroup.querySelector(`.tool-btn[data-tool="${this.currentTool}"]`);
-            if (currentBtn) currentBtn.classList.add('active');
-
+            toolGroup.querySelector('.tool-btn.active')?.classList.remove('active');
+            toolGroup.querySelector(`.tool-btn[data-tool="${this.currentTool}"]`)?.classList.add('active');
             
             this.updateCanvasInfo();
         }
@@ -2968,12 +2906,13 @@ class JerryEditor {
 
 document.addEventListener('DOMContentLoaded', () => {
     window.jerryEditor = new JerryEditor();
-    window.jerryEditor.init();
 });
-
+    
+// Service Worker Registration
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', async () => {
         try {
+            // Remove the service worker registration since you don't have the file
             console.log('Service worker registration skipped - file not provided');
         } catch (error) {
             console.log('SW registration failed: ', error);
