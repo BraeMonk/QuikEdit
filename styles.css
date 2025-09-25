@@ -362,8 +362,8 @@ body {
   pointer-events: none;
   opacity: 0.4;
   z-index: 5;
-  grid-template-columns: repeat(var(--cols), (var(--cellSize);
-  grid-template-rows: repeat(var(--rows), (var(--cellSize));
+  grid-template-columns: repeat(var(--cols), var(--cellSize));
+  grid-template-rows: repeat(var(--rows), var(--cellSize));
 }
 
 #canvasGrid.hidden,
