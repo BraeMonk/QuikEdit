@@ -542,30 +542,34 @@ class JerryEditor {
         if (this.mode !== 'pixel') return;
 
         const grid = this.canvasGrid;
+
+        // Toggle grid visibility
+        grid.style.display = this.showGrid ? 'grid' : 'none';
         grid.innerHTML = '';
         if (!this.showGrid) return;
 
         const canvas = this.pixelCanvas;
-        const width = canvas.width;
-        const height = canvas.height;
 
-        // Determine the pixel size dynamically
-        const cellWidth = width / this.canvasWidth;
-        const cellHeight = height / this.canvasHeight;
+        // Determine cell size based on canvas size and grid dimensions
+        const cellWidth = canvas.width / this.canvasWidth;
+        const cellHeight = canvas.height / this.canvasHeight;
 
         grid.style.gridTemplateColumns = `repeat(${this.canvasWidth}, ${cellWidth}px)`;
-        grid.style.gridTemplateRows = `repeat(${this.canvasHeight}, ${cellHeight}px)`;
-        grid.style.width = `${width}px`;
-        grid.style.height = `${height}px`;
+        grid.style.gridTemplateRows = `repeat(${this.canvasHeight}, ${cellHeight}px)`; 
+        grid.style.width = `${canvas.width}px`;
+        grid.style.height = `${canvas.height}px`;
 
         const fragment = document.createDocumentFragment();
         for (let i = 0; i < this.canvasWidth * this.canvasHeight; i++) {
             const cell = document.createElement('div');
             cell.className = 'grid-cell';
+            // Set explicit size to ensure alignment
+            cell.style.width = `${cellWidth}px`;
+            cell.style.height = `${cellHeight}px`;
             fragment.appendChild(cell);
         }
 
-        grid.appendChild(fragment);
+        grid.appendChild(fragment); 
     }
     
     getCanvasPos(e) {
@@ -2118,6 +2122,9 @@ class JerryEditor {
         this.canvasWidth = newWidth;
         this.canvasHeight = newHeight;
         this.grid = newGrid;
+
+        this.pixelCanvas.width = newWidth * this.pixelSize;
+        this.pixelCanvas.height = newHeight * this.pixelSize;
         
         this.updatePixelCanvas();
         this.updateGrid();
@@ -2658,7 +2665,10 @@ class JerryEditor {
         this.canvasHeightInput.value = this.canvasHeight;
         this.primaryColorEl.style.background = this.primaryColor;
         this.secondaryColorEl.style.background = this.secondaryColor;
-        document.getElementById('gridToggle').checked = this.showGrid;
+        document.getElementById('gridToggle').addEventListener('change', (e) => {
+            this.showGrid = e.target.checked;
+            this.updateGrid();
+        });
         
         // Set symmetry mode
         document.querySelectorAll('.symmetry-btn').forEach(btn => {
