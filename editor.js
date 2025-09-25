@@ -2783,19 +2783,19 @@ class JerryEditor {
         }
     }
 
-    // Initialize the editor when the page loads
-    document.addEventListener('DOMContentLoaded', () => {
-        window.jerryEditor = new JerryEditor();
-    });
+// Initialize the editor when the page loads
+document.addEventListener('DOMContentLoaded', () => {
+    window.jerryEditor = new JerryEditor();
+ });
     
-    // Register service worker for PWA functionality
-    if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-            navigator.serviceWorker.register('./service-worker.js')
-                .then((registration) => {
-                    console.log('SW registered: ', registration);
-                })
-                .catch((registrationError) => {
-                    console.log('SW registration failed: ', registrationError);
-                });
-        });
+// Register service worker for PWA functionality
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./service-worker.js')
+            .then((registration) => {
+                console.log('SW registered: ', registration);
+            })
+            .catch((registrationError) => {
+                console.log('SW registration failed: ', registrationError);
+            });
+    });
