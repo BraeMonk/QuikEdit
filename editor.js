@@ -540,37 +540,36 @@ class JerryEditor {
     
     updateGrid() {
         if (this.mode !== 'pixel') return;
-
+    
         const grid = this.canvasGrid;
-
-        // Toggle grid visibility
+        const canvas = this.pixelCanvas;
+    
+        // Show or hide grid
         grid.style.display = this.showGrid ? 'grid' : 'none';
         grid.innerHTML = '';
         if (!this.showGrid) return;
-
-        const canvas = this.pixelCanvas;
-
-        // Determine cell size based on canvas size and grid dimensions
-        const cellWidth = canvas.width / this.canvasWidth;
-        const cellHeight = canvas.height / this.canvasHeight;
-
-        grid.style.gridTemplateColumns = `repeat(${this.canvasWidth}, ${cellWidth}px)`;
-        grid.style.gridTemplateRows = `repeat(${this.canvasHeight}, ${cellHeight}px)`; 
+    
+        // --- Use uniform pixel size for perfect square cells ---
+        const cellSize = this.pixelSize;
+    
+        grid.style.gridTemplateColumns = `repeat(${this.canvasWidth}, ${cellSize}px)`;
+        grid.style.gridTemplateRows = `repeat(${this.canvasHeight}, ${cellSize}px)`;
         grid.style.width = `${canvas.width}px`;
         grid.style.height = `${canvas.height}px`;
-
+    
+        // --- Build grid cells ---
         const fragment = document.createDocumentFragment();
         for (let i = 0; i < this.canvasWidth * this.canvasHeight; i++) {
             const cell = document.createElement('div');
             cell.className = 'grid-cell';
-            // Set explicit size to ensure alignment
-            cell.style.width = `${cellWidth}px`;
-            cell.style.height = `${cellHeight}px`;
+            cell.style.width = `${cellSize}px`;
+            cell.style.height = `${cellSize}px`;
             fragment.appendChild(cell);
         }
-
-        grid.appendChild(fragment); 
+    
+        grid.appendChild(fragment);
     }
+
     
     getCanvasPos(e) {
         const rect = (this.mode === 'pixel' ? this.pixelCanvas : this.sketchCanvas).getBoundingClientRect();
@@ -2102,40 +2101,41 @@ class JerryEditor {
     resizeCanvas() {
         const newWidth = parseInt(this.canvasWidthInput.value);
         const newHeight = parseInt(this.canvasHeightInput.value);
-
+    
         if (this.mode === 'pixel') {
             this.resizePixelCanvas(newWidth, newHeight);
         }
     }
-
+    
     resizePixelCanvas(newWidth, newHeight) {
-        // --- 1. Create new grid while preserving existing pixels ---
+        // --- 1. Preserve existing pixels in a new grid ---
         const newGrid = [];
         for (let y = 0; y < newHeight; y++) {
             newGrid[y] = [];
             for (let x = 0; x < newWidth; x++) {
-            newGrid[y][x] = (y < this.canvasHeight && x < this.canvasWidth) 
-                ? this.grid[y][x] 
-                : 'transparent';
+                newGrid[y][x] = (y < this.canvasHeight && x < this.canvasWidth)
+                    ? this.grid[y][x]
+                    : 'transparent';
             }
         }
         this.grid = newGrid;
         this.canvasWidth = newWidth;
         this.canvasHeight = newHeight;
-
-        // --- 2. Calculate pixel size to keep canvas square and fit max display size ---
-        const maxDisplaySize = 512; // maximum canvas display size in px
-        const scale = Math.floor(maxDisplaySize / Math.max(newWidth, newHeight));
-        this.pixelSize = scale;
-
+    
+        // --- 2. Calculate uniform pixel size for square pixels ---
+        const maxDisplaySize = 512; // Maximum display size in px
+        this.pixelSize = Math.floor(maxDisplaySize / Math.max(newWidth, newHeight));
+    
+        // --- 3. Resize canvas to match pixel grid ---
         this.pixelCanvas.width = newWidth * this.pixelSize;
         this.pixelCanvas.height = newHeight * this.pixelSize;
-
-        // --- 3. Update canvas and grid overlay ---
+    
+        // --- 4. Update canvas and grid overlay ---
         this.updatePixelCanvas();
         this.updateGrid();
         this.updateCanvasInfo();
     }
+
     
     resizeSketchCanvas(width, height) {
         this.sketchCanvas.width = width;
