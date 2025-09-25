@@ -400,7 +400,6 @@ body {
   left: 0;
   right: 0;
   bottom: 0;
-  border: 1px solid rgba(255, 255, 255, 0.2);
   pointer-events: none;
   opacity: 0;
   transition: opacity 0.2s ease;
@@ -422,7 +421,7 @@ body {
 .pixel {
   width: 20px;
   height: 20px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: none;
   cursor: crosshair;
   box-sizing: border-box;
   transition: transform 0.1s ease;
@@ -432,6 +431,10 @@ body {
 .pixel:hover {
   transform: scale(1.05);
   z-index: 2;
+}
+
+.pixel::before {
+  display: none;
 }
 
 /* Symmetry Guide Lines */
