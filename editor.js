@@ -568,8 +568,8 @@ class JerryEditor {
     
     getPixelPos(e) {
         const rect = this.pixelCanvas.getBoundingClientRect();
-        const x = Math.floor((e.clientX - rect.left) / 20);
-        const y = Math.floor((e.clientY - rect.top) / 20);
+        const x = Math.floor((e.clientX - rect.left) / (this.pixelSize * this.zoom));
+        const y = Math.floor((e.clientY - rect.top) / (this.pixelSize * this.zoom));
         return { x, y };
     }
     
