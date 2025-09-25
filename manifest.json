@@ -7,12 +7,12 @@
   "theme_color": "#f5f5f5",
   "icons": [
     {
-      "src": "./JEIcon.PNG",
+      "src": "./jeditor.PNG",
       "sizes": "192x192",
       "type": "image/png"
     },
     {
-      "src": "./JEIcon.PNG",
+      "src": "./jeditor.PNG",
       "sizes": "512x512",
       "type": "image/png"
     }
