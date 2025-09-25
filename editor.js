@@ -436,13 +436,6 @@ class JerryEditor {
         if (pixelTools) pixelTools.classList.toggle('active', mode === 'pixel');
         if (sketchTools) sketchTools.classList.toggle('active', mode === 'sketch');
     
-        // Optional: if you have separate controls, handle them separately
-        const pixelControls = document.querySelector('.pixel-controls');
-        const sketchControls = document.querySelector('.sketch-controls');
-    
-        if (pixelControls) pixelControls.style.display = mode === 'pixel' ? 'flex' : 'none';
-        if (sketchControls) sketchControls.style.display = mode === 'sketch' ? 'flex' : 'none';
-    
         // ----- CANVASES -----
         this.pixelCanvas.style.display = mode === 'pixel' ? 'grid' : 'none';
         this.sketchCanvas.style.display = mode === 'sketch' ? 'block' : 'none';
