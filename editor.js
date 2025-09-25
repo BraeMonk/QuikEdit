@@ -2306,9 +2306,10 @@ class JerryEditor {
     }
     loadPalette(paletteName) {
         const colors = this.palettes[paletteName] || this.palettes.default;
-        
-        if (this.swatchesContainer) {
-            this.swatchesContainer.innerHTML = '';
+
+        const swatchesContainer = document.getElementById('swatches');
+        if (swatchesContainer) {
+            swatchesContainer.innerHTML = '';
             colors.forEach(color => {
                 const swatch = document.createElement('div');
                 swatch.className = 'color-swatch';
@@ -2324,7 +2325,7 @@ class JerryEditor {
                     this.secondaryColor = color;
                     this.secondaryColorEl.style.background = color;
                 });
-                this.swatchesContainer.appendChild(swatch);
+                swatchesContainer.appendChild(swatch);
             });
         }
     }
