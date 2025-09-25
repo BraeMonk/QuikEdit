@@ -230,44 +230,63 @@ class JerryEditor {
         setInterval(() => this.autoSave(), 30000);
     }
     
+    // Replace the setupCanvasEvents method in your JerryEditor class
+
     setupCanvasEvents() {
         const canvasWrapper = document.querySelector('.canvas-wrapper');
         
+        // Mouse events
         canvasWrapper.addEventListener('mousedown', (e) => this.startDrawing(e));
         canvasWrapper.addEventListener('mousemove', (e) => this.draw(e));
         canvasWrapper.addEventListener('mouseup', () => this.stopDrawing());
         canvasWrapper.addEventListener('mouseout', () => this.stopDrawing());
         canvasWrapper.addEventListener('contextmenu', (e) => e.preventDefault());
         
-        // Touch events for mobile
-        // Touch events - replace the existing touch event listeners with:
+        // Improved touch events with better handling
         canvasWrapper.addEventListener('touchstart', (e) => {
             e.preventDefault();
             e.stopPropagation();
+            
             const touch = e.touches[0];
             const rect = canvasWrapper.getBoundingClientRect();
-            const mouseEvent = new MouseEvent('mousedown', {
+            
+            // Create a proper mouse event with correct coordinates
+            const mouseEvent = {
                 clientX: touch.clientX,
                 clientY: touch.clientY,
                 button: 0,
-                bubbles: false
-            });
+                preventDefault: () => {},
+                stopPropagation: () => {}
+            };
+            
             this.startDrawing(mouseEvent);
         }, { passive: false });
         
         canvasWrapper.addEventListener('touchmove', (e) => {
             e.preventDefault();
             e.stopPropagation();
+            
+            if (!this.isDrawing) return;
+            
             const touch = e.touches[0];
-            const mouseEvent = new MouseEvent('mousemove', {
+            const mouseEvent = {
                 clientX: touch.clientX,
                 clientY: touch.clientY,
-                bubbles: false
-            });
+                button: 0,
+                preventDefault: () => {},
+                stopPropagation: () => {}
+            };
+            
             this.draw(mouseEvent);
         }, { passive: false });
         
         canvasWrapper.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            this.stopDrawing();
+        }, { passive: false });
+        
+        canvasWrapper.addEventListener('touchcancel', (e) => {
             e.preventDefault();
             this.stopDrawing();
         });
@@ -278,6 +297,113 @@ class JerryEditor {
             const zoomFactor = e.deltaY > 0 ? 0.9 : 1.1;
             this.adjustZoom(zoomFactor);
         });
+        
+        // Prevent scrolling and zooming on mobile
+        document.addEventListener('touchmove', (e) => {
+            if (e.target.closest('.canvas-wrapper')) {
+                e.preventDefault();
+            }
+        }, { passive: false });
+    }
+    
+    // Also add this improved startDrawing method
+    startDrawing(e) {
+        this.isDrawing = true;
+        const pos = this.mode === 'pixel' ? this.getPixelPos(e) : this.getCanvasPos(e);
+        this.lastPos = pos;
+        
+        // Initialize stroke path for smooth drawing  
+        this.strokePath = [pos];
+        this.strokeStartTime = Date.now();
+        
+        // Handle selection tool
+        if (this.currentTool === 'select') {
+            this.startSelection(pos);
+            return;
+        }
+        
+        // Handle move tool
+        if (this.currentTool === 'move') {
+            this.startMoving(pos);
+            return;
+        }
+        
+        // For shape tools in sketch mode, store the starting position
+        if (this.mode === 'sketch' && ['lineSketch', 'rectSketch', 'circleSketch'].includes(this.currentTool)) {
+            this.shapeStartPos = pos;
+            this.saveShapeState();
+            return;
+        }
+        
+        this.saveState();
+        
+        if (this.mode === 'pixel') {
+            this.handlePixelTool(pos, e.button === 2);
+        } else {
+            this.handleSketchTool(pos, e);
+        }
+    }
+    
+    // Improved draw method with better interpolation
+    draw(e) {
+        const pos = this.mode === 'pixel' ? this.getPixelPos(e) : this.getCanvasPos(e);
+        
+        if (!this.isDrawing) {
+            // Show brush preview for sketch mode
+            if (this.mode === 'sketch' && ['brush', 'pen', 'marker', 'pencilSketch', 'charcoal', 'eraser'].includes(this.currentTool)) {
+                this.showBrushPreview(pos);
+            }
+            return;
+        }
+        
+        // Handle selection dragging
+        if (this.currentTool === 'select' && this.selecting) {
+            this.updateSelection(pos);
+            return;
+        }
+        
+        // Handle moving selection
+        if (this.currentTool === 'move' && this.movingSelection) {
+            this.updateMove(pos);
+            return;
+        }
+        
+        // Handle shape preview for sketch mode
+        if (this.mode === 'sketch' && ['lineSketch', 'rectSketch', 'circleSketch'].includes(this.currentTool) && this.shapeStartPos) {
+            this.previewShape(this.shapeStartPos, pos);
+            return;
+        }
+        
+        // Add current position to stroke path
+        if (this.strokePath) {
+            this.strokePath.push(pos);
+        }
+        
+        if (this.mode === 'pixel') {
+            this.handlePixelTool(pos, e.button === 2);
+        } else {
+            this.handleSketchTool(pos, e);
+        }
+        
+        this.lastPos = pos;
+    }
+    
+    // Add this method to improve getCanvasPos for better coordinate calculation
+    getCanvasPos(e) {
+        const canvas = this.mode === 'pixel' ? this.pixelCanvas : this.sketchCanvas;
+        const rect = canvas.getBoundingClientRect();
+        
+        // Account for canvas wrapper padding and zoom
+        const canvasWrapper = document.querySelector('.canvas-wrapper');
+        const wrapperRect = canvasWrapper.getBoundingClientRect();
+        const wrapperStyle = window.getComputedStyle(canvasWrapper);
+        const padding = parseInt(wrapperStyle.padding) || 20;
+        
+        // Calculate position relative to actual canvas
+        const x = (e.clientX - rect.left) / this.zoom;
+        const y = (e.clientY - rect.top) / this.zoom;
+        
+        return { x, y };
     }
     
     switchMode(mode) {
@@ -1353,141 +1479,115 @@ class JerryEditor {
     }
 
     // Corrected smooth drawing methods
+    // Add these improved drawing methods to your JerryEditor class
+
     drawSmoothBrush(ctx, pos, color) {
-        // Create brush stroke with proper gradient
-        const gradient = ctx.createRadialGradient(pos.x, pos.y, 0, pos.x, pos.y, this.brushSize / 2);
-        const alpha = ctx.globalAlpha;
-        gradient.addColorStop(0, this.hexToRgba(color, alpha));
-        gradient.addColorStop(this.brushHardness / 100, this.hexToRgba(color, alpha * 0.7));
-        gradient.addColorStop(1, this.hexToRgba(color, 0));
+        // Save current alpha
+        const currentAlpha = ctx.globalAlpha;
         
-        ctx.fillStyle = gradient;
-        ctx.beginPath();
-        ctx.arc(pos.x, pos.y, this.brushSize / 2, 0, 2 * Math.PI);
-        ctx.fill();
-        
-        // Connect smoothly to previous position
-        if (this.lastPos && this.isDrawing) {
-            const distance = Math.sqrt(
-                Math.pow(pos.x - this.lastPos.x, 2) + 
-                Math.pow(pos.y - this.lastPos.y, 2)
-            );
+        if (!this.lastPos || !this.isDrawing) {
+            // Initial dot
+            const gradient = ctx.createRadialGradient(pos.x, pos.y, 0, pos.x, pos.y, this.brushSize / 2);
+            gradient.addColorStop(0, this.hexToRgba(color, currentAlpha));
+            gradient.addColorStop(this.brushHardness / 100, this.hexToRgba(color, currentAlpha * 0.7));
+            gradient.addColorStop(1, this.hexToRgba(color, 0));
             
-            if (distance > 2) {
-                // Draw intermediate points for smooth connection
-                const steps = Math.ceil(distance / 3);
-                for (let i = 1; i < steps; i++) {
-                    const t = i / steps;
-                    const x = this.lastPos.x + (pos.x - this.lastPos.x) * t;
-                    const y = this.lastPos.y + (pos.y - this.lastPos.y) * t;
-                    
-                    const interpGrad = ctx.createRadialGradient(x, y, 0, x, y, this.brushSize / 2);
-                    interpGrad.addColorStop(0, this.hexToRgba(color, alpha));
-                    interpGrad.addColorStop(this.brushHardness / 100, this.hexToRgba(color, alpha * 0.7));
-                    interpGrad.addColorStop(1, this.hexToRgba(color, 0));
-                    
-                    ctx.fillStyle = interpGrad;
-                    ctx.beginPath();
-                    ctx.arc(x, y, this.brushSize / 2, 0, 2 * Math.PI);
-                    ctx.fill();
-                }
+            ctx.fillStyle = gradient;
+            ctx.beginPath();
+            ctx.arc(pos.x, pos.y, this.brushSize / 2, 0, 2 * Math.PI);
+            ctx.fill();
+            return;
+        }
+        
+        // Calculate distance for smooth interpolation
+        const distance = Math.sqrt(
+            Math.pow(pos.x - this.lastPos.x, 2) + 
+            Math.pow(pos.y - this.lastPos.y, 2)
+        );
+        
+        // Draw connecting stroke with interpolation
+        if (distance > 1) {
+            const steps = Math.max(1, Math.ceil(distance / 2)); // Increase density for smoother lines
+            
+            for (let i = 0; i <= steps; i++) {
+                const t = i / steps;
+                const x = this.lastPos.x + (pos.x - this.lastPos.x) * t;
+                const y = this.lastPos.y + (pos.y - this.lastPos.y) * t;
+                
+                // Create brush stroke at interpolated position
+                const gradient = ctx.createRadialGradient(x, y, 0, x, y, this.brushSize / 2);
+                gradient.addColorStop(0, this.hexToRgba(color, currentAlpha));
+                gradient.addColorStop(this.brushHardness / 100, this.hexToRgba(color, currentAlpha * 0.7));
+                gradient.addColorStop(1, this.hexToRgba(color, 0));
+                
+                ctx.fillStyle = gradient;
+                ctx.beginPath();
+                ctx.arc(x, y, this.brushSize / 2, 0, 2 * Math.PI);
+                ctx.fill();
             }
         }
     }
     
     drawSmoothPen(ctx, pos, color) {
-        // Pen creates solid connecting lines
-        if (this.lastPos && this.isDrawing) {
-            // Calculate pressure based on speed for natural variation
-            const distance = Math.sqrt(Math.pow(pos.x - this.lastPos.x, 2) + Math.pow(pos.y - this.lastPos.y, 2));
-            const speed = distance; // Simple speed calculation
-            const pressure = Math.max(0.4, Math.min(1.2, 15 / (speed + 5))); // Pressure varies with speed
-            
-            ctx.strokeStyle = color;
-            ctx.lineWidth = this.brushSize * pressure;
-            ctx.lineCap = 'round';
-            ctx.lineJoin = 'round';
-            ctx.beginPath();
-            ctx.moveTo(this.lastPos.x, this.lastPos.y);
-            ctx.lineTo(pos.x, pos.y);
-            ctx.stroke();
-        } else {
+        if (!this.lastPos || !this.isDrawing) {
             // Initial dot
             ctx.fillStyle = color;
             ctx.beginPath();
             ctx.arc(pos.x, pos.y, this.brushSize / 2, 0, 2 * Math.PI);
             ctx.fill();
-        }
-    }
-    
-    drawSmoothMarker(ctx, pos, color) {
-        const currentAlpha = ctx.globalAlpha;
-        
-        if (this.lastPos && this.isDrawing) {
-            // Multi-layer marker effect for realistic texture
-            for (let layer = 0; layer < 3; layer++) {
-                ctx.globalAlpha = currentAlpha * 0.25 * (layer + 1);
-                ctx.strokeStyle = color;
-                ctx.lineWidth = this.brushSize + (layer - 1);
-                ctx.lineCap = 'round';
-                ctx.lineJoin = 'round';
-                
-                // Add subtle texture variation
-                const jitter = layer * 0.3;
-                const x1 = this.lastPos.x + (Math.random() - 0.5) * jitter;
-                const y1 = this.lastPos.y + (Math.random() - 0.5) * jitter;
-                const x2 = pos.x + (Math.random() - 0.5) * jitter;
-                const y2 = pos.y + (Math.random() - 0.5) * jitter;
-                
-                ctx.beginPath();
-                ctx.moveTo(x1, y1);
-                ctx.lineTo(x2, y2);
-                ctx.stroke();
-            }
-        } else {
-            // Initial marker dot
-            ctx.globalAlpha = currentAlpha * 0.7;
-            ctx.fillStyle = color;
-            ctx.beginPath();
-            ctx.arc(pos.x, pos.y, this.brushSize / 2, 0, 2 * Math.PI);
-            ctx.fill();
+            return;
         }
         
-        ctx.globalAlpha = currentAlpha;
+        // Calculate pressure based on speed for natural variation
+        const distance = Math.sqrt(Math.pow(pos.x - this.lastPos.x, 2) + Math.pow(pos.y - this.lastPos.y, 2));
+        const speed = Math.min(distance, 50); // Cap speed for calculation
+        const pressure = Math.max(0.3, Math.min(1.5, 20 / (speed + 10))); // More dynamic pressure
+        
+        // Use quadratic curves for smoother lines
+        ctx.strokeStyle = color;
+        ctx.lineWidth = this.brushSize * pressure;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        
+        ctx.beginPath();
+        const midX = (this.lastPos.x + pos.x) / 2;
+        const midY = (this.lastPos.y + pos.y) / 2;
+        
+        ctx.moveTo(this.lastPos.x, this.lastPos.y);
+        ctx.quadraticCurveTo(this.lastPos.x, this.lastPos.y, midX, midY);
+        ctx.stroke();
     }
     
     drawTexturedPencil(ctx, pos, color) {
+        const currentAlpha = ctx.globalAlpha;
+        
         if (!this.lastPos || !this.isDrawing) {
-            this.strokePath = [pos];
             this.drawPencilTexture(ctx, pos, color, 1.0);
             return;
         }
         
-        this.strokePath.push(pos);
+        // Calculate distance and create smooth interpolation
+        const distance = Math.sqrt(Math.pow(pos.x - this.lastPos.x, 2) + Math.pow(pos.y - this.lastPos.y, 2));
+        const steps = Math.max(1, Math.ceil(distance / 1.5)); // Denser steps for texture
         
-        if (this.strokePath.length >= 2) {
-            const len = this.strokePath.length;
-            const p1 = this.strokePath[len - 2];
-            const p2 = this.strokePath[len - 1];
+        for (let i = 0; i <= steps; i++) {
+            const t = i / steps;
+            const x = this.lastPos.x + (pos.x - this.lastPos.x) * t;
+            const y = this.lastPos.y + (pos.y - this.lastPos.y) * t;
             
-            const distance = Math.sqrt(Math.pow(p2.x - p1.x, 2) + Math.pow(p2.y - p1.y, 2));
-            const steps = Math.max(1, Math.floor(distance / 2));
-            
-            for (let i = 0; i <= steps; i++) {
-                const t = i / steps;
-                const x = p1.x + (p2.x - p1.x) * t;
-                const y = p1.y + (p2.y - p1.y) * t;
-                
-                const pressure = 0.7 + Math.random() * 0.3;
-                this.drawPencilTexture(ctx, {x, y}, color, pressure);
-            }
+            // Vary pressure along the stroke
+            const pressure = 0.6 + Math.random() * 0.4;
+            this.drawPencilTexture(ctx, {x, y}, color, pressure);
         }
     }
     
     drawPencilTexture(ctx, pos, color, pressure) {
+        const currentAlpha = ctx.globalAlpha;
         const intensity = pressure * (this.brushOpacity / 100);
         const radius = (this.brushSize / 2) * pressure;
-        const strokes = Math.floor(radius * 4);
+        
+        // Create multiple overlapping strokes for texture
+        const strokes = Math.floor(radius * 3) + 5; // More strokes for better texture
         
         for (let i = 0; i < strokes; i++) {
             const angle = Math.random() * Math.PI * 2;
@@ -1495,94 +1595,100 @@ class JerryEditor {
             const x = pos.x + Math.cos(angle) * distance;
             const y = pos.y + Math.sin(angle) * distance;
             
-            const strokeAlpha = intensity * (0.1 + Math.random() * 0.4);
-            const strokeWidth = 0.5 + Math.random() * 1.5;
+            const strokeAlpha = intensity * (0.15 + Math.random() * 0.3); // Varied opacity
+            const strokeWidth = 0.3 + Math.random() * 1.2;
             
             ctx.globalAlpha = strokeAlpha;
             ctx.strokeStyle = color;
             ctx.lineWidth = strokeWidth;
             ctx.lineCap = 'round';
             
-            const strokeLength = 1 + Math.random() * 3;
+            // Create small textured strokes
+            const strokeLength = 0.5 + Math.random() * 2;
             const strokeAngle = Math.random() * Math.PI * 2;
             
             ctx.beginPath();
             ctx.moveTo(x, y);
-            ctx.lineTo(x + Math.cos(strokeAngle) * strokeLength, y + Math.sin(strokeAngle) * strokeLength);
+            ctx.lineTo(
+                x + Math.cos(strokeAngle) * strokeLength, 
+                y + Math.sin(strokeAngle) * strokeLength
+            );
             ctx.stroke();
         }
+        
+        ctx.globalAlpha = currentAlpha;
     }
     
     drawTexturedCharcoal(ctx, pos, color) {
+        const currentAlpha = ctx.globalAlpha;
+        
         if (!this.lastPos || !this.isDrawing) {
-            this.strokePath = [pos];
             this.drawCharcoalTexture(ctx, pos, color, 1.0);
             return;
         }
         
-        this.strokePath.push(pos);
+        // Smooth interpolation for charcoal
+        const distance = Math.sqrt(Math.pow(pos.x - this.lastPos.x, 2) + Math.pow(pos.y - this.lastPos.y, 2));
+        const steps = Math.max(1, Math.ceil(distance / 2));
         
-        if (this.strokePath.length >= 2) {
-            const len = this.strokePath.length;
-            const p1 = this.strokePath[len - 2];
-            const p2 = this.strokePath[len - 1];
+        for (let i = 0; i <= steps; i++) {
+            const t = i / steps;
+            const x = this.lastPos.x + (pos.x - this.lastPos.x) * t;
+            const y = this.lastPos.y + (pos.y - this.lastPos.y) * t;
             
-            const distance = Math.sqrt(Math.pow(p2.x - p1.x, 2) + Math.pow(p2.y - p1.y, 2));
-            const steps = Math.max(1, Math.floor(distance / 3));
-            
-            for (let i = 0; i <= steps; i++) {
-                const t = i / steps;
-                const x = p1.x + (p2.x - p1.x) * t;
-                const y = p1.y + (p2.y - p1.y) * t;
-                
-                const pressure = 0.8 + Math.random() * 0.2;
-                this.drawCharcoalTexture(ctx, {x, y}, color, pressure);
-            }
+            const pressure = 0.7 + Math.random() * 0.3;
+            this.drawCharcoalTexture(ctx, {x, y}, color, pressure);
         }
     }
     
     drawCharcoalTexture(ctx, pos, color, pressure) {
+        const currentAlpha = ctx.globalAlpha;
         const intensity = pressure * (this.brushOpacity / 100);
         const radius = this.brushSize * pressure;
-        const particles = Math.floor(radius * 2);
         
+        // Main charcoal particles
+        const particles = Math.floor(radius * 4) + 10; // More particles for better texture
         ctx.fillStyle = color;
         
         for (let i = 0; i < particles; i++) {
             const angle = Math.random() * Math.PI * 2;
-            const distance = Math.random() * radius;
+            const distance = Math.random() * radius * 0.8; // Tighter distribution
             const x = pos.x + Math.cos(angle) * distance;
             const y = pos.y + Math.sin(angle) * distance;
             
-            const particleSize = 0.5 + Math.random() * 4;
-            const alpha = intensity * (0.2 + Math.random() * 0.6);
+            const particleSize = 0.3 + Math.random() * 3;
+            const alpha = intensity * (0.1 + Math.random() * 0.4);
             
             ctx.globalAlpha = alpha;
             ctx.beginPath();
             
-            if (Math.random() > 0.7) {
-                ctx.ellipse(x, y, particleSize, particleSize * 0.6, Math.random() * Math.PI, 0, 2 * Math.PI);
+            // Mix of circles and ellipses for texture variety
+            if (Math.random() > 0.6) {
+                const scaleX = 0.5 + Math.random() * 1.5;
+                const scaleY = 0.5 + Math.random() * 1.5;
+                ctx.ellipse(x, y, particleSize * scaleX, particleSize * scaleY, Math.random() * Math.PI, 0, 2 * Math.PI);
             } else {
-                ctx.arc(x, y, particleSize * 0.5, 0, 2 * Math.PI);
+                ctx.arc(x, y, particleSize, 0, 2 * Math.PI);
             }
             ctx.fill();
         }
         
-        if (this.strokePath && this.strokePath.length > 1) {
-            const smudges = Math.floor(radius * 0.5);
-            for (let i = 0; i < smudges; i++) {
-                const smudgeRadius = radius * (0.3 + Math.random() * 0.4);
-                const angle = Math.random() * Math.PI * 2;
-                const distance = Math.random() * smudgeRadius;
-                const x = pos.x + Math.cos(angle) * distance;
-                const y = pos.y + Math.sin(angle) * distance;
-                
-                ctx.globalAlpha = intensity * 0.1;
-                ctx.beginPath();
-                ctx.arc(x, y, smudgeRadius, 0, 2 * Math.PI);
-                ctx.fill();
-            }
+        // Add smudge effect around edges
+        const smudges = Math.floor(radius * 0.8);
+        for (let i = 0; i < smudges; i++) {
+            const smudgeRadius = radius * (0.5 + Math.random() * 0.5);
+            const angle = Math.random() * Math.PI * 2;
+            const distance = radius * (0.7 + Math.random() * 0.3);
+            const x = pos.x + Math.cos(angle) * distance;
+            const y = pos.y + Math.sin(angle) * distance;
+            
+            ctx.globalAlpha = intensity * 0.05;
+            ctx.beginPath();
+            ctx.arc(x, y, smudgeRadius * 0.3, 0, 2 * Math.PI);
+            ctx.fill();
         }
+        
+        ctx.globalAlpha = currentAlpha;
     }
     
     gaussianRandom() {
