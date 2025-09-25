@@ -865,6 +865,20 @@ input[type="checkbox"] {
     height: 80%;
     margin: 0 4px;
   }
+
+  .pixel-tools.active-mode,
+  .sketch-tools.active-mode {
+      display: flex !important;
+      flex-direction: row !important;
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      overflow-y: hidden;
+      width: 100%;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 0;
+      -webkit-overflow-scrolling: touch;
+  }
 }
 
 /* Mobile Landscape - Keep desktop-like layout but smaller */
@@ -1125,4 +1139,5 @@ input:focus {
         min-width: 44px; /* Touch-friendly minimum */
     }
 }
+
   
