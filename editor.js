@@ -533,6 +533,7 @@ class JerryEditor {
         this.pixelCanvas.innerHTML = '';
         
         // Set canvas dimensions first
+        this.pixelCanvas.style.display = 'grid';
         this.pixelCanvas.style.width = `${this.canvasWidth * this.pixelSize}px`;
         this.pixelCanvas.style.height = `${this.canvasHeight * this.pixelSize}px`;
         this.pixelCanvas.style.gridTemplateColumns = `repeat(${this.canvasWidth}, ${this.pixelSize}px)`;
