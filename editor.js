@@ -540,21 +540,32 @@ class JerryEditor {
     
     updateGrid() {
         if (this.mode !== 'pixel') return;
-        
-        this.canvasGrid.innerHTML = '';
+
+        const grid = this.canvasGrid;
+        grid.innerHTML = '';
         if (!this.showGrid) return;
-        
-        this.canvasGrid.style.gridTemplateColumns = `repeat(${this.canvasWidth}, 20px)`;
-        this.canvasGrid.style.gridTemplateRows = `repeat(${this.canvasHeight}, 20px)`;
-        this.canvasGrid.style.width = `${this.canvasWidth * 20}px`;
-        this.canvasGrid.style.height = `${this.canvasHeight * 20}px`;
-        this.canvasGrid.style.gridTemplateRows = `repeat(${this.canvasHeight}, ${this.pixelSize}px)`;
-        
+
+        const canvas = this.pixelCanvas;
+        const width = canvas.width;
+        const height = canvas.height;
+
+        // Determine the pixel size dynamically
+        const cellWidth = width / this.canvasWidth;
+        const cellHeight = height / this.canvasHeight;
+
+        grid.style.gridTemplateColumns = `repeat(${this.canvasWidth}, ${cellWidth}px)`;
+        grid.style.gridTemplateRows = `repeat(${this.canvasHeight}, ${cellHeight}px)`;
+        grid.style.width = `${width}px`;
+        grid.style.height = `${height}px`;
+
+        const fragment = document.createDocumentFragment();
         for (let i = 0; i < this.canvasWidth * this.canvasHeight; i++) {
-            const gridCell = document.createElement('div');
-            gridCell.className = 'grid-cell';
-            this.canvasGrid.appendChild(gridCell);
+            const cell = document.createElement('div');
+            cell.className = 'grid-cell';
+            fragment.appendChild(cell);
         }
+
+        grid.appendChild(fragment);
     }
     
     getCanvasPos(e) {
