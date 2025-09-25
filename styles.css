@@ -307,6 +307,45 @@ body {
     pointer-events: none;
     z-index: 10;
 }
+
+/* Mode visibility controls */
+.pixel-tools, .pixel-controls {
+    display: none;
+}
+
+.sketch-tools, .sketch-controls {
+    display: none;
+}
+
+.pixel-tools.active-mode, 
+.pixel-controls.active-mode {
+    display: flex;
+}
+
+.sketch-tools.active-mode, 
+.sketch-controls.active-mode {
+    display: block;
+}
+
+#canvas {
+    display: none;
+}
+
+#sketchCanvas {
+    display: none;
+}
+
+#canvas.active-mode {
+    display: grid;
+}
+
+#sketchCanvas.active-mode {
+    display: block;
+}
+
+#selectionOverlay.active-mode {
+    display: block;
+}
 /* ============================= */
 /* Right Panels                  */
 /* ============================= */
