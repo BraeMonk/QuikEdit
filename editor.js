@@ -2926,6 +2926,7 @@ class JerryEditor {
 
 document.addEventListener('DOMContentLoaded', () => {
     window.jerryEditor = new JerryEditor();
+    window.jerryEditor.init();
 });
 
 if ('serviceWorker' in navigator) {
