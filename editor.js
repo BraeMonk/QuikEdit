@@ -106,12 +106,14 @@ class JerryEditor {
         document.querySelectorAll('.tool-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 const toolGroup = btn.closest('.tool-group');
-                toolGroup.querySelector('.tool-btn.active')?.classList.remove('active');
+                const activeBtn = toolGroup.querySelector('.tool-btn.active');
+                if (activeBtn) activeBtn.classList.remove('active');
                 btn.classList.add('active');
                 this.currentTool = btn.dataset.tool;
                 this.updateCanvasInfo();
             });
         });
+
 
         document.querySelectorAll('.panel-header').forEach(header => {
             header.addEventListener('click', (e) => {
@@ -176,71 +178,106 @@ class JerryEditor {
         document.getElementById('newSprite').addEventListener('click', () => this.newSprite());
         document.getElementById('duplicateSprite').addEventListener('click', () => this.duplicateSprite());
         document.getElementById('deleteSprite').addEventListener('click', () => this.deleteSprite());
-        this.spriteSelector?.addEventListener('change', (e) => {
-            this.switchSprite(parseInt(e.target.value));
-        });
+        if (this.spriteSelector) {
+            this.spriteSelector.addEventListener('change', (e) => {
+                this.switchSprite(parseInt(e.target.value));
+            });
+        }
+
         
         // Color controls
         this.primaryColorEl.addEventListener('click', () => this.openColorPicker('primary'));
         this.secondaryColorEl.addEventListener('click', () => this.openColorPicker('secondary'));
-        this.paletteSelector?.addEventListener('change', (e) => this.loadPalette(e.target.value));
+        if (this.paletteSelector) {
+            this.paletteSelector.addEventListener('change', (e) => {
+                this.loadPalette(e.target.value);
+            });
+        }
+
         
         // Sketch controls
-        this.brushSizeSlider?.addEventListener('input', (e) => {
-            this.brushSize = parseInt(e.target.value);
-            document.getElementById('brushSizeLabel').textContent = this.brushSize;
-            this.updateBrushPreview();
-        });
+        if (this.brushSizeSlider) {
+            this.brushSizeSlider.addEventListener('input', (e) => {
+                this.brushSize = parseInt(e.target.value);
+                const label = document.getElementById('brushSizeLabel');
+                if (label) label.textContent = this.brushSize;
+                this.updateBrushPreview();
+            });
+        }
         
-        this.brushOpacitySlider?.addEventListener('input', (e) => {
-            this.brushOpacity = parseInt(e.target.value);
-            document.getElementById('opacityLabel').textContent = this.brushOpacity;
-            this.updateBrushPreview();
-        });
+        if (this.brushOpacitySlider) {
+            this.brushOpacitySlider.addEventListener('input', (e) => {
+                this.brushOpacity = parseInt(e.target.value);
+                const label = document.getElementById('opacityLabel');
+                if (label) label.textContent = this.brushOpacity;
+                this.updateBrushPreview();
+            });
+        }
         
-        this.brushHardnessSlider?.addEventListener('input', (e) => {
-            this.brushHardness = parseInt(e.target.value);
-            document.getElementById('hardnessLabel').textContent = this.brushHardness;
-            this.updateBrushPreview();
-        });
+        if (this.brushHardnessSlider) {
+            this.brushHardnessSlider.addEventListener('input', (e) => {
+                this.brushHardness = parseInt(e.target.value);
+                const label = document.getElementById('hardnessLabel');
+                if (label) label.textContent = this.brushHardness;
+                this.updateBrushPreview();
+            });
+        }
         
-        this.brushFlowSlider?.addEventListener('input', (e) => {
-            this.brushFlow = parseInt(e.target.value);
-            document.getElementById('flowLabel').textContent = this.brushFlow;
-        });
+        if (this.brushFlowSlider) {
+            this.brushFlowSlider.addEventListener('input', (e) => {
+                this.brushFlow = parseInt(e.target.value);
+                const label = document.getElementById('flowLabel');
+                if (label) label.textContent = this.brushFlow;
+            });
+        }
         
-        this.sketchColorPicker?.addEventListener('change', (e) => {
-            this.primaryColor = e.target.value;
-            this.primaryColorEl.style.background = this.primaryColor;
-        });
+        if (this.sketchColorPicker) {
+            this.sketchColorPicker.addEventListener('change', (e) => {
+                this.primaryColor = e.target.value;
+                if (this.primaryColorEl) this.primaryColorEl.style.background = this.primaryColor;
+            });
+        }
         
         // Layer controls
-        document.getElementById('addLayer')?.addEventListener('click', () => this.addLayer());
-        this.layerOpacitySlider?.addEventListener('input', (e) => {
-            if (this.layers[this.currentLayer]) {
-                this.layers[this.currentLayer].opacity = parseInt(e.target.value) / 100;
-                document.getElementById('layerOpacityLabel').textContent = e.target.value;
-                this.redrawLayers();
-            }
-        });
+        const addLayerBtn = document.getElementById('addLayer');
+        if (addLayerBtn) addLayerBtn.addEventListener('click', () => this.addLayer());
         
-        this.blendModeSelect?.addEventListener('change', (e) => {
-            if (this.layers[this.currentLayer]) {
-                this.layers[this.currentLayer].blendMode = e.target.value;
-                this.redrawLayers();
-            }
-        });
+        if (this.layerOpacitySlider) {
+            this.layerOpacitySlider.addEventListener('input', (e) => {
+                if (this.layers[this.currentLayer]) {
+                    this.layers[this.currentLayer].opacity = parseInt(e.target.value) / 100;
+                    const label = document.getElementById('layerOpacityLabel');
+                    if (label) label.textContent = e.target.value;
+                    this.redrawLayers();
+                }
+            });
+        }
         
-        // Export/Import
-        document.getElementById('exportJSON')?.addEventListener('click', () => this.exportJSON());
-        document.getElementById('exportPNG2')?.addEventListener('click', () => this.exportPNG());
-        document.getElementById('importFile')?.addEventListener('change', (e) => this.importFile(e));
+        if (this.blendModeSelect) {
+            this.blendModeSelect.addEventListener('change', (e) => {
+                if (this.layers[this.currentLayer]) {
+                    this.layers[this.currentLayer].blendMode = e.target.value;
+                    this.redrawLayers();
+                }
+            });
+        }
+
+        
+        const exportJSONBtn = document.getElementById('exportJSON');
+        if (exportJSONBtn) exportJSONBtn.addEventListener('click', () => this.exportJSON());
+        
+        const exportPNG2Btn = document.getElementById('exportPNG2');
+        if (exportPNG2Btn) exportPNG2Btn.addEventListener('click', () => this.exportPNG());
+        
+        const importFileInput = document.getElementById('importFile');
+        if (importFileInput) importFileInput.addEventListener('change', (e) => this.importFile(e));
         
         // Keyboard shortcuts
         document.addEventListener('keydown', (e) => this.handleKeyboard(e));
         
         // Palette management
-        document.getElementById('saveCustomPalette')?.addEventListener('click', () => this.saveCustomPalette());
+        const saveCustomPaletteBtn = document.getElementById('saveCustomPalette');
+        if (saveCustomPaletteBtn) saveCustomPaletteBtn.addEventListener('click', () => this.saveCustomPalette());
         
         // Canvas size presets for sketch mode
         document.querySelectorAll('[data-size]').forEach(btn => {
@@ -249,6 +286,7 @@ class JerryEditor {
                 this.resizeSketchCanvas(width, height);
             });
         });
+
         
         // Auto-save
         setInterval(() => this.autoSave(), 30000);
@@ -2840,8 +2878,12 @@ class JerryEditor {
                     toolMap[key] + 'Filled' : toolMap[key]);
             
             const toolGroup = document.querySelector(`.${this.mode}-tools`);
-            toolGroup.querySelector('.tool-btn.active')?.classList.remove('active');
-            toolGroup.querySelector(`.tool-btn[data-tool="${this.currentTool}"]`)?.classList.add('active');
+            const activeBtn = toolGroup.querySelector('.tool-btn.active');
+            if (activeBtn) activeBtn.classList.remove('active');
+            
+            const currentBtn = toolGroup.querySelector(`.tool-btn[data-tool="${this.currentTool}"]`);
+            if (currentBtn) currentBtn.classList.add('active');
+
             
             this.updateCanvasInfo();
         }
