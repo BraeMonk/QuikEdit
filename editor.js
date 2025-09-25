@@ -2791,7 +2791,7 @@ class JerryEditor {
     // Register service worker for PWA functionality
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
-            navigator.serviceWorker.register('./sw.js')
+            navigator.serviceWorker.register('./service-worker.js')
                 .then((registration) => {
                     console.log('SW registered: ', registration);
                 })
