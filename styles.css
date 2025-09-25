@@ -1076,24 +1076,4 @@ input:focus {
   overflow-x: auto;
   overflow-y: hidden;
 }
-
-/* Desktop – vertical */
-@media (max-width: 768px) {
-    .tool-group {
-        display: flex;
-        flex-direction: row;
-        overflow-x: auto;
-        overflow-y: hidden;
-        gap: 4px;
-        padding: 4px;
-        white-space: nowrap;
-        -webkit-overflow-scrolling: touch;
-    }
-    
-    .tool-btn {
-        flex-shrink: 0;
-        min-width: 44px; /* Touch-friendly minimum */
-    }
-}
-
   
