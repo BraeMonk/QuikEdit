@@ -543,6 +543,14 @@ class JerryEditor {
     
         const grid = this.canvasGrid;
         const canvas = this.pixelCanvas;
+
+        // After calculating pixelSize, canvasWidth, canvasHeight
+        const wrapper = this.canvasWrapper;
+        wrapper.style.setProperty('--cellSize', `${this.pixelSize}px`);
+        wrapper.style.setProperty('--halfCell', `${this.pixelSize / 2}px`);
+        wrapper.style.setProperty('--cols', this.canvasWidth);
+        wrapper.style.setProperty('--rows', this.canvasHeight);
+
     
         // Show or hide grid
         grid.style.display = this.showGrid ? 'grid' : 'none';
