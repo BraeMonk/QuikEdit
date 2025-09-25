@@ -430,16 +430,18 @@ class JerryEditor {
         this.mode = mode;
     
         // ----- TOOLBARS -----
-        const pixelElements = document.querySelectorAll('.pixel-tools, .pixel-controls');
-        pixelElements.forEach(el => {
-            el.classList.toggle('active', mode === 'pixel');
-        });
-        
-        const sketchElements = document.querySelectorAll('.sketch-tools, .sketch-controls');
-        sketchElements.forEach(el => {
-            el.classList.toggle('active', mode === 'sketch');
-        });
-
+        const pixelTools = document.querySelector('.pixel-tools');
+        const sketchTools = document.querySelector('.sketch-tools');
+    
+        if (pixelTools) pixelTools.classList.toggle('active', mode === 'pixel');
+        if (sketchTools) sketchTools.classList.toggle('active', mode === 'sketch');
+    
+        // Optional: if you have separate controls, handle them separately
+        const pixelControls = document.querySelector('.pixel-controls');
+        const sketchControls = document.querySelector('.sketch-controls');
+    
+        if (pixelControls) pixelControls.style.display = mode === 'pixel' ? 'flex' : 'none';
+        if (sketchControls) sketchControls.style.display = mode === 'sketch' ? 'flex' : 'none';
     
         // ----- CANVASES -----
         this.pixelCanvas.style.display = mode === 'pixel' ? 'grid' : 'none';
@@ -450,7 +452,6 @@ class JerryEditor {
         // ----- INITIALIZE MODE -----
         if (mode === 'pixel') {
             this.currentTool = 'pencil';
-            // Ensure grid layout matches pixel size
             this.pixelCanvas.style.gridTemplateColumns = `repeat(${this.canvasWidth}, ${this.pixelSize}px)`;
             this.pixelCanvas.style.gridTemplateRows = `repeat(${this.canvasHeight}, ${this.pixelSize}px)`;
             this.updatePixelCanvas();
@@ -467,6 +468,7 @@ class JerryEditor {
         // ----- UPDATE UI -----
         this.updateUI();
     }
+
 
     
     initializeCanvas() {
