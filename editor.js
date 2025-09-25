@@ -437,26 +437,22 @@ class JerryEditor {
     
     switchMode(mode) {
         this.mode = mode;
-        
-        // Show/hide pixel elements
+    
+        // Elements
         const pixelElements = document.querySelectorAll('.pixel-tools, .pixel-controls');
-        pixelElements.forEach(el => {
-            el.style.display = mode === 'pixel' ? 'block' : 'none';
-        });
-        
-        // Show/hide sketch elements
         const sketchElements = document.querySelectorAll('.sketch-tools, .sketch-controls');
-        sketchElements.forEach(el => {
-            el.style.display = mode === 'sketch' ? 'block' : 'none';
-        });
-        
-        // Show/hide canvases
-        this.pixelCanvas.style.display = mode === 'pixel' ? 'grid' : 'none';
-        this.sketchCanvas.style.display = mode === 'sketch' ? 'block' : 'none';
-        this.canvasGrid.style.display = (mode === 'pixel' && this.showGrid) ? 'grid' : 'none';
-        this.selectionOverlay.style.display = mode === 'sketch' ? 'block' : 'none';
-        
-        // Initialize mode
+    
+        // Toggle active-mode class
+        pixelElements.forEach(el => el.classList.toggle('active-mode', mode === 'pixel'));
+        sketchElements.forEach(el => el.classList.toggle('active-mode', mode === 'sketch'));
+    
+        // Canvases and overlays
+        this.pixelCanvas.classList.toggle('active-mode', mode === 'pixel');
+        this.sketchCanvas.classList.toggle('active-mode', mode === 'sketch');
+        this.canvasGrid.classList.toggle('active-mode', mode === 'pixel' && this.showGrid);
+        this.selectionOverlay.classList.toggle('active-mode', mode === 'sketch');
+    
+        // Initialize mode-specific stuff
         if (mode === 'sketch') {
             this.initializeSketchMode();
             this.currentTool = 'brush';
@@ -465,9 +461,10 @@ class JerryEditor {
             this.updatePixelCanvas();
             this.updateGrid();
         }
-        
+    
         this.updateUI();
     }
+
     
     initializeCanvas() {
         if (this.mode === 'pixel') {
