@@ -371,51 +371,49 @@ class JerryEditor {
         }
     }
     
-    // Improved draw method with better interpolation
     draw(e) {
         const pos = this.mode === 'pixel' ? this.getPixelPos(e) : this.getCanvasPos(e);
-        
+    
         if (!this.isDrawing) {
             // Show brush preview for sketch mode
-            if (this.mode === 'sketch' && ['brush', 'pen', 'marker', 'pencilSketch', 'charcoal', 'eraser'].includes(this.currentTool)) {
+            if (this.mode === 'sketch' && ['brush','pen','marker','pencilSketch','charcoal','eraser'].includes(this.currentTool)) {
                 this.showBrushPreview(pos);
             }
             return;
         }
-        
-        // Handle selection dragging
+    
+        // ----- Selection -----
         if (this.currentTool === 'select' && this.selecting) {
             this.updateSelection(pos);
             return;
         }
-        
-        // Handle moving selection
+    
         if (this.currentTool === 'move' && this.movingSelection) {
             this.updateMove(pos);
             return;
         }
-        
-        // Handle shape preview for sketch mode
-        if (this.mode === 'sketch' && ['lineSketch', 'rectSketch', 'circleSketch'].includes(this.currentTool) && this.shapeStartPos) {
+    
+        // ----- Sketch shapes -----
+        if (this.mode === 'sketch' && ['lineSketch','rectSketch','circleSketch'].includes(this.currentTool) && this.shapeStartPos) {
+            this.clearShapePreview();
             this.previewShape(this.shapeStartPos, pos);
             return;
         }
-        
-        // Add current position to stroke path
-        if (this.strokePath) {
-            this.strokePath.push(pos);
-        }
-        
+    
+        // ----- Pixel shapes / tools -----
         if (this.mode === 'pixel') {
             const rightClick = e.buttons === 2;
-            const isDragEnd = !this.isDrawing; // pointerup handled separately, optional
-            this.handlePixelTool(pos, rightClick, false, false); // keep false during move
+            const isDragEnd = false; // will handle commit on pointerup
+            this.handlePixelTool(pos, rightClick, false, isDragEnd);
         } else {
-                this.handlePixelTool(pos, e.button === 2);
-            }
-        
+            // Sketch drawing tools
+            this.handleSketchTool(pos, e);
+        }
+    
         this.lastPos = pos;
+        if (this.strokePath) this.strokePath.push(pos);
     }
+
 
     
     // Add this method to improve getCanvasPos for better coordinate calculation
@@ -621,40 +619,39 @@ class JerryEditor {
     
     stopDrawing() {
         if (!this.isDrawing) return;
-        
-        // Finalize selection
+    
+        // ----- Selection -----
         if (this.currentTool === 'select' && this.selecting) {
             this.finalizeSelection();
             this.selecting = false;
-            return;
         }
-        
-        // Finalize move
+    
+        // ----- Move -----
         if (this.currentTool === 'move' && this.movingSelection) {
             this.finalizeMove();
             this.movingSelection = false;
-            return;
         }
-        
-        // Finalize shape drawing for sketch mode
-        if (this.mode === 'sketch' && ['lineSketch', 'rectSketch', 'circleSketch'].includes(this.currentTool) && this.shapeStartPos) {
+    
+        // ----- Sketch shapes -----
+        if (this.mode === 'sketch' && ['lineSketch','rectSketch','circleSketch'].includes(this.currentTool) && this.shapeStartPos) {
             this.finalizeShape();
             this.shapeStartPos = null;
             this.clearShapePreview();
         }
-
-        // ----- Finalize pixel shapes -----
-        if (this.mode === 'pixel' && ['line', 'rect', 'circle'].includes(this.currentTool) && this.isDrawingShape) {
-            this.handlePixelTool(this.lastPos, false, false, true); // commit shape
+    
+        // ----- Pixel shapes -----
+        if (this.mode === 'pixel' && ['line','rect','circle'].includes(this.currentTool) && this.isDrawingShape) {
+            this.handlePixelTool(this.lastPos, false, false, true); // commit
             this.isDrawingShape = false;
             this.shapeStartPos = null;
+            this.originalGrid = null;
         }
-        
+    
         this.isDrawing = false;
         this.lastPos = null;
-        // Clear stroke path
         this.strokePath = null;
     }
+
     
     // Selection functionality
     startSelection(pos) {
@@ -766,22 +763,20 @@ class JerryEditor {
         if (pos.x < 0 || pos.x >= this.canvasWidth || pos.y < 0 || pos.y >= this.canvasHeight) return;
     
         const color = rightClick ? this.secondaryColor : this.primaryColor;
-    
         const shapeTools = ['line', 'rect', 'circle'];
     
         if (shapeTools.includes(this.currentTool)) {
-            // Store original grid state only once when starting
-            if (!this.shapeStartPos) {
-                this.shapeStartPos = { ...pos };
-                this.originalGrid = this.grid.map(row => [...row]);
+            // Initialize original grid for preview
+            if (!this.originalGrid) {
+                this.originalGrid = this.cloneGrid(this.grid);
                 return;
             }
     
-            // Restore original grid and draw preview
-            this.grid = this.originalGrid.map(row => [...row]);
-            
+            // Restore grid to original for live preview
+            this.grid = this.cloneGrid(this.originalGrid);
+    
             const start = this.shapeStartPos;
-            
+    
             switch (this.currentTool) {
                 case 'line':
                     this.drawLine(start.x, start.y, pos.x, pos.y, color);
@@ -799,20 +794,20 @@ class JerryEditor {
                 this.applyShapeSymmetry(start, pos, color, filled);
             }
     
-            // Commit on drag end
+            // Commit final shape at drag end
             if (isDragEnd) {
-                this.shapeStartPos = null;
                 this.originalGrid = null;
+                this.shapeStartPos = null;
             }
         } else {
-            // Non-shape tools
+            // Regular pixel tools
             switch (this.currentTool) {
                 case 'pencil':
                 case 'symmetricPencil':
                     this.drawPixel(pos.x, pos.y, color);
                     if (this.currentTool === 'symmetricPencil') this.applySymmetry(pos.x, pos.y, color);
                     break;
-                
+    
                 case 'eraser':
                 case 'symmetricEraser':
                     this.drawPixel(pos.x, pos.y, 'transparent');
@@ -846,6 +841,7 @@ class JerryEditor {
     
         this.updatePixelCanvas();
     }
+
     
     // Helper methods for live preview
     restorePixelGridFromTemp() {
