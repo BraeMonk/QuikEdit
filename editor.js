@@ -714,84 +714,101 @@ class JerryEditor {
         this.clearSelection();
     }
     
-    handlePixelTool(pos, rightClick = false) {
+    handlePixelTool(pos, rightClick = false, filled = false) {
         if (pos.x < 0 || pos.x >= this.canvasWidth || pos.y < 0 || pos.y >= this.canvasHeight) return;
-        
+    
         const color = rightClick ? this.secondaryColor : this.primaryColor;
-        
-        // For continuous drawing tools, interpolate between last position and current
-        if (
-            this.lastPos && this.isDrawing &&
-            ['pencil', 'symmetricPencil', 'eraser', 'symmetricEraser'].includes(this.currentTool)
-        ) {
-            this.drawPixelLine(this.lastPos.x, this.lastPos.y, pos.x, pos.y, color);
     
-            if (this.currentTool.includes('symmetric')) {
-                const symmetryPositions = this.getSymmetryPositions(pos.x, pos.y);
-                const lastSymmetryPositions = this.getSymmetryPositions(this.lastPos.x, this.lastPos.y);
+        // Helper to apply symmetry for any draw function
+        const drawWithSymmetry = (fn, x0, y0, x1, y1, c, filledFlag = false) => {
+            if (this.symmetryMode && this.symmetryMode !== 'none') {
+                const symPositions = this.getSymmetryPositions(x1, y1);
+                const lastSymPositions = (x0 !== null && y0 !== null) ? this.getSymmetryPositions(x0, y0) : [];
     
-                symmetryPositions.forEach((sPos, index) => {
-                    if (lastSymmetryPositions[index]) {
-                        this.drawPixelLine(
-                            lastSymmetryPositions[index].x, lastSymmetryPositions[index].y,
-                            sPos.x, sPos.y,
-                            color
-                        );
-                    }
+                symPositions.forEach((sPos, i) => {
+                    const lastSPos = lastSymPositions[i] || { x: x0, y: y0 };
+                    fn(lastSPos.x, lastSPos.y, sPos.x, sPos.y, c, filledFlag);
                 });
             }
-        } else {
-            // Handle other tools
-            switch (this.currentTool) {
-                case 'pencil':
-                case 'symmetricPencil':
+        };
+    
+        switch (this.currentTool) {
+            case 'pencil':
+                this.drawPixel(pos.x, pos.y, color);
+                break;
+    
+            case 'symmetricPencil':
+                this.drawPixel(pos.x, pos.y, color);
+                this.applySymmetry(pos.x, pos.y, color);
+                break;
+    
+            case 'eraser':
+                this.drawPixel(pos.x, pos.y, 'transparent');
+                break;
+    
+            case 'symmetricEraser':
+                this.drawPixel(pos.x, pos.y, 'transparent');
+                this.applySymmetry(pos.x, pos.y, 'transparent');
+                break;
+    
+            case 'line':
+                if (this.lastPos) {
+                    this.drawLine(this.lastPos.x, this.lastPos.y, pos.x, pos.y, color);
+                    drawWithSymmetry(this.drawLine.bind(this), this.lastPos.x, this.lastPos.y, pos.x, pos.y, color);
+                } else {
                     this.drawPixel(pos.x, pos.y, color);
-                    if (this.currentTool === 'symmetricPencil') {
-                        this.applySymmetry(pos.x, pos.y, color);
-                    }
-                    break;
-    
-                case 'eraser':
-                case 'symmetricEraser':
-                    this.drawPixel(pos.x, pos.y, 'transparent');
-                    if (this.currentTool === 'symmetricEraser') {
-                        this.applySymmetry(pos.x, pos.y, 'transparent');
-                    }
-                    break;
-    
-                case 'eyedropper': {
-                    const pickedColor = this.grid[pos.y][pos.x];
-                    if (pickedColor !== 'transparent') {
-                        if (rightClick) {
-                            this.secondaryColor = pickedColor;
-                            this.secondaryColorEl.style.background = pickedColor;
-                        } else {
-                            this.primaryColor = pickedColor;
-                            this.primaryColorEl.style.background = pickedColor;
-                            if (this.sketchColorPicker) this.sketchColorPicker.value = pickedColor;
-                        }
-                    }
-                    break;
                 }
+                break;
     
-                case 'fill':
-                case 'symmetricFill':
-                    this.floodFill(pos.x, pos.y, color);
-                    if (this.currentTool === 'symmetricFill') {
-                        const symmetryPositions = this.getSymmetryPositions(pos.x, pos.y);
-                        symmetryPositions.forEach(sPos => {
-                            this.floodFill(sPos.x, sPos.y, color);
-                        });
+            case 'rect':
+                if (this.lastPos) {
+                    this.drawRect(this.lastPos.x, this.lastPos.y, pos.x, pos.y, color, filled);
+                    drawWithSymmetry(this.drawRect.bind(this), this.lastPos.x, this.lastPos.y, pos.x, pos.y, color, filled);
+                } else {
+                    this.drawPixel(pos.x, pos.y, color);
+                }
+                break;
+    
+            case 'circle':
+                if (this.lastPos) {
+                    this.drawCircle(this.lastPos.x, this.lastPos.y, pos.x, pos.y, color, filled);
+                    drawWithSymmetry(this.drawCircle.bind(this), this.lastPos.x, this.lastPos.y, pos.x, pos.y, color, filled);
+                } else {
+                    this.drawPixel(pos.x, pos.y, color);
+                }
+                break;
+    
+            case 'eyedropper': {
+                const pickedColor = this.grid[pos.y][pos.x];
+                if (pickedColor !== 'transparent') {
+                    if (rightClick) {
+                        this.secondaryColor = pickedColor;
+                        this.secondaryColorEl.style.background = pickedColor;
+                    } else {
+                        this.primaryColor = pickedColor;
+                        this.primaryColorEl.style.background = pickedColor;
+                        if (this.sketchColorPicker) this.sketchColorPicker.value = pickedColor;
                     }
-                    break;
+                }
+                break;
             }
+    
+            case 'fill':
+                this.floodFill(pos.x, pos.y, color);
+                break;
+    
+            case 'symmetricFill':
+                this.floodFill(pos.x, pos.y, color);
+                const symFillPositions = this.getSymmetryPositions(pos.x, pos.y);
+                symFillPositions.forEach(sPos => this.floodFill(sPos.x, sPos.y, color));
+                break;
         }
     
+        // Update canvas and last position for continuous drawing
         this.updatePixelCanvas();
         this.lastPos = pos;
     }
 
-    
     // Add this new method for pixel line drawing
     drawPixelLine(x0, y0, x1, y1, color) {
         let dx = Math.abs(x1 - x0);
