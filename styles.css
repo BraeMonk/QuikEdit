@@ -347,11 +347,30 @@ body {
 /* ============================= */
 /* Color Palette                 */
 /* ============================= */
+#paletteSelector {
+    width: 100%;
+    padding: 4px;
+    background: white;
+    border: 1px solid #ccc;
+    /* Make sure it's visible */
+    display: block;
+    opacity: 1;
+    visibility: visible;
+}
+
 .palette-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(24px, 1fr));
-  gap: 4px;
-  margin-bottom: 12px;
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 4px;
+    margin-top: 8px;
+}
+
+.color-swatch {
+    width: 24px;
+    height: 24px;
+    border: 1px solid #ccc;
+    cursor: pointer;
+    border-radius: 2px;
 }
 
 .swatch {
