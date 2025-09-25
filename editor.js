@@ -275,29 +275,27 @@ class JerryEditor {
         canvasWrapper.addEventListener('touchstart', (e) => {
             e.preventDefault();
             e.stopPropagation();
-            
+        
             const touch = e.touches[0];
-            const rect = canvasWrapper.getBoundingClientRect();
-            
-            // Create a proper mouse event with correct coordinates
-            const mouseEvent = {
+            const pos = this.getPixelPos(touch); // get grid coordinates
+            this.lastPos = pos; // <-- important for continuous drawing
+            this.startDrawing({
                 clientX: touch.clientX,
                 clientY: touch.clientY,
                 button: 0,
                 preventDefault: () => {},
                 stopPropagation: () => {}
-            };
-            
-            this.startDrawing(mouseEvent);
+            });
         }, { passive: false });
         
         canvasWrapper.addEventListener('touchmove', (e) => {
             e.preventDefault();
             e.stopPropagation();
-            
+        
             if (!this.isDrawing) return;
-            
+        
             const touch = e.touches[0];
+            const pos = this.getPixelPos(touch);
             const mouseEvent = {
                 clientX: touch.clientX,
                 clientY: touch.clientY,
@@ -305,8 +303,9 @@ class JerryEditor {
                 preventDefault: () => {},
                 stopPropagation: () => {}
             };
-            
+        
             this.draw(mouseEvent);
+            this.lastPos = pos; // <-- update lastPos each move
         }, { passive: false });
         
         canvasWrapper.addEventListener('touchend', (e) => {
@@ -319,6 +318,7 @@ class JerryEditor {
             e.preventDefault();
             this.stopDrawing();
         });
+
         
         // Zoom with mouse wheel
         canvasWrapper.addEventListener('wheel', (e) => {
