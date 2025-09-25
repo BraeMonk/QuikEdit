@@ -352,7 +352,14 @@ class JerryEditor {
         this.saveState();
         
         if (this.mode === 'pixel') {
-            this.handlePixelTool(pos, e.button === 2);
+            // If starting a pixel shape, mark it
+            if (['line', 'rect', 'circle'].includes(this.currentTool)) {
+                this.isDrawingShape = true;
+                this.shapeStartPos = pos;
+            }
+            const rightClick = e.buttons === 2;
+            const isDragEnd = !this.isDrawing; // pointerup handled separately, optional
+            this.handlePixelTool(pos, rightClick, false, false); // keep false during move
         } else {
             this.handleSketchTool(pos, e);
         }
@@ -394,15 +401,12 @@ class JerryEditor {
         }
         
         if (this.mode === 'pixel') {
-            if (this.lastPos) {
-                const color = this.currentColor || '#000'; // or however you track brush color
-                this.drawPixelLine(this.lastPos.x, this.lastPos.y, pos.x, pos.y, color);
-            } else {
+            const rightClick = e.buttons === 2;
+            const isDragEnd = !this.isDrawing; // pointerup handled separately, optional
+            this.handlePixelTool(pos, rightClick, false, false); // keep false during move
+        } else {
                 this.handlePixelTool(pos, e.button === 2);
             }
-        } else {
-            this.handleSketchTool(pos, e);
-        }
         
         this.lastPos = pos;
     }
@@ -596,6 +600,13 @@ class JerryEditor {
             this.finalizeShape();
             this.shapeStartPos = null;
             this.clearShapePreview();
+        }
+
+        // ----- Finalize pixel shapes -----
+        if (this.mode === 'pixel' && ['line', 'rect', 'circle'].includes(this.currentTool) && this.isDrawingShape) {
+            this.handlePixelTool(this.lastPos, false, false, true); // commit shape
+            this.isDrawingShape = false;
+            this.shapeStartPos = null;
         }
         
         this.isDrawing = false;
