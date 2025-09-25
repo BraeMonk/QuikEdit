@@ -2134,6 +2134,14 @@ class JerryEditor {
         this.updatePixelCanvas();
         this.updateGrid();
         this.updateCanvasInfo();
+
+        // After calculating pixelSize, canvasWidth, canvasHeight
+        const wrapper = this.canvasWrapper;
+        wrapper.style.setProperty('--cellSize', `${this.pixelSize}px`);
+        wrapper.style.setProperty('--halfCell', `${this.pixelSize / 2}px`);
+        wrapper.style.setProperty('--cols', this.canvasWidth);
+        wrapper.style.setProperty('--rows', this.canvasHeight);
+
     }
 
     
