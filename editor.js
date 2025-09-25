@@ -263,77 +263,61 @@ class JerryEditor {
 
     setupCanvasEvents() {
         const canvasWrapper = document.querySelector('.canvas-wrapper');
-        
-        // Mouse events
-        canvasWrapper.addEventListener('mousedown', (e) => this.startDrawing(e));
-        canvasWrapper.addEventListener('mousemove', (e) => this.draw(e));
-        canvasWrapper.addEventListener('mouseup', () => this.stopDrawing());
-        canvasWrapper.addEventListener('mouseout', () => this.stopDrawing());
-        canvasWrapper.addEventListener('contextmenu', (e) => e.preventDefault());
-        
-        // Improved touch events with better handling
-        canvasWrapper.addEventListener('touchstart', (e) => {
+    
+        // pointerdown - works for mouse, touch, pen
+        canvasWrapper.addEventListener('pointerdown', (e) => {
+            // only left mouse, or any touch/pen
+            if (e.pointerType === 'mouse' && e.button !== 0) return;
+    
             e.preventDefault();
-            e.stopPropagation();
-        
-            const touch = e.touches[0];
-            const pos = this.getPixelPos(touch); // get grid coordinates
-            this.lastPos = pos; // <-- important for continuous drawing
-            this.startDrawing({
-                clientX: touch.clientX,
-                clientY: touch.clientY,
-                button: 0,
-                preventDefault: () => {},
-                stopPropagation: () => {}
-            });
-        }, { passive: false });
-        
-        canvasWrapper.addEventListener('touchmove', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-        
-            if (!this.isDrawing) return;
-        
-            const touch = e.touches[0];
-            const pos = this.getPixelPos(touch);
-            const mouseEvent = {
-                clientX: touch.clientX,
-                clientY: touch.clientY,
-                button: 0,
-                preventDefault: () => {},
-                stopPropagation: () => {}
-            };
-        
-            this.draw(mouseEvent);
-            this.lastPos = pos; // <-- update lastPos each move
-        }, { passive: false });
-        
-        canvasWrapper.addEventListener('touchend', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            this.stopDrawing();
-        }, { passive: false });
-        
-        canvasWrapper.addEventListener('touchcancel', (e) => {
-            e.preventDefault();
-            this.stopDrawing();
+            canvasWrapper.setPointerCapture(e.pointerId);
+            this._activePointerId = e.pointerId;
+            this.startDrawing(e);
         });
-
-        
-        // Zoom with mouse wheel
+    
+        // pointermove
+        canvasWrapper.addEventListener('pointermove', (e) => {
+            if (this._activePointerId !== e.pointerId) return;
+    
+            // skip hover when no mouse button pressed
+            if (e.pointerType === 'mouse' && e.buttons === 0) return;
+    
+            this.draw(e);
+        });
+    
+        // pointerup
+        canvasWrapper.addEventListener('pointerup', (e) => {
+            if (this._activePointerId === e.pointerId) {
+                try { canvasWrapper.releasePointerCapture(e.pointerId); } catch {}
+                this._activePointerId = null;
+            }
+            this.stopDrawing(e);
+        });
+    
+        // pointercancel (touch interruptions)
+        canvasWrapper.addEventListener('pointercancel', (e) => {
+            if (this._activePointerId === e.pointerId) {
+                try { canvasWrapper.releasePointerCapture(e.pointerId); } catch {}
+                this._activePointerId = null;
+            }
+            this.stopDrawing(e);
+        });
+    
+        // zoom with wheel
         canvasWrapper.addEventListener('wheel', (e) => {
             e.preventDefault();
             const zoomFactor = e.deltaY > 0 ? 0.9 : 1.1;
             this.adjustZoom(zoomFactor);
-        });
-        
-        // Prevent scrolling and zooming on mobile
+        }, { passive: false });
+    
+        // block touch scrolling inside canvas
         document.addEventListener('touchmove', (e) => {
             if (e.target.closest('.canvas-wrapper')) {
                 e.preventDefault();
             }
         }, { passive: false });
     }
+
     
     // Also add this improved startDrawing method
     startDrawing(e) {
@@ -409,13 +393,19 @@ class JerryEditor {
         }
         
         if (this.mode === 'pixel') {
-            this.handlePixelTool(pos, e.button === 2);
+            if (this.lastPos) {
+                const color = this.currentColor || '#000'; // or however you track brush color
+                this.drawPixelLine(this.lastPos.x, this.lastPos.y, pos.x, pos.y, color);
+            } else {
+                this.handlePixelTool(pos, e.button === 2);
+            }
         } else {
             this.handleSketchTool(pos, e);
         }
         
         this.lastPos = pos;
     }
+
     
     // Add this method to improve getCanvasPos for better coordinate calculation
     getCanvasPos(e) {
@@ -437,37 +427,47 @@ class JerryEditor {
     
     switchMode(mode) {
         this.mode = mode;
-        
-        // Show/hide pixel elements
+    
+        // ----- TOOLBARS -----
         const pixelElements = document.querySelectorAll('.pixel-tools, .pixel-controls');
         pixelElements.forEach(el => {
-            el.style.display = mode === 'pixel' ? 'block' : 'none';
+            el.style.display = mode === 'pixel' ? 'flex' : 'none';
+            if (mode === 'pixel') el.style.flexDirection = 'row';
         });
-        
-        // Show/hide sketch elements
+    
         const sketchElements = document.querySelectorAll('.sketch-tools, .sketch-controls');
         sketchElements.forEach(el => {
-            el.style.display = mode === 'sketch' ? 'block' : 'none';
+            el.style.display = mode === 'sketch' ? 'flex' : 'none';
+            if (mode === 'sketch') el.style.flexDirection = 'row';
         });
-        
-        // Show/hide canvases
+    
+        // ----- CANVASES -----
         this.pixelCanvas.style.display = mode === 'pixel' ? 'grid' : 'none';
         this.sketchCanvas.style.display = mode === 'sketch' ? 'block' : 'none';
         this.canvasGrid.style.display = (mode === 'pixel' && this.showGrid) ? 'grid' : 'none';
         this.selectionOverlay.style.display = mode === 'sketch' ? 'block' : 'none';
-        
-        // Initialize mode
-        if (mode === 'sketch') {
-            this.initializeSketchMode();
-            this.currentTool = 'brush';
-        } else {
+    
+        // ----- INITIALIZE MODE -----
+        if (mode === 'pixel') {
             this.currentTool = 'pencil';
+            // Ensure grid layout matches pixel size
+            this.pixelCanvas.style.gridTemplateColumns = `repeat(${this.canvasWidth}, ${this.pixelSize}px)`;
+            this.pixelCanvas.style.gridTemplateRows = `repeat(${this.canvasHeight}, ${this.pixelSize}px)`;
             this.updatePixelCanvas();
             this.updateGrid();
+            this.lastPos = null;
+            this.strokePath = [];
+        } else {
+            this.currentTool = 'brush';
+            this.initializeSketchMode();
+            this.lastPos = null;
+            this.strokePath = [];
         }
-        
+    
+        // ----- UPDATE UI -----
         this.updateUI();
     }
+
     
     initializeCanvas() {
         if (this.mode === 'pixel') {
@@ -568,10 +568,16 @@ class JerryEditor {
     
     getPixelPos(e) {
         const rect = this.pixelCanvas.getBoundingClientRect();
-        const x = Math.floor((e.clientX - rect.left) / (this.pixelSize * this.zoom));
-        const y = Math.floor((e.clientY - rect.top) / (this.pixelSize * this.zoom));
+    
+        const scaleX = rect.width / (this.canvasWidth * this.pixelSize);
+        const scaleY = rect.height / (this.canvasHeight * this.pixelSize);
+    
+        const x = Math.floor((e.clientX - rect.left) / (this.pixelSize * scaleX));
+        const y = Math.floor((e.clientY - rect.top) / (this.pixelSize * scaleY));
+    
         return { x, y };
     }
+
     
     stopDrawing() {
         if (!this.isDrawing) return;
@@ -942,9 +948,18 @@ class JerryEditor {
     }
     
     drawPixel(x, y, color) {
-        if (x < 0 || x >= this.canvasWidth || y < 0 || y >= this.canvasHeight) return;
+        if (x < 0 || y < 0 || x >= this.canvasWidth || y >= this.canvasHeight) return;
         this.grid[y][x] = color;
+    
+        // Update the DOM pixel element for immediate feedback
+        const selector = `.pixel[data-x="${x}"][data-y="${y}"]`;
+        const el = this.pixelCanvas.querySelector(selector);
+        if (el) {
+            // Allow 'transparent' to be shown as empty
+            el.style.backgroundColor = (color === 'transparent') ? 'transparent' : color;
+        }
     }
+
     
     applySymmetry(x, y, color) {
         const positions = this.getSymmetryPositions(x, y);
