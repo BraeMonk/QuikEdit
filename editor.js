@@ -432,20 +432,25 @@ class JerryEditor {
     
     switchMode(mode) {
         this.mode = mode;
-    
-        // ----- TOOLBARS -----
+
         const pixelTools = document.querySelector('.pixel-tools');
         const sketchTools = document.querySelector('.sketch-tools');
-    
-        if (pixelTools) pixelTools.classList.toggle('active', mode === 'pixel');
-        if (sketchTools) sketchTools.classList.toggle('active', mode === 'sketch');
-    
+
+        if (pixelTools) {
+            pixelTools.classList.toggle('active', mode === 'pixel');
+            pixelTools.style.display = mode === 'pixel' ? 'flex' : 'none';
+        }
+        if (sketchTools) {
+            sketchTools.classList.toggle('active', mode === 'sketch');
+            sketchTools.style.display = mode === 'sketch' ? 'flex' : 'none';
+        }
+
         // ----- CANVASES -----
         this.pixelCanvas.style.display = mode === 'pixel' ? 'grid' : 'none';
         this.sketchCanvas.style.display = mode === 'sketch' ? 'block' : 'none';
         this.canvasGrid.style.display = (mode === 'pixel' && this.showGrid) ? 'grid' : 'none';
         this.selectionOverlay.style.display = mode === 'sketch' ? 'block' : 'none';
-    
+
         // ----- INITIALIZE MODE -----
         if (mode === 'pixel') {
             this.currentTool = 'pencil';
@@ -461,7 +466,7 @@ class JerryEditor {
             this.lastPos = null;
             this.strokePath = [];
         }
-    
+
         // ----- UPDATE UI -----
         this.updateUI();
     }
