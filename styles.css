@@ -1035,12 +1035,19 @@ input:focus {
 }
 
 /* Desktop – vertical */
-@media (min-width: 769px) {
-  .tool-group {
-    flex-direction: column;
-    overflow-x: visible;
-    overflow-y: auto;
-  }
+@media (max-width: 768px) {
+    .tool-group {
+        display: flex !important;
+        flex-direction: row !important;
+        flex-wrap: wrap !important;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+    
+    .tool-btn {
+        flex-shrink: 0;
+        min-width: 44px; /* Touch-friendly minimum */
+    }
 }
 
 @media (max-width: 768px) and (orientation: portrait) {
