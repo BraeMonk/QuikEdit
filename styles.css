@@ -811,6 +811,29 @@ input[type="checkbox"] {
     padding: 4px 8px;
     font-size: 11px;
   }
+
+  .pixel-tools,
+  .sketch-tools {
+    flex-direction: row;        /* horizontal layout */
+    flex-wrap: nowrap;
+    overflow-x: auto;           /* horizontal scroll */
+    overflow-y: hidden;         /* no vertical scroll */
+    width: 100%;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 0;
+  }
+
+  .pixel-tools > *,
+  .sketch-tools > * {
+    flex: 0 0 auto;             /* don't shrink buttons */
+  }
+
+  .tool-separator {
+    width: 1px;
+    height: 80%;
+    margin: 0 4px;
+  }
 }
 
 /* Mobile Landscape - Keep desktop-like layout but smaller */
@@ -1071,41 +1094,4 @@ input:focus {
         min-width: 44px; /* Touch-friendly minimum */
     }
 }
-
-@media (max-width: 768px) and (orientation: portrait) {
-  .pixel-tools {
-    display: flex;
-    flex-direction: row;
-    flex-wrap: nowrap;           /* prevent stacking */
-    overflow-x: auto;            /* enable horizontal scroll */
-    -webkit-overflow-scrolling: touch; /* smooth scrolling on iOS */
-    width: 100%;
-    align-items: center;
-    gap: 8px; /* optional spacing between buttons */
-  }
-
-  .pixel-tools > * {
-    flex: 0 0 auto; /* prevent flex items from shrinking */
-  }
-
-.sketch-tools {
-    flex-direction: row;
-    flex-wrap: nowrap;               /* keep buttons in one line */
-    overflow-x: auto;                /* allow horizontal scrolling */
-    overflow-y: visible;             /* disable vertical scroll */
-    width: 100%;
-    align-items: center;
-    gap: 6px;                        /* spacing between buttons */
-    padding: 4px 0;
-  }
-
-.sketch-tools > * {
-    flex: 0 0 auto;                  /* prevent buttons from shrinking */
-  }
-
-  .tool-separator {
-    width: 1px;
-    height: 80%;
-    margin: 0 4px;
-  }
-}
+  
