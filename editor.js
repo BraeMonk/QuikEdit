@@ -2899,7 +2899,6 @@ class JerryEditor {
     }
 }
 
-// Initialize the editor when the page loads
 document.addEventListener('DOMContentLoaded', () => {
     window.jerryEditor = new JerryEditor();
 });
