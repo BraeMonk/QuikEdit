@@ -438,43 +438,35 @@ class JerryEditor {
     
     switchMode(mode) {
         this.mode = mode;
-    
-        // Elements
+        
+        // Show/hide pixel elements
         const pixelElements = document.querySelectorAll('.pixel-tools, .pixel-controls');
+        pixelElements.forEach(el => {
+            el.style.display = mode === 'pixel' ? 'block' : 'none';
+        });
+        
+        // Show/hide sketch elements
         const sketchElements = document.querySelectorAll('.sketch-tools, .sketch-controls');
-    
-        // Remove active-mode from all elements first
-        pixelElements.forEach(el => el.classList.remove('active-mode'));
-        sketchElements.forEach(el => el.classList.remove('active-mode'));
-        this.pixelCanvas.classList.remove('active-mode');
-        this.sketchCanvas.classList.remove('active-mode');
-        this.canvasGrid.classList.remove('active-mode');
-        this.selectionOverlay.classList.remove('active-mode');
-    
-        // Add active-mode to correct elements
-        if (mode === 'pixel') {
-            pixelElements.forEach(el => el.classList.add('active-mode'));
-            this.pixelCanvas.classList.add('active-mode');
-            if (this.showGrid) this.canvasGrid.classList.add('active-mode');
+        sketchElements.forEach(el => {
+            el.style.display = mode === 'sketch' ? 'block' : 'none';
+        });
+        
+        // Show/hide canvases
+        this.pixelCanvas.style.display = mode === 'pixel' ? 'grid' : 'none';
+        this.sketchCanvas.style.display = mode === 'sketch' ? 'block' : 'none';
+        this.canvasGrid.style.display = (mode === 'pixel' && this.showGrid) ? 'grid' : 'none';
+        this.selectionOverlay.style.display = mode === 'sketch' ? 'block' : 'none';
+        
+        // Initialize mode
+        if (mode === 'sketch') {
+            this.initializeSketchMode();
+            this.currentTool = 'brush';
+        } else {
             this.currentTool = 'pencil';
             this.updatePixelCanvas();
             this.updateGrid();
-        } else {
-            sketchElements.forEach(el => el.classList.add('active-mode'));
-            this.sketchCanvas.classList.add('active-mode');
-            this.selectionOverlay.classList.add('active-mode');
-            if (this.layers.length === 0) {
-                this.initializeSketchMode();
-            }
-            this.currentTool = 'brush';
         }
-    
-        // Update active tool button
-        document.querySelectorAll('.tool-btn').forEach(btn => btn.classList.remove('active'));
-        const activeToolGroup = mode === 'pixel' ? '.pixel-tools' : '.sketch-tools';
-        const activeToolBtn = document.querySelector(`${activeToolGroup} .tool-btn[data-tool="${this.currentTool}"]`);
-        if (activeToolBtn) activeToolBtn.classList.add('active');
-    
+        
         this.updateUI();
     }
 
