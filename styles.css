@@ -824,11 +824,14 @@ input[type="checkbox"] {
 
   .pixel-tools > *,
   .sketch-tools > * {
-    flex: 0 0 auto;             /* don't shrink buttons */
+    flex: 0 0 auto;  
+    text-align: center;
+    min-width: 40px;
   }
 
-  .pixel-tools.active-mode,
-  .sketch-tools.active-mode {
+  .pixel-tools.active,
+  .sketch-tools.active {
+    display: flex;
     flex-direction: row;  /* force horizontal layout */
     flex-wrap: nowrap;
     overflow-x: auto;
