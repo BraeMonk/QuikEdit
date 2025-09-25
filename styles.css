@@ -1056,10 +1056,13 @@ input:focus {
 /* Desktop – vertical */
 @media (max-width: 768px) {
     .tool-group {
-        display: flex !important;
-        flex-direction: row !important;
-        flex-wrap: wrap !important;
+        display: flex;
+        flex-direction: row;
         overflow-x: auto;
+        overflow-y: hidden;
+        gap: 4px;
+        padding: 4px;
+        white-space: nowrap;
         -webkit-overflow-scrolling: touch;
     }
     
