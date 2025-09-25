@@ -783,36 +783,35 @@ class JerryEditor {
         }
     
         this.updatePixelCanvas();
+        this.lastPos = pos;
+
     }
 
     
     // Add this new method for pixel line drawing
     drawPixelLine(x0, y0, x1, y1, color) {
-        const dx = Math.abs(x1 - x0);
-        const dy = Math.abs(y1 - y0);
-        const sx = x0 < x1 ? 1 : -1;
-        const sy = y0 < y1 ? 1 : -1;
+        let dx = Math.abs(x1 - x0);
+        let dy = Math.abs(y1 - y0);
+        let sx = (x0 < x1) ? 1 : -1;
+        let sy = (y0 < y1) ? 1 : -1;
         let err = dx - dy;
-        
-        let currentX = x0;
-        let currentY = y0;
-        
+    
         while (true) {
-            this.drawPixel(currentX, currentY, color);
-            
-            if (currentX === x1 && currentY === y1) break;
-            
-            const e2 = 2 * err;
+            this.drawPixel(x0, y0, color);
+    
+            if (x0 === x1 && y0 === y1) break;
+            let e2 = 2 * err;
             if (e2 > -dy) {
                 err -= dy;
-                currentX += sx;
+                x0 += sx;
             }
             if (e2 < dx) {
                 err += dx;
-                currentY += sy;
+                y0 += sy;
             }
         }
     }
+
     
     handleSketchTool(pos, e) {
         if (!this.layers[this.currentLayer]) return;
