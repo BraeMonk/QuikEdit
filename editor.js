@@ -830,21 +830,22 @@ class JerryEditor {
     
     getSymmetryPositions(x, y) {
         const positions = [];
-        const centerX = Math.floor(this.canvasWidth / 2);
-        const centerY = Math.floor(this.canvasHeight / 2);
         
         switch (this.symmetryMode) {
             case 'horizontal':
+                // Mirror across vertical center line
                 positions.push({ x: this.canvasWidth - 1 - x, y });
                 break;
             case 'vertical':
+                // Mirror across horizontal center line  
                 positions.push({ x, y: this.canvasHeight - 1 - y });
                 break;
             case 'both':
+                // Mirror across both axes
                 positions.push(
-                    { x: this.canvasWidth - 1 - x, y },
-                    { x, y: this.canvasHeight - 1 - y },
-                    { x: this.canvasWidth - 1 - x, y: this.canvasHeight - 1 - y }
+                    { x: this.canvasWidth - 1 - x, y }, // horizontal mirror
+                    { x, y: this.canvasHeight - 1 - y }, // vertical mirror
+                    { x: this.canvasWidth - 1 - x, y: this.canvasHeight - 1 - y } // diagonal mirror
                 );
                 break;
         }
