@@ -2096,36 +2096,42 @@ class JerryEditor {
         this.redrawLayers();
     }
     
+    // ----------------------
     // Canvas operations
+    // ----------------------
     resizeCanvas() {
         const newWidth = parseInt(this.canvasWidthInput.value);
         const newHeight = parseInt(this.canvasHeightInput.value);
-        
+
         if (this.mode === 'pixel') {
             this.resizePixelCanvas(newWidth, newHeight);
         }
     }
-    
+
     resizePixelCanvas(newWidth, newHeight) {
+        // --- 1. Create new grid while preserving existing pixels ---
         const newGrid = [];
         for (let y = 0; y < newHeight; y++) {
             newGrid[y] = [];
             for (let x = 0; x < newWidth; x++) {
-                if (y < this.canvasHeight && x < this.canvasWidth) {
-                    newGrid[y][x] = this.grid[y][x];
-                } else {
-                    newGrid[y][x] = 'transparent';
-                }
+            newGrid[y][x] = (y < this.canvasHeight && x < this.canvasWidth) 
+                ? this.grid[y][x] 
+                : 'transparent';
             }
         }
-        
+        this.grid = newGrid;
         this.canvasWidth = newWidth;
         this.canvasHeight = newHeight;
-        this.grid = newGrid;
+
+        // --- 2. Calculate pixel size to keep canvas square and fit max display size ---
+        const maxDisplaySize = 512; // maximum canvas display size in px
+        const scale = Math.floor(maxDisplaySize / Math.max(newWidth, newHeight));
+        this.pixelSize = scale;
 
         this.pixelCanvas.width = newWidth * this.pixelSize;
         this.pixelCanvas.height = newHeight * this.pixelSize;
-        
+
+        // --- 3. Update canvas and grid overlay ---
         this.updatePixelCanvas();
         this.updateGrid();
         this.updateCanvasInfo();
