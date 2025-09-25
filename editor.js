@@ -329,47 +329,53 @@ class JerryEditor {
     // Also add this improved startDrawing method
     startDrawing(e) {
         this.isDrawing = true;
+    
+        // Get position based on current mode
         const pos = this.mode === 'pixel' ? this.getPixelPos(e) : this.getCanvasPos(e);
         this.lastPos = pos;
-        
-        // Initialize stroke path for smooth drawing  
+    
+        // Initialize stroke path
         this.strokePath = [pos];
         this.strokeStartTime = Date.now();
-        
-        // Handle selection tool
+    
+        // ----- SELECTION TOOL -----
         if (this.currentTool === 'select') {
             this.startSelection(pos);
             return;
         }
-        
-        // Handle move tool
+    
+        // ----- MOVE TOOL -----
         if (this.currentTool === 'move') {
             this.startMoving(pos);
             return;
         }
-        
-        // For shape tools in sketch mode, store the starting position
+    
+        // ----- SKETCH SHAPES -----
         if (this.mode === 'sketch' && ['lineSketch', 'rectSketch', 'circleSketch'].includes(this.currentTool)) {
             this.shapeStartPos = pos;
-            this.saveShapeState();
+            this.saveShapeState(); // optional: store canvas state for preview
             return;
         }
-        
-        this.saveState();
-        
+    
+        // ----- PIXEL SHAPES -----
+        if (this.mode === 'pixel' && ['line', 'rect', 'circle'].includes(this.currentTool)) {
+            this.isDrawingShape = true;
+            this.shapeStartPos = pos;
+            this.originalGrid = this.cloneGrid(this.grid); // store grid for live preview
+            return;
+        }
+    
+        // ----- REGULAR TOOLS -----
+        this.saveState(); // save current state for undo
+    
         if (this.mode === 'pixel') {
-            // If starting a pixel shape, mark it
-            if (['line', 'rect', 'circle'].includes(this.currentTool)) {
-                this.isDrawingShape = true;
-                this.shapeStartPos = pos;
-            }
             const rightClick = e.buttons === 2;
-            const isDragEnd = !this.isDrawing; // pointerup handled separately, optional
-            this.handlePixelTool(pos, rightClick, false, false); // keep false during move
+            this.handlePixelTool(pos, rightClick, false, false);
         } else {
             this.handleSketchTool(pos, e);
         }
     }
+
     
     draw(e) {
         const pos = this.mode === 'pixel' ? this.getPixelPos(e) : this.getCanvasPos(e);
