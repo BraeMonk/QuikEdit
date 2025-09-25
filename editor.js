@@ -967,28 +967,31 @@ class JerryEditor {
     
     getSymmetryPositions(x, y) {
         const positions = [];
-        
+    
         switch (this.symmetryMode) {
             case 'horizontal':
-                // Mirror across vertical center line
-                positions.push({ x: this.canvasWidth - 1 - x, y });
-                break;
-            case 'vertical':
-                // Mirror across horizontal center line  
+                // Mirror across the horizontal center line (flip Y)
                 positions.push({ x, y: this.canvasHeight - 1 - y });
                 break;
+    
+            case 'vertical':
+                // Mirror across the vertical center line (flip X)
+                positions.push({ x: this.canvasWidth - 1 - x, y });
+                break;
+    
             case 'both':
                 // Mirror across both axes
                 positions.push(
-                    { x: this.canvasWidth - 1 - x, y }, // horizontal mirror
-                    { x, y: this.canvasHeight - 1 - y }, // vertical mirror
+                    { x, y: this.canvasHeight - 1 - y },                 // horizontal mirror
+                    { x: this.canvasWidth - 1 - x, y },                  // vertical mirror
                     { x: this.canvasWidth - 1 - x, y: this.canvasHeight - 1 - y } // diagonal mirror
                 );
                 break;
         }
-        
+    
         return positions;
     }
+
     
     floodFill(startX, startY, fillColor) {
         const targetColor = this.grid[startY][startX];
