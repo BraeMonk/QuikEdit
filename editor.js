@@ -439,33 +439,41 @@ class JerryEditor {
     switchMode(mode) {
         this.mode = mode;
         
-        // Show/hide pixel elements
-        const pixelElements = document.querySelectorAll('.pixel-tools, .pixel-controls');
-        pixelElements.forEach(el => {
-            el.style.display = mode === 'pixel' ? 'block' : 'none';
-        });
+        // Remove all active-mode classes first
+        const allElements = document.querySelectorAll('.pixel-tools, .pixel-controls, .sketch-tools, .sketch-controls');
+        allElements.forEach(el => el.classList.remove('active-mode'));
         
-        // Show/hide sketch elements
-        const sketchElements = document.querySelectorAll('.sketch-tools, .sketch-controls');
-        sketchElements.forEach(el => {
-            el.style.display = mode === 'sketch' ? 'block' : 'none';
-        });
-        
-        // Show/hide canvases
-        this.pixelCanvas.style.display = mode === 'pixel' ? 'grid' : 'none';
-        this.sketchCanvas.style.display = mode === 'sketch' ? 'block' : 'none';
-        this.canvasGrid.style.display = (mode === 'pixel' && this.showGrid) ? 'grid' : 'none';
-        this.selectionOverlay.style.display = mode === 'sketch' ? 'block' : 'none';
-        
-        // Initialize mode
-        if (mode === 'sketch') {
-            this.initializeSketchMode();
-            this.currentTool = 'brush';
-        } else {
+        // Add active-mode to correct elements
+        if (mode === 'pixel') {
+            document.querySelectorAll('.pixel-tools, .pixel-controls').forEach(el => {
+                el.classList.add('active-mode');
+            });
+            this.pixelCanvas.classList.add('active-mode');
+            this.sketchCanvas.classList.remove('active-mode');
+            this.selectionOverlay.classList.remove('active-mode');
+            if (this.showGrid) this.canvasGrid.classList.add('active-mode');
             this.currentTool = 'pencil';
             this.updatePixelCanvas();
             this.updateGrid();
+        } else {
+            document.querySelectorAll('.sketch-tools, .sketch-controls').forEach(el => {
+                el.classList.add('active-mode');
+            });
+            this.sketchCanvas.classList.add('active-mode');
+            this.pixelCanvas.classList.remove('active-mode');
+            this.selectionOverlay.classList.add('active-mode');
+            this.canvasGrid.classList.remove('active-mode');
+            if (this.layers.length === 0) {
+                this.initializeSketchMode();
+            }
+            this.currentTool = 'brush';
         }
+        
+        // Update active tool button
+        document.querySelectorAll('.tool-btn').forEach(btn => btn.classList.remove('active'));
+        const activeToolGroup = mode === 'pixel' ? '.pixel-tools' : '.sketch-tools';
+        const activeToolBtn = document.querySelector(`${activeToolGroup} .tool-btn[data-tool="${this.currentTool}"]`);
+        if (activeToolBtn) activeToolBtn.classList.add('active');
         
         this.updateUI();
     }
@@ -716,46 +724,42 @@ class JerryEditor {
         
         const color = rightClick ? this.secondaryColor : this.primaryColor;
         
-        // For continuous drawing tools, interpolate between last position and current
-        if (
-            this.lastPos && this.isDrawing &&
-            ['pencil', 'symmetricPencil', 'eraser', 'symmetricEraser'].includes(this.currentTool)
-        ) {
-            this.drawPixelLine(this.lastPos.x, this.lastPos.y, pos.x, pos.y, color);
-    
+        // For all drawing tools, draw immediately and interpolate if needed
+        if (['pencil', 'symmetricPencil', 'eraser', 'symmetricEraser'].includes(this.currentTool)) {
+            // Draw at current position immediately
+            const drawColor = ['eraser', 'symmetricEraser'].includes(this.currentTool) ? 'transparent' : color;
+            this.drawPixel(pos.x, pos.y, drawColor);
+            
             if (this.currentTool.includes('symmetric')) {
-                const symmetryPositions = this.getSymmetryPositions(pos.x, pos.y);
-                const lastSymmetryPositions = this.getSymmetryPositions(this.lastPos.x, this.lastPos.y);
-    
-                symmetryPositions.forEach((sPos, index) => {
-                    if (lastSymmetryPositions[index]) {
-                        this.drawPixelLine(
-                            lastSymmetryPositions[index].x, lastSymmetryPositions[index].y,
-                            sPos.x, sPos.y,
-                            color
-                        );
-                    }
-                });
+                this.applySymmetry(pos.x, pos.y, drawColor);
             }
+            
+            // Interpolate between last position and current for smooth lines
+            if (this.lastPos && this.isDrawing) {
+                this.drawPixelLine(this.lastPos.x, this.lastPos.y, pos.x, pos.y, drawColor);
+                
+                if (this.currentTool.includes('symmetric')) {
+                    const symmetryPositions = this.getSymmetryPositions(pos.x, pos.y);
+                    const lastSymmetryPositions = this.getSymmetryPositions(this.lastPos.x, this.lastPos.y);
+                    
+                    symmetryPositions.forEach((sPos, index) => {
+                        if (lastSymmetryPositions[index]) {
+                            this.drawPixelLine(
+                                lastSymmetryPositions[index].x, lastSymmetryPositions[index].y,
+                                sPos.x, sPos.y,
+                                drawColor
+                            );
+                        }
+                    });
+                }
+            }
+            
+            // Update canvas immediately
+            this.updatePixelCanvas();
+            
         } else {
-            // Handle other tools
+            // Handle other tools (eyedropper, fill, etc.)
             switch (this.currentTool) {
-                case 'pencil':
-                case 'symmetricPencil':
-                    this.drawPixel(pos.x, pos.y, color);
-                    if (this.currentTool === 'symmetricPencil') {
-                        this.applySymmetry(pos.x, pos.y, color);
-                    }
-                    break;
-    
-                case 'eraser':
-                case 'symmetricEraser':
-                    this.drawPixel(pos.x, pos.y, 'transparent');
-                    if (this.currentTool === 'symmetricEraser') {
-                        this.applySymmetry(pos.x, pos.y, 'transparent');
-                    }
-                    break;
-    
                 case 'eyedropper': {
                     const pickedColor = this.grid[pos.y][pos.x];
                     if (pickedColor !== 'transparent') {
@@ -770,7 +774,7 @@ class JerryEditor {
                     }
                     break;
                 }
-    
+                
                 case 'fill':
                 case 'symmetricFill':
                     this.floodFill(pos.x, pos.y, color);
@@ -780,11 +784,11 @@ class JerryEditor {
                             this.floodFill(sPos.x, sPos.y, color);
                         });
                     }
+                    this.updatePixelCanvas();
                     break;
             }
         }
-    
-        this.updatePixelCanvas();
+        
         this.lastPos = pos;
     }
 
