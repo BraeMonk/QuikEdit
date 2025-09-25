@@ -711,10 +711,10 @@ input[type="checkbox"] {
   overflow-y: auto;
   width: 100%;
 }
+
 .sketch-tools > * {
   flex-shrink: 0; /* prevents buttons from shrinking */
 }
-
 
 .pixel-tools {
   display: flex;
@@ -816,15 +816,7 @@ input[type="checkbox"] {
   /* Tools inherit sidebar layout */
   .pixel-tools,
   .sketch-tools {
-    display: flex;             /* visible when active-mode applied */
-    flex-direction: inherit;    /* follow sidebar direction */
-    flex-wrap: nowrap;
-    overflow-x: auto;
-    overflow-y: hidden;
-    width: 100%;
-    align-items: center;
-    gap: 6px;
-    padding: 4px 0;
+    display: none;
   }
 
   .pixel-tools > *,
@@ -832,16 +824,17 @@ input[type="checkbox"] {
     flex: 0 0 auto;             /* don't shrink buttons */
   }
 
-  /* Active mode just toggles visibility */
-  .pixel-tools,
-  .sketch-tools {
-    display: none;
-  }
-
   .pixel-tools.active-mode,
   .sketch-tools.active-mode {
-    display: flex;
-  }
+    flex-direction: row;  /* force horizontal layout */
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    overflow-y: hidden;
+    width: 100%;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 0;
+
 }
 
 /* Mobile Landscape - Keep desktop-like layout but smaller */
