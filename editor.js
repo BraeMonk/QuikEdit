@@ -58,6 +58,12 @@ class JerryEditor {
         this.loadProject();
         this.updateUI();
         this.initializePanels();
+
+        // Force initial tool visibility update
+        document.querySelector('.pixel-tools').style.display = 'flex';
+        document.querySelector('.pixel-tools').classList.add('active');
+        document.querySelector('.sketch-tools').style.display = 'none';
+        document.querySelector('.sketch-tools').classList.remove('active');
     }
     
     setupElements() {
@@ -525,17 +531,22 @@ class JerryEditor {
     
     updatePixelCanvas() {
         this.pixelCanvas.innerHTML = '';
-        this.pixelCanvas.style.gridTemplateColumns = `repeat(${this.canvasWidth}, ${this.pixelSize}px)`;
-        this.pixelCanvas.style.gridTemplateRows = `repeat(${this.canvasHeight}, ${this.pixelSize}px)`;
-
+        
+        // Set canvas dimensions first
         this.pixelCanvas.style.width = `${this.canvasWidth * this.pixelSize}px`;
         this.pixelCanvas.style.height = `${this.canvasHeight * this.pixelSize}px`;
+        this.pixelCanvas.style.gridTemplateColumns = `repeat(${this.canvasWidth}, ${this.pixelSize}px)`;
+        this.pixelCanvas.style.gridTemplateRows = `repeat(${this.canvasHeight}, ${this.pixelSize}px)`;
+        this.pixelCanvas.style.backgroundColor = 'transparent';
         
         for (let y = 0; y < this.canvasHeight; y++) {
             for (let x = 0; x < this.canvasWidth; x++) {
                 const pixel = document.createElement('div');
                 pixel.className = 'pixel';
-                pixel.style.backgroundColor = this.grid[y][x];
+                pixel.style.width = `${this.pixelSize}px`;
+                pixel.style.height = `${this.pixelSize}px`;
+                const color = this.grid[y][x];
+                pixel.style.backgroundColor = color === 'transparent' ? 'transparent' : color;
                 pixel.dataset.x = x;
                 pixel.dataset.y = y;
                 this.pixelCanvas.appendChild(pixel);
@@ -547,40 +558,42 @@ class JerryEditor {
         if (this.mode !== 'pixel') return;
     
         const grid = this.canvasGrid;
-        const canvas = this.pixelCanvas;
-
-        // After calculating pixelSize, canvasWidth, canvasHeight
-        const wrapper = this.canvasWrapper;
+        
+        // Update CSS custom properties for checkerboard
+        const wrapper = document.querySelector('.canvas-wrapper');
         wrapper.style.setProperty('--cellSize', `${this.pixelSize}px`);
         wrapper.style.setProperty('--halfCell', `${this.pixelSize / 2}px`);
         wrapper.style.setProperty('--cols', this.canvasWidth);
         wrapper.style.setProperty('--rows', this.canvasHeight);
-
     
-        // Show or hide grid
-        grid.style.display = this.showGrid ? 'grid' : 'none';
-        grid.innerHTML = '';
-        if (!this.showGrid) return;
-    
-        // --- Use uniform pixel size for perfect square cells ---
-        const cellSize = this.pixelSize;
-    
-        grid.style.gridTemplateColumns = `repeat(${this.canvasWidth}, ${cellSize}px)`;
-        grid.style.gridTemplateRows = `repeat(${this.canvasHeight}, ${cellSize}px)`;
-        grid.style.width = `${canvas.width}px`;
-        grid.style.height = `${canvas.height}px`;
-    
-        // --- Build grid cells ---
-        const fragment = document.createDocumentFragment();
-        for (let i = 0; i < this.canvasWidth * this.canvasHeight; i++) {
-            const cell = document.createElement('div');
-            cell.className = 'grid-cell';
-            cell.style.width = `${cellSize}px`;
-            cell.style.height = `${cellSize}px`;
-            fragment.appendChild(cell);
+        if (!this.showGrid) {
+            grid.style.display = 'none';
+            return;
         }
     
-        grid.appendChild(fragment);
+        // Show and configure grid
+        grid.style.display = 'grid';
+        grid.style.position = 'absolute';
+        grid.style.top = '0';
+        grid.style.left = '0';
+        grid.style.width = `${this.canvasWidth * this.pixelSize}px`;
+        grid.style.height = `${this.canvasHeight * this.pixelSize}px`;
+        grid.style.gridTemplateColumns = `repeat(${this.canvasWidth}, ${this.pixelSize}px)`;
+        grid.style.gridTemplateRows = `repeat(${this.canvasHeight}, ${this.pixelSize}px)`;
+        grid.style.pointerEvents = 'none';
+        grid.style.zIndex = '10';
+        
+        // Clear and rebuild grid cells
+        grid.innerHTML = '';
+        const totalCells = this.canvasWidth * this.canvasHeight;
+        
+        for (let i = 0; i < totalCells; i++) {
+            const cell = document.createElement('div');
+            cell.className = 'grid-cell';
+            cell.style.border = '0.5px solid rgba(255, 255, 255, 0.2)';
+            cell.style.boxSizing = 'border-box';
+            grid.appendChild(cell);
+        }
     }
 
     
@@ -753,70 +766,59 @@ class JerryEditor {
     
         const color = rightClick ? this.secondaryColor : this.primaryColor;
     
-        // Helper to apply symmetry for any draw function
-        const drawWithSymmetry = (fn, x0, y0, x1, y1, c, filledFlag = false) => {
-            if (this.symmetryMode && this.symmetryMode !== 'none') {
-                const symPositions = this.getSymmetryPositions(x1, y1);
-                const lastSymPositions = (x0 !== null && y0 !== null) ? this.getSymmetryPositions(x0, y0) : [];
-                symPositions.forEach((sPos, i) => {
-                    const lastSPos = lastSymPositions[i] || { x: x0, y: y0 };
-                    fn(lastSPos.x, lastSPos.y, sPos.x, sPos.y, c, filledFlag);
-                });
-            }
-        };
-    
         const shapeTools = ['line', 'rect', 'circle'];
     
         if (shapeTools.includes(this.currentTool)) {
-            // ----- Shape tool handling -----
-            if (!this.isDrawingShape) {
+            // Store original grid state only once when starting
+            if (!this.shapeStartPos) {
                 this.shapeStartPos = { ...pos };
-                this.isDrawingShape = true;
+                this.originalGrid = this.grid.map(row => [...row]);
+                return;
             }
     
-            // Draw live preview on the grid
-            this.restorePixelGridFromTemp(); // restores last committed state to avoid stacking previews
-    
+            // Restore original grid and draw preview
+            this.grid = this.originalGrid.map(row => [...row]);
+            
             const start = this.shapeStartPos;
-    
+            
             switch (this.currentTool) {
                 case 'line':
                     this.drawLine(start.x, start.y, pos.x, pos.y, color);
-                    drawWithSymmetry(this.drawLine.bind(this), start.x, start.y, pos.x, pos.y, color);
                     break;
                 case 'rect':
                     this.drawRect(start.x, start.y, pos.x, pos.y, color, filled);
-                    drawWithSymmetry(this.drawRect.bind(this), start.x, start.y, pos.x, pos.y, color, filled);
                     break;
                 case 'circle':
                     this.drawCircle(start.x, start.y, pos.x, pos.y, color, filled);
-                    drawWithSymmetry(this.drawCircle.bind(this), start.x, start.y, pos.x, pos.y, color, filled);
                     break;
             }
     
-            // Commit the shape when the drag ends
+            // Apply symmetry if active
+            if (this.symmetryMode !== 'none') {
+                this.applyShapeSymmetry(start, pos, color, filled);
+            }
+    
+            // Commit on drag end
             if (isDragEnd) {
-                this.commitTempGridToMain();
-                this.isDrawingShape = false;
                 this.shapeStartPos = null;
-                this.lastPos = null;
+                this.originalGrid = null;
             }
         } else {
-            // ----- Non-shape tools -----
+            // Non-shape tools
             switch (this.currentTool) {
                 case 'pencil':
                 case 'symmetricPencil':
                     this.drawPixel(pos.x, pos.y, color);
                     if (this.currentTool === 'symmetricPencil') this.applySymmetry(pos.x, pos.y, color);
                     break;
-    
+                
                 case 'eraser':
                 case 'symmetricEraser':
                     this.drawPixel(pos.x, pos.y, 'transparent');
                     if (this.currentTool === 'symmetricEraser') this.applySymmetry(pos.x, pos.y, 'transparent');
                     break;
     
-                case 'eyedropper': {
+                case 'eyedropper':
                     const pickedColor = this.grid[pos.y][pos.x];
                     if (pickedColor !== 'transparent') {
                         if (rightClick) {
@@ -829,24 +831,16 @@ class JerryEditor {
                         }
                     }
                     break;
-                }
     
                 case 'fill':
                 case 'symmetricFill':
                     this.floodFill(pos.x, pos.y, color);
                     if (this.currentTool === 'symmetricFill') {
-                        const symFillPositions = this.getSymmetryPositions(pos.x, pos.y);
-                        symFillPositions.forEach(sPos => this.floodFill(sPos.x, sPos.y, color));
+                        const symPositions = this.getSymmetryPositions(pos.x, pos.y);
+                        symPositions.forEach(sPos => this.floodFill(sPos.x, sPos.y, color));
                     }
                     break;
-    
-                default:
-                    // fallback: pencil-like drawing
-                    this.drawPixel(pos.x, pos.y, color);
-                    break;
             }
-    
-            this.lastPos = pos;
         }
     
         this.updatePixelCanvas();
@@ -899,6 +893,24 @@ class JerryEditor {
         }
     }
 
+    applyShapeSymmetry(start, end, color, filled) {
+        const symStart = this.getSymmetryPositions(start.x, start.y);
+        const symEnd = this.getSymmetryPositions(end.x, end.y);
+        
+        for (let i = 0; i < symStart.length; i++) {
+            switch (this.currentTool) {
+                case 'line':
+                    this.drawLine(symStart[i].x, symStart[i].y, symEnd[i].x, symEnd[i].y, color);
+                    break;
+                case 'rect':
+                    this.drawRect(symStart[i].x, symStart[i].y, symEnd[i].x, symEnd[i].y, color, filled);
+                    break;
+                case 'circle':
+                    this.drawCircle(symStart[i].x, symStart[i].y, symEnd[i].x, symEnd[i].y, color, filled);
+                    break;
+            }
+        }
+    }
     
     handleSketchTool(pos, e) {
         if (!this.layers[this.currentLayer]) return;
