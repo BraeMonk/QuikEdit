@@ -765,6 +765,7 @@ input[type="checkbox"] {
 /* MOBILE LAYOUT                 */
 /* ============================= */
 
+/* ============================= */
 /* Mobile Portrait - Stack everything vertically */
 @media (max-width: 768px) and (orientation: portrait) {
   .editor-container {
@@ -789,8 +790,9 @@ input[type="checkbox"] {
     padding: 10px;
   }
 
+  /* Sidebar becomes horizontal */
   .sidebar {
-    flex-direction: row;
+    flex-direction: row;        /* horizontal layout */
     justify-content: flex-start;
     padding: 8px;
     gap: 6px;
@@ -798,7 +800,7 @@ input[type="checkbox"] {
     border-top: 1px solid #333;
     border-bottom: 1px solid #333;
     overflow-x: auto;
-    overflow-y: visible;
+    overflow-y: hidden;
     min-height: 60px;
     max-height: 60px;
   }
@@ -820,6 +822,7 @@ input[type="checkbox"] {
     margin: 0 4px;
   }
 
+  /* Panels */
   .panels {
     max-height: 40vh;
     min-height: 200px;
@@ -848,12 +851,14 @@ input[type="checkbox"] {
     font-size: 11px;
   }
 
+  /* Tools inherit sidebar layout */
   .pixel-tools,
   .sketch-tools {
-    flex-direction: row;        /* horizontal layout */
+    display: flex;             /* visible when active-mode applied */
+    flex-direction: inherit;    /* follow sidebar direction */
     flex-wrap: nowrap;
-    overflow-x: auto;           /* horizontal scroll */
-    overflow-y: hidden;         /* no vertical scroll */
+    overflow-x: auto;
+    overflow-y: hidden;
     width: 100%;
     align-items: center;
     gap: 6px;
@@ -865,24 +870,15 @@ input[type="checkbox"] {
     flex: 0 0 auto;             /* don't shrink buttons */
   }
 
-  .tool-separator {
-    width: 1px;
-    height: 80%;
-    margin: 0 4px;
+  /* Active mode just toggles visibility */
+  .pixel-tools,
+  .sketch-tools {
+    display: none;
   }
 
   .pixel-tools.active-mode,
   .sketch-tools.active-mode {
-      display: flex !important;
-      flex-direction: row !important;
-      flex-wrap: nowrap;
-      overflow-x: auto;
-      overflow-y: hidden;
-      width: 100%;
-      align-items: center;
-      gap: 6px;
-      padding: 4px 0;
-      -webkit-overflow-scrolling: touch;
+    display: flex;
   }
 }
 
