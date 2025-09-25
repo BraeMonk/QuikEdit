@@ -373,14 +373,19 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  width: 100%;
 }
 
 .panel-content {
   padding: 16px;
+  display: block; /* visible by default */
+  transition: max-height 0.3s ease, padding 0.3s ease;
+  overflow: hidden;
 }
 
 .panel.collapsed .panel-content {
-  display: none;
+  max-height: 0;
+  padding: 0 16px;
 }
 
 /* ============================= */
