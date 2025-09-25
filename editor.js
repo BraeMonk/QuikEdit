@@ -1675,11 +1675,17 @@ class JerryEditor {
             ctx.globalAlpha = alpha;
             ctx.beginPath();
             
-            // Mix of circles and ellipses for texture variety
+            // Replace ellipse with arc for better compatibility
             if (Math.random() > 0.6) {
                 const scaleX = 0.5 + Math.random() * 1.5;
                 const scaleY = 0.5 + Math.random() * 1.5;
-                ctx.ellipse(x, y, particleSize * scaleX, particleSize * scaleY, Math.random() * Math.PI, 0, 2 * Math.PI);
+                
+                // Use transform to create ellipse effect with arc
+                ctx.save();
+                ctx.translate(x, y);
+                ctx.scale(scaleX, scaleY);
+                ctx.arc(0, 0, particleSize, 0, 2 * Math.PI);
+                ctx.restore();
             } else {
                 ctx.arc(x, y, particleSize, 0, 2 * Math.PI);
             }
