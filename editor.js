@@ -541,79 +541,6 @@ class JerryEditor {
         return { x, y };
     }
     
-    startDrawing(e) {
-        this.isDrawing = true;
-        const pos = this.mode === 'pixel' ? this.getPixelPos(e) : this.getCanvasPos(e);
-        this.lastPos = pos;
-        // Initialize stroke path for smooth drawing
-        this.strokePath = [pos];
-        
-        // Handle selection tool
-        if (this.currentTool === 'select') {
-            this.startSelection(pos);
-            return;
-        }
-        
-        // Handle move tool
-        if (this.currentTool === 'move') {
-            this.startMoving(pos);
-            return;
-        }
-        
-        // For shape tools in sketch mode, store the starting position
-        if (this.mode === 'sketch' && ['lineSketch', 'rectSketch', 'circleSketch'].includes(this.currentTool)) {
-            this.shapeStartPos = pos;
-            this.saveShapeState();
-            return;
-        }
-        
-        this.saveState();
-        
-        if (this.mode === 'pixel') {
-            this.handlePixelTool(pos, e.button === 2);
-        } else {
-            this.handleSketchTool(pos, e);
-        }
-    }
-    
-    draw(e) {
-        const pos = this.mode === 'pixel' ? this.getPixelPos(e) : this.getCanvasPos(e);
-        
-        if (!this.isDrawing) {
-            // Show brush preview for sketch mode
-            if (this.mode === 'sketch' && ['brush', 'pen', 'marker', 'pencilSketch', 'charcoal', 'eraser'].includes(this.currentTool)) {
-                this.showBrushPreview(pos);
-            }
-            return;
-        }
-        
-        // Handle selection dragging
-        if (this.currentTool === 'select' && this.selecting) {
-            this.updateSelection(pos);
-            return;
-        }
-        
-        // Handle moving selection
-        if (this.currentTool === 'move' && this.movingSelection) {
-            this.updateMove(pos);
-            return;
-        }
-        
-        // Handle shape preview for sketch mode
-        if (this.mode === 'sketch' && ['lineSketch', 'rectSketch', 'circleSketch'].includes(this.currentTool) && this.shapeStartPos) {
-            this.previewShape(this.shapeStartPos, pos);
-            return;
-        }
-        
-        if (this.mode === 'pixel') {
-            this.handlePixelTool(pos, e.button === 2);
-        } else {
-            this.handleSketchTool(pos, e);
-        }
-        
-        this.lastPos = pos;
-    }
-    
     stopDrawing() {
         if (!this.isDrawing) return;
         
@@ -1295,15 +1222,6 @@ class JerryEditor {
         }
     }
     
-    // Transform operations
-    rotate(degrees) {
-        if (this.mode === 'pixel') {
-            this.rotatePixelCanvas(degrees);
-        } else {
-            this.rotateSketchCanvas(degrees);
-        }
-    }
-    
     rotatePixelCanvas(degrees) {
         const newGrid = [];
         
@@ -1556,6 +1474,36 @@ class JerryEditor {
         ctx.moveTo(this.lastPos.x, this.lastPos.y);
         ctx.quadraticCurveTo(this.lastPos.x, this.lastPos.y, midX, midY);
         ctx.stroke();
+    }
+
+    drawSmoothMarker(ctx, pos, color) {
+        const currentAlpha = ctx.globalAlpha;
+        ctx.globalAlpha = currentAlpha * 0.6; // Marker transparency
+        
+        if (this.lastPos && this.isDrawing) {
+            ctx.strokeStyle = color;
+            ctx.lineWidth = this.brushSize;
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+            
+            const jitter = this.brushSize * 0.1;
+            const x1 = this.lastPos.x + (Math.random() - 0.5) * jitter;
+            const y1 = this.lastPos.y + (Math.random() - 0.5) * jitter;
+            const x2 = pos.x + (Math.random() - 0.5) * jitter;
+            const y2 = pos.y + (Math.random() - 0.5) * jitter;
+            
+            ctx.beginPath();
+            ctx.moveTo(x1, y1);
+            ctx.lineTo(x2, y2);
+            ctx.stroke();
+        } else {
+            ctx.fillStyle = color;
+            ctx.beginPath();
+            ctx.arc(pos.x, pos.y, this.brushSize / 2, 0, 2 * Math.PI);
+            ctx.fill();
+        }
+        
+        ctx.globalAlpha = currentAlpha;
     }
     
     drawTexturedPencil(ctx, pos, color) {
@@ -1821,20 +1769,6 @@ class JerryEditor {
         ctx.beginPath();
         ctx.arc(start.x, start.y, radius, 0, 2 * Math.PI);
         ctx.stroke();
-    }
-    
-    updateLayerControls() {
-        if (!this.layers[this.currentLayer]) return;
-        
-        const layer = this.layers[this.currentLayer];
-        if (this.layerOpacitySlider) {
-            this.layerOpacitySlider.value = layer.opacity * 100;
-            document.getElementById('layerOpacityLabel').textContent = Math.round(layer.opacity * 100);
-        }
-        
-        if (this.blendModeSelect) {
-            this.blendModeSelect.value = layer.blendMode;
-        }
     }
     
     
@@ -2364,7 +2298,7 @@ class JerryEditor {
         
         this.palettes = palettes;
         this.loadSavedPalettes();
-        this.loadPalette('basic');
+        this.loadPalette('default');
         this.setupColorPickers();
     }
     loadPalette(paletteName) {
@@ -2897,31 +2831,19 @@ class JerryEditor {
             this.updateBrushPreview();
         }
     }
+}
 
 // Initialize the editor when the page loads
 document.addEventListener('DOMContentLoaded', () => {
     window.jerryEditor = new JerryEditor();
  });
     
-// Replace your existing service worker code with:
+// Service Worker Registration
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', async () => {
         try {
-            const registration = await navigator.serviceWorker.register('./service-worker.js');
-            console.log('SW registered: ', registration);
-            
-            // Handle updates
-            registration.addEventListener('updatefound', () => {
-                const newWorker = registration.installing;
-                newWorker.addEventListener('statechange', () => {
-                    if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                        // New version available
-                        if (confirm('New version available! Reload to update?')) {
-                            window.location.reload();
-                        }
-                    }
-                });
-            });
+            // Remove the service worker registration since you don't have the file
+            console.log('Service worker registration skipped - file not provided');
         } catch (error) {
             console.log('SW registration failed: ', error);
         }
