@@ -494,6 +494,9 @@ class JerryEditor {
         this.pixelCanvas.innerHTML = '';
         this.pixelCanvas.style.gridTemplateColumns = `repeat(${this.canvasWidth}, ${this.pixelSize}px)`;
         this.pixelCanvas.style.gridTemplateRows = `repeat(${this.canvasHeight}, ${this.pixelSize}px)`;
+
+        this.pixelCanvas.style.width = `${this.canvasWidth * this.pixelSize}px`;
+        this.pixelCanvas.style.height = `${this.canvasHeight * this.pixelSize}px`;
         
         for (let y = 0; y < this.canvasHeight; y++) {
             for (let x = 0; x < this.canvasWidth; x++) {
