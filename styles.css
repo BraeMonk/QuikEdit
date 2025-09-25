@@ -736,14 +736,6 @@ input[type="checkbox"] {
   box-sizing: border-box;
 }
 
-.sketch-controls {
-  display: none;
-}
-
-.pixel-controls {
-  display: block;
-}
-
 .sketch-tools {
   display: flex;
   flex-direction: column;
