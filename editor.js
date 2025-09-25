@@ -715,24 +715,28 @@ class JerryEditor {
         const color = rightClick ? this.secondaryColor : this.primaryColor;
         
         // For continuous drawing tools, interpolate between last position and current
-        if (this.lastPos && this.isDrawing && 
-            ['pencil', 'symmetricPencil', 'eraser', 'symmetricEraser'].includes(this.currentTool)) {
-            
+        if (
+            this.lastPos && this.isDrawing &&
+            ['pencil', 'symmetricPencil', 'eraser', 'symmetricEraser'].includes(this.currentTool)
+        ) {
             this.drawPixelLine(this.lastPos.x, this.lastPos.y, pos.x, pos.y, color);
-            
+    
             if (this.currentTool.includes('symmetric')) {
                 const symmetryPositions = this.getSymmetryPositions(pos.x, pos.y);
                 const lastSymmetryPositions = this.getSymmetryPositions(this.lastPos.x, this.lastPos.y);
-                
+    
                 symmetryPositions.forEach((sPos, index) => {
                     if (lastSymmetryPositions[index]) {
-                        this.drawPixelLine(lastSymmetryPositions[index].x, lastSymmetryPositions[index].y, 
-                                         sPos.x, sPos.y, color);
+                        this.drawPixelLine(
+                            lastSymmetryPositions[index].x, lastSymmetryPositions[index].y,
+                            sPos.x, sPos.y,
+                            color
+                        );
                     }
                 });
             }
         } else {
-            // Handle other tools as before
+            // Handle other tools
             switch (this.currentTool) {
                 case 'pencil':
                 case 'symmetricPencil':
@@ -741,7 +745,7 @@ class JerryEditor {
                         this.applySymmetry(pos.x, pos.y, color);
                     }
                     break;
-                    
+    
                 case 'eraser':
                 case 'symmetricEraser':
                     this.drawPixel(pos.x, pos.y, 'transparent');
@@ -749,8 +753,8 @@ class JerryEditor {
                         this.applySymmetry(pos.x, pos.y, 'transparent');
                     }
                     break;
-                    
-                case 'eyedropper':
+    
+                case 'eyedropper': {
                     const pickedColor = this.grid[pos.y][pos.x];
                     if (pickedColor !== 'transparent') {
                         if (rightClick) {
@@ -763,7 +767,8 @@ class JerryEditor {
                         }
                     }
                     break;
-                    
+                }
+    
                 case 'fill':
                 case 'symmetricFill':
                     this.floodFill(pos.x, pos.y, color);
@@ -775,9 +780,11 @@ class JerryEditor {
                     }
                     break;
             }
-        
+        }
+    
         this.updatePixelCanvas();
     }
+
     
     // Add this new method for pixel line drawing
     drawPixelLine(x0, y0, x1, y1, color) {
