@@ -431,15 +431,14 @@ class JerryEditor {
         // ----- TOOLBARS -----
         const pixelElements = document.querySelectorAll('.pixel-tools, .pixel-controls');
         pixelElements.forEach(el => {
-            el.style.display = mode === 'pixel' ? 'flex' : 'none';
-            if (mode === 'pixel') el.style.flexDirection = 'row';
+            el.classList.toggle('active', mode === 'pixel');
         });
-    
+        
         const sketchElements = document.querySelectorAll('.sketch-tools, .sketch-controls');
         sketchElements.forEach(el => {
-            el.style.display = mode === 'sketch' ? 'flex' : 'none';
-            if (mode === 'sketch') el.style.flexDirection = 'row';
+            el.classList.toggle('active', mode === 'sketch');
         });
+
     
         // ----- CANVASES -----
         this.pixelCanvas.style.display = mode === 'pixel' ? 'grid' : 'none';
