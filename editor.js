@@ -55,6 +55,7 @@ class JerryEditor {
         this.loadPalettes();
         this.initializeCanvas();
         this.loadProject();
+        this.switchMode('pixel');
         this.updateUI();
         this.initializePanels();
     }
@@ -442,25 +443,37 @@ class JerryEditor {
         const pixelElements = document.querySelectorAll('.pixel-tools, .pixel-controls');
         const sketchElements = document.querySelectorAll('.sketch-tools, .sketch-controls');
     
-        // Toggle active-mode class
-        pixelElements.forEach(el => el.classList.toggle('active-mode', mode === 'pixel'));
-        sketchElements.forEach(el => el.classList.toggle('active-mode', mode === 'sketch'));
+        // Remove active-mode from all elements first
+        pixelElements.forEach(el => el.classList.remove('active-mode'));
+        sketchElements.forEach(el => el.classList.remove('active-mode'));
+        this.pixelCanvas.classList.remove('active-mode');
+        this.sketchCanvas.classList.remove('active-mode');
+        this.canvasGrid.classList.remove('active-mode');
+        this.selectionOverlay.classList.remove('active-mode');
     
-        // Canvases and overlays
-        this.pixelCanvas.classList.toggle('active-mode', mode === 'pixel');
-        this.sketchCanvas.classList.toggle('active-mode', mode === 'sketch');
-        this.canvasGrid.classList.toggle('active-mode', mode === 'pixel' && this.showGrid);
-        this.selectionOverlay.classList.toggle('active-mode', mode === 'sketch');
-    
-        // Initialize mode-specific stuff
-        if (mode === 'sketch') {
-            this.initializeSketchMode();
-            this.currentTool = 'brush';
-        } else {
+        // Add active-mode to correct elements
+        if (mode === 'pixel') {
+            pixelElements.forEach(el => el.classList.add('active-mode'));
+            this.pixelCanvas.classList.add('active-mode');
+            if (this.showGrid) this.canvasGrid.classList.add('active-mode');
             this.currentTool = 'pencil';
             this.updatePixelCanvas();
             this.updateGrid();
+        } else {
+            sketchElements.forEach(el => el.classList.add('active-mode'));
+            this.sketchCanvas.classList.add('active-mode');
+            this.selectionOverlay.classList.add('active-mode');
+            if (this.layers.length === 0) {
+                this.initializeSketchMode();
+            }
+            this.currentTool = 'brush';
         }
+    
+        // Update active tool button
+        document.querySelectorAll('.tool-btn').forEach(btn => btn.classList.remove('active'));
+        const activeToolGroup = mode === 'pixel' ? '.pixel-tools' : '.sketch-tools';
+        const activeToolBtn = document.querySelector(`${activeToolGroup} .tool-btn[data-tool="${this.currentTool}"]`);
+        if (activeToolBtn) activeToolBtn.classList.add('active');
     
         this.updateUI();
     }
