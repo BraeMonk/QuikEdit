@@ -710,7 +710,7 @@ class JerryEditor {
         this.clearSelection();
     }
     
-    handlePixelTool(pos, rightClick = false, filled = false) {
+    handlePixelTool(pos, rightClick = false, filled = false, isDragEnd = false) {
         if (pos.x < 0 || pos.x >= this.canvasWidth || pos.y < 0 || pos.y >= this.canvasHeight) return;
     
         const color = rightClick ? this.secondaryColor : this.primaryColor;
@@ -720,7 +720,6 @@ class JerryEditor {
             if (this.symmetryMode && this.symmetryMode !== 'none') {
                 const symPositions = this.getSymmetryPositions(x1, y1);
                 const lastSymPositions = (x0 !== null && y0 !== null) ? this.getSymmetryPositions(x0, y0) : [];
-    
                 symPositions.forEach((sPos, i) => {
                     const lastSPos = lastSymPositions[i] || { x: x0, y: y0 };
                     fn(lastSPos.x, lastSPos.y, sPos.x, sPos.y, c, filledFlag);
@@ -728,82 +727,115 @@ class JerryEditor {
             }
         };
     
-        switch (this.currentTool) {
-            case 'pencil':
-                this.drawPixel(pos.x, pos.y, color);
-                break;
+        const shapeTools = ['line', 'rect', 'circle'];
     
-            case 'symmetricPencil':
-                this.drawPixel(pos.x, pos.y, color);
-                this.applySymmetry(pos.x, pos.y, color);
-                break;
-    
-            case 'eraser':
-                this.drawPixel(pos.x, pos.y, 'transparent');
-                break;
-    
-            case 'symmetricEraser':
-                this.drawPixel(pos.x, pos.y, 'transparent');
-                this.applySymmetry(pos.x, pos.y, 'transparent');
-                break;
-    
-            case 'line':
-                if (this.lastPos) {
-                    this.drawLine(this.lastPos.x, this.lastPos.y, pos.x, pos.y, color);
-                    drawWithSymmetry(this.drawLine.bind(this), this.lastPos.x, this.lastPos.y, pos.x, pos.y, color);
-                } else {
-                    this.drawPixel(pos.x, pos.y, color);
-                }
-                break;
-    
-            case 'rect':
-                if (this.lastPos) {
-                    this.drawRect(this.lastPos.x, this.lastPos.y, pos.x, pos.y, color, filled);
-                    drawWithSymmetry(this.drawRect.bind(this), this.lastPos.x, this.lastPos.y, pos.x, pos.y, color, filled);
-                } else {
-                    this.drawPixel(pos.x, pos.y, color);
-                }
-                break;
-    
-            case 'circle':
-                if (this.lastPos) {
-                    this.drawCircle(this.lastPos.x, this.lastPos.y, pos.x, pos.y, color, filled);
-                    drawWithSymmetry(this.drawCircle.bind(this), this.lastPos.x, this.lastPos.y, pos.x, pos.y, color, filled);
-                } else {
-                    this.drawPixel(pos.x, pos.y, color);
-                }
-                break;
-    
-            case 'eyedropper': {
-                const pickedColor = this.grid[pos.y][pos.x];
-                if (pickedColor !== 'transparent') {
-                    if (rightClick) {
-                        this.secondaryColor = pickedColor;
-                        this.secondaryColorEl.style.background = pickedColor;
-                    } else {
-                        this.primaryColor = pickedColor;
-                        this.primaryColorEl.style.background = pickedColor;
-                        if (this.sketchColorPicker) this.sketchColorPicker.value = pickedColor;
-                    }
-                }
-                break;
+        if (shapeTools.includes(this.currentTool)) {
+            // ----- Shape tool handling -----
+            if (!this.isDrawingShape) {
+                this.shapeStartPos = { ...pos };
+                this.isDrawingShape = true;
             }
     
-            case 'fill':
-                this.floodFill(pos.x, pos.y, color);
-                break;
+            // Draw live preview on the grid
+            this.restorePixelGridFromTemp(); // restores last committed state to avoid stacking previews
     
-            case 'symmetricFill':
-                this.floodFill(pos.x, pos.y, color);
-                const symFillPositions = this.getSymmetryPositions(pos.x, pos.y);
-                symFillPositions.forEach(sPos => this.floodFill(sPos.x, sPos.y, color));
-                break;
+            const start = this.shapeStartPos;
+    
+            switch (this.currentTool) {
+                case 'line':
+                    this.drawLine(start.x, start.y, pos.x, pos.y, color);
+                    drawWithSymmetry(this.drawLine.bind(this), start.x, start.y, pos.x, pos.y, color);
+                    break;
+                case 'rect':
+                    this.drawRect(start.x, start.y, pos.x, pos.y, color, filled);
+                    drawWithSymmetry(this.drawRect.bind(this), start.x, start.y, pos.x, pos.y, color, filled);
+                    break;
+                case 'circle':
+                    this.drawCircle(start.x, start.y, pos.x, pos.y, color, filled);
+                    drawWithSymmetry(this.drawCircle.bind(this), start.x, start.y, pos.x, pos.y, color, filled);
+                    break;
+            }
+    
+            // Commit the shape when the drag ends
+            if (isDragEnd) {
+                this.commitTempGridToMain();
+                this.isDrawingShape = false;
+                this.shapeStartPos = null;
+                this.lastPos = null;
+            }
+        } else {
+            // ----- Non-shape tools -----
+            switch (this.currentTool) {
+                case 'pencil':
+                case 'symmetricPencil':
+                    this.drawPixel(pos.x, pos.y, color);
+                    if (this.currentTool === 'symmetricPencil') this.applySymmetry(pos.x, pos.y, color);
+                    break;
+    
+                case 'eraser':
+                case 'symmetricEraser':
+                    this.drawPixel(pos.x, pos.y, 'transparent');
+                    if (this.currentTool === 'symmetricEraser') this.applySymmetry(pos.x, pos.y, 'transparent');
+                    break;
+    
+                case 'eyedropper': {
+                    const pickedColor = this.grid[pos.y][pos.x];
+                    if (pickedColor !== 'transparent') {
+                        if (rightClick) {
+                            this.secondaryColor = pickedColor;
+                            this.secondaryColorEl.style.background = pickedColor;
+                        } else {
+                            this.primaryColor = pickedColor;
+                            this.primaryColorEl.style.background = pickedColor;
+                            if (this.sketchColorPicker) this.sketchColorPicker.value = pickedColor;
+                        }
+                    }
+                    break;
+                }
+    
+                case 'fill':
+                case 'symmetricFill':
+                    this.floodFill(pos.x, pos.y, color);
+                    if (this.currentTool === 'symmetricFill') {
+                        const symFillPositions = this.getSymmetryPositions(pos.x, pos.y);
+                        symFillPositions.forEach(sPos => this.floodFill(sPos.x, sPos.y, color));
+                    }
+                    break;
+    
+                default:
+                    // fallback: pencil-like drawing
+                    this.drawPixel(pos.x, pos.y, color);
+                    break;
+            }
+    
+            this.lastPos = pos;
         }
     
-        // Update canvas and last position for continuous drawing
         this.updatePixelCanvas();
-        this.lastPos = pos;
     }
+    
+    // Helper methods for live preview
+    restorePixelGridFromTemp() {
+        if (!this.tempGrid) return;
+        for (let y = 0; y < this.canvasHeight; y++) {
+            for (let x = 0; x < this.canvasWidth; x++) {
+                this.grid[y][x] = this.tempGrid[y][x];
+            }
+        }
+    }
+    
+    commitTempGridToMain() {
+        if (!this.tempGrid) this.tempGrid = this.cloneGrid(this.grid);
+        else for (let y = 0; y < this.canvasHeight; y++)
+            for (let x = 0; x < this.canvasWidth; x++)
+                this.tempGrid[y][x] = this.grid[y][x];
+    }
+    
+    cloneGrid(grid) {
+        return grid.map(row => [...row]);
+    }
+
+
 
     // Add this new method for pixel line drawing
     drawPixelLine(x0, y0, x1, y1, color) {
