@@ -784,7 +784,6 @@ class JerryEditor {
     
         this.updatePixelCanvas();
         this.lastPos = pos;
-
     }
 
     
@@ -2908,12 +2907,10 @@ class JerryEditor {
 document.addEventListener('DOMContentLoaded', () => {
     window.jerryEditor = new JerryEditor();
 });
-    
-// Service Worker Registration
+
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', async () => {
         try {
-            // Remove the service worker registration since you don't have the file
             console.log('Service worker registration skipped - file not provided');
         } catch (error) {
             console.log('SW registration failed: ', error);
