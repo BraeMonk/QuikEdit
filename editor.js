@@ -413,6 +413,8 @@ class JerryEditor {
         this.isDrawing = true;
         const pos = this.mode === 'pixel' ? this.getPixelPos(e) : this.getCanvasPos(e);
         this.lastPos = pos;
+        // Initialize stroke path for smooth drawing
+        this.strokePath = [pos];
         
         // Handle selection tool
         if (this.currentTool === 'select') {
@@ -506,6 +508,8 @@ class JerryEditor {
         
         this.isDrawing = false;
         this.lastPos = null;
+        // Clear stroke path
+        this.strokePath = null;
     }
     
     // Selection functionality
@@ -697,27 +701,27 @@ class JerryEditor {
         
         switch (this.currentTool) {
             case 'brush':
-                this.drawBrush(ctx, pos, color, 'soft');
+                this.drawSmoothBrush(ctx, pos, color);
                 break;
                 
             case 'pen':
-                this.drawBrush(ctx, pos, color, 'hard');
+                this.drawSmoothPen(ctx, pos, color);
                 break;
                 
             case 'marker':
-                this.drawMarker(ctx, pos, color);
+                this.drawSmoothMarker(ctx, pos, color);
                 break;
                 
             case 'pencilSketch':
-                this.drawPencil(ctx, pos, color);
+                this.drawTexturedPencil(ctx, pos, color);
                 break;
                 
             case 'charcoal':
-                this.drawCharcoal(ctx, pos, color);
+                this.drawTexturedCharcoal(ctx, pos, color);
                 break;
                 
             case 'eraser':
-                this.drawBrush(ctx, pos, color, 'soft');
+                this.drawSmoothBrush(ctx, pos, color);
                 break;
                 
             case 'smudge':
@@ -1339,6 +1343,236 @@ class JerryEditor {
         }
         
         ctx.globalAlpha = currentAlpha;
+    }
+
+    // Smooth drawing methods for professional sketch tools
+    drawSmoothBrush(ctx, pos, color) {
+        if (!this.lastPos || !this.isDrawing) {
+            this.strokePath = [pos];
+            return;
+        }
+        
+        this.strokePath.push(pos);
+        
+        if (this.strokePath.length >= 3) {
+            const len = this.strokePath.length;
+            const p1 = this.strokePath[len - 3];
+            const p2 = this.strokePath[len - 2];
+            const p3 = this.strokePath[len - 1];
+            
+            const gradient = ctx.createRadialGradient(p2.x, p2.y, 0, p2.x, p2.y, this.brushSize / 2);
+            const alpha = ctx.globalAlpha;
+            gradient.addColorStop(0, this.hexToRgba(color, alpha));
+            gradient.addColorStop(this.brushHardness / 100, this.hexToRgba(color, alpha * 0.8));
+            gradient.addColorStop(1, this.hexToRgba(color, 0));
+            
+            ctx.fillStyle = gradient;
+            ctx.beginPath();
+            ctx.arc(p2.x, p2.y, this.brushSize / 2, 0, 2 * Math.PI);
+            ctx.fill();
+            
+            ctx.strokeStyle = gradient;
+            ctx.lineWidth = this.brushSize;
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+            ctx.beginPath();
+            ctx.moveTo(p1.x, p1.y);
+            ctx.quadraticCurveTo(p2.x, p2.y, (p2.x + p3.x) / 2, (p2.y + p3.y) / 2);
+            ctx.stroke();
+        }
+    }
+    
+    drawSmoothPen(ctx, pos, color) {
+        if (!this.lastPos || !this.isDrawing) {
+            this.strokePath = [pos];
+            ctx.fillStyle = color;
+            ctx.beginPath();
+            ctx.arc(pos.x, pos.y, this.brushSize / 2, 0, 2 * Math.PI);
+            ctx.fill();
+            return;
+        }
+        
+        this.strokePath.push(pos);
+        
+        if (this.strokePath.length >= 2) {
+            const len = this.strokePath.length;
+            const p1 = this.strokePath[len - 2];
+            const p2 = this.strokePath[len - 1];
+            
+            const distance = Math.sqrt(Math.pow(p2.x - p1.x, 2) + Math.pow(p2.y - p1.y, 2));
+            const pressure = Math.max(0.3, Math.min(1, 10 / (distance + 1)));
+            const dynamicWidth = this.brushSize * pressure;
+            
+            ctx.strokeStyle = color;
+            ctx.lineWidth = dynamicWidth;
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+            ctx.beginPath();
+            ctx.moveTo(p1.x, p1.y);
+            ctx.lineTo(p2.x, p2.y);
+            ctx.stroke();
+        }
+    }
+    
+    drawSmoothMarker(ctx, pos, color) {
+        if (!this.lastPos || !this.isDrawing) {
+            this.strokePath = [pos];
+            return;
+        }
+        
+        this.strokePath.push(pos);
+        
+        if (this.strokePath.length >= 2) {
+            const len = this.strokePath.length;
+            const p1 = this.strokePath[len - 2];
+            const p2 = this.strokePath[len - 1];
+            
+            const originalAlpha = ctx.globalAlpha;
+            
+            for (let i = 0; i < 3; i++) {
+                const offset = (i - 1) * 0.5;
+                ctx.strokeStyle = color;
+                ctx.lineWidth = this.brushSize + offset;
+                ctx.lineCap = 'round';
+                ctx.globalAlpha = originalAlpha * (0.2 + i * 0.2);
+                
+                ctx.beginPath();
+                ctx.moveTo(p1.x + offset, p1.y);
+                ctx.lineTo(p2.x + offset, p2.y);
+                ctx.stroke();
+            }
+            
+            ctx.globalAlpha = originalAlpha;
+        }
+    }
+    
+    drawTexturedPencil(ctx, pos, color) {
+        if (!this.lastPos || !this.isDrawing) {
+            this.strokePath = [pos];
+            this.drawPencilTexture(ctx, pos, color, 1.0);
+            return;
+        }
+        
+        this.strokePath.push(pos);
+        
+        if (this.strokePath.length >= 2) {
+            const len = this.strokePath.length;
+            const p1 = this.strokePath[len - 2];
+            const p2 = this.strokePath[len - 1];
+            
+            const distance = Math.sqrt(Math.pow(p2.x - p1.x, 2) + Math.pow(p2.y - p1.y, 2));
+            const steps = Math.max(1, Math.floor(distance / 2));
+            
+            for (let i = 0; i <= steps; i++) {
+                const t = i / steps;
+                const x = p1.x + (p2.x - p1.x) * t;
+                const y = p1.y + (p2.y - p1.y) * t;
+                
+                const pressure = 0.7 + Math.random() * 0.3;
+                this.drawPencilTexture(ctx, {x, y}, color, pressure);
+            }
+        }
+    }
+    
+    drawPencilTexture(ctx, pos, color, pressure) {
+        const intensity = pressure * (this.brushOpacity / 100);
+        const radius = (this.brushSize / 2) * pressure;
+        const strokes = Math.floor(radius * 4);
+        
+        for (let i = 0; i < strokes; i++) {
+            const angle = Math.random() * Math.PI * 2;
+            const distance = Math.random() * radius;
+            const x = pos.x + Math.cos(angle) * distance;
+            const y = pos.y + Math.sin(angle) * distance;
+            
+            const strokeAlpha = intensity * (0.1 + Math.random() * 0.4);
+            const strokeWidth = 0.5 + Math.random() * 1.5;
+            
+            ctx.globalAlpha = strokeAlpha;
+            ctx.strokeStyle = color;
+            ctx.lineWidth = strokeWidth;
+            ctx.lineCap = 'round';
+            
+            const strokeLength = 1 + Math.random() * 3;
+            const strokeAngle = Math.random() * Math.PI * 2;
+            
+            ctx.beginPath();
+            ctx.moveTo(x, y);
+            ctx.lineTo(x + Math.cos(strokeAngle) * strokeLength, y + Math.sin(strokeAngle) * strokeLength);
+            ctx.stroke();
+        }
+    }
+    
+    drawTexturedCharcoal(ctx, pos, color) {
+        if (!this.lastPos || !this.isDrawing) {
+            this.strokePath = [pos];
+            this.drawCharcoalTexture(ctx, pos, color, 1.0);
+            return;
+        }
+        
+        this.strokePath.push(pos);
+        
+        if (this.strokePath.length >= 2) {
+            const len = this.strokePath.length;
+            const p1 = this.strokePath[len - 2];
+            const p2 = this.strokePath[len - 1];
+            
+            const distance = Math.sqrt(Math.pow(p2.x - p1.x, 2) + Math.pow(p2.y - p1.y, 2));
+            const steps = Math.max(1, Math.floor(distance / 3));
+            
+            for (let i = 0; i <= steps; i++) {
+                const t = i / steps;
+                const x = p1.x + (p2.x - p1.x) * t;
+                const y = p1.y + (p2.y - p1.y) * t;
+                
+                const pressure = 0.8 + Math.random() * 0.2;
+                this.drawCharcoalTexture(ctx, {x, y}, color, pressure);
+            }
+        }
+    }
+    
+    drawCharcoalTexture(ctx, pos, color, pressure) {
+        const intensity = pressure * (this.brushOpacity / 100);
+        const radius = this.brushSize * pressure;
+        const particles = Math.floor(radius * 2);
+        
+        ctx.fillStyle = color;
+        
+        for (let i = 0; i < particles; i++) {
+            const angle = Math.random() * Math.PI * 2;
+            const distance = Math.random() * radius;
+            const x = pos.x + Math.cos(angle) * distance;
+            const y = pos.y + Math.sin(angle) * distance;
+            
+            const particleSize = 0.5 + Math.random() * 4;
+            const alpha = intensity * (0.2 + Math.random() * 0.6);
+            
+            ctx.globalAlpha = alpha;
+            ctx.beginPath();
+            
+            if (Math.random() > 0.7) {
+                ctx.ellipse(x, y, particleSize, particleSize * 0.6, Math.random() * Math.PI, 0, 2 * Math.PI);
+            } else {
+                ctx.arc(x, y, particleSize * 0.5, 0, 2 * Math.PI);
+            }
+            ctx.fill();
+        }
+        
+        if (this.strokePath && this.strokePath.length > 1) {
+            const smudges = Math.floor(radius * 0.5);
+            for (let i = 0; i < smudges; i++) {
+                const smudgeRadius = radius * (0.3 + Math.random() * 0.4);
+                const angle = Math.random() * Math.PI * 2;
+                const distance = Math.random() * smudgeRadius;
+                const x = pos.x + Math.cos(angle) * distance;
+                const y = pos.y + Math.sin(angle) * distance;
+                
+                ctx.globalAlpha = intensity * 0.1;
+                ctx.beginPath();
+                ctx.arc(x, y, smudgeRadius, 0, 2 * Math.PI);
+                ctx.fill();
+            }
+        }
     }
     
     gaussianRandom() {
