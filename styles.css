@@ -1631,7 +1631,11 @@ input[type="checkbox"],
     max-height: unset;
     flex: 1;
     padding: 12px;
-    display: block;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-evenly;
+    align-items: center;
+    gap: 8px;
   }
 
   #pixel-tools,
@@ -1645,6 +1649,10 @@ input[type="checkbox"],
     flex: 1;
     padding: 12px;
     display: none;
+    flex-direction: column;
+    justify-content: space-evenly;
+    align-items: center;
+    gap: 8px;
   }
 
   #pixel-tools.active,
@@ -1657,7 +1665,11 @@ input[type="checkbox"],
     max-height: unset;
     flex: 1;
     padding: 12px;
-    display: block !important;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-evenly;
+    align-items: center;
+    gap: 8px;
   }
   
   /* Tool buttons - compact for more space */
