@@ -1573,65 +1573,83 @@ input[type="checkbox"],
   }
 }
 
+/* Mobile Landscape - Fixed version */
 @media (max-width: 1024px) and (orientation: landscape) {
   html, body {
     width: 100%;
     height: 100%;
     margin: 0;
     padding: 0;
-    overflow: hidden; /* prevent scrolling of the whole page */
+    overflow: hidden;
   }
 
-  /* Editor container grid: left toolbar, canvas, right panel */
+  /* Fix: Use the correct grid area names that match your HTML elements */
   #editor-container,
   .editor-container {
     display: grid;
-    grid-template-areas: "toolbar canvas panel";
-    grid-template-columns: 55px 1fr 260px; /* fixed width for tool/panel, canvas flexible */
-    grid-template-rows: 1fr; /* full height */
+    grid-template-areas: "sidebar canvas panels"; /* Changed to match your actual HTML */
+    grid-template-columns: 65px 1fr 280px;
+    grid-template-rows: 1fr;
     width: 100vw;
     height: 100vh;
+    gap: 1px;
   }
 
-  /* Left toolbar vertical */
-  #toolbar,
-  .tool-bar {
-    grid-area: toolbar;
-    display: flex;
-    flex-direction: column; /* top to bottom */
-    overflow-y: auto;       /* scroll if content exceeds screen */
-    overflow-x: hidden;
-    height: 100%;
+  /* Remove header completely in landscape */
+  #header,
+  .header {
+    display: none;
   }
 
-  /* Right panel vertical */
-  #panel,
-  .panel {
-    grid-area: panel;
+  /* Sidebar - vertical layout */
+  #sidebar,
+  .sidebar {
+    grid-area: sidebar;
     display: flex;
     flex-direction: column;
-    overflow-y: auto;       /* scroll if content exceeds screen */
+    overflow-y: auto;
     overflow-x: hidden;
-    height: 100%;
+    height: 100vh;
+    padding: 10px 0;
+    gap: 6px;
+    border-right: 2px solid #333;
+    border-top: none;
+    border-bottom: none;
   }
 
-  /* Center canvas area */
+  /* Panels - vertical layout */
+  #panels,
+  .panels {
+    grid-area: panels;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    overflow-x: hidden;
+    height: 100vh;
+    border-left: 2px solid #333;
+    border-top: none;
+    max-height: none; /* Remove height restrictions */
+    min-height: none;
+  }
+
+  /* Canvas area - center and fill */
   #canvas-area,
   .canvas-area {
     grid-area: canvas;
     display: flex;
     justify-content: center;
     align-items: center;
-    overflow: hidden; /* prevents canvas overflow */
+    overflow: hidden;
     width: 100%;
-    height: 100%;
+    height: 100vh;
+    padding: 10px;
   }
 
-  /* Canvas wrapper keeps scaling correct */
+  /* Canvas wrapper */
   #canvas-wrapper,
   .canvas-wrapper {
-    max-width: 100%;
-    max-height: 100%;
+    max-width: calc(100% - 20px);
+    max-height: calc(100vh - 20px);
     display: flex;
     justify-content: center;
     align-items: center;
@@ -1639,22 +1657,76 @@ input[type="checkbox"],
     height: auto;
   }
 
-  /* Canvases scale correctly */
-  #canvas,
-  #sketchCanvas,
-  #selectionOverlay {
-    width: auto;
-    height: 100%;
-    max-width: 100%;
-    max-height: 100%;
-    object-fit: contain;
-    display: block;
+  /* Tool buttons - smaller for landscape */
+  #tool-btn,
+  .tool-btn {
+    width: 45px;
+    height: 45px;
+    font-size: 16px;
   }
 
-  /* Ensure toolbar/panel children don’t stretch weirdly */
-  #toolbar > *, .tool-bar > *,
-  #panel > *, .panel > * {
-    flex: 0 0 auto;
+  #tool-btn.symmetric-tool,
+  .tool-btn.symmetric-tool {
+    font-size: 14px;
+  }
+
+  /* Panel content - reduce padding */
+  #panel-content,
+  .panel-content {
+    padding: 12px;
+  }
+
+  /* Tool groups - ensure they display properly */
+  #pixel-tools,
+  .pixel-tools,
+  #sketch-tools,
+  .sketch-tools {
+    display: none;
+  }
+
+  #pixel-tools.active,
+  .pixel-tools.active,
+  #sketch-tools.active,
+  .sketch-tools.active {
+    display: flex;
+    flex-direction: column; /* Keep vertical in landscape */
+    gap: 6px;
+    width: 100%;
+  }
+
+  /* Tool separator - vertical */
+  #tool-separator,
+  .tool-separator {
+    width: 80%;
+    height: 2px;
+    margin: 6px 0;
+    background: linear-gradient(90deg, transparent 0%, #444 50%, transparent 100%);
+  }
+
+  /* Ensure controls don't get crushed */
+  #control-group,
+  .control-group {
+    margin-bottom: 15px;
+    min-height: auto;
+  }
+
+  /* Button groups */
+  #btn-group,
+  .btn-group {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 6px;
+    flex-wrap: wrap;
+  }
+
+  #btn-group .btn,
+  .btn-group .btn,
+  #btn-group button,
+  .btn-group button {
+    flex: 1 1 auto;
+    min-width: 60px;
+    font-size: 11px;
+    padding: 6px 8px;
   }
 }
 
