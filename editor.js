@@ -338,15 +338,15 @@ class JerryEditor {
         this.strokePath = [pos];
         this.strokeStartTime = Date.now();
     
-        // ----- SELECTION TOOL -----
-        if (this.currentTool === 'select') {
-            this.startSelection(pos);
+        // ----- PIXEL SELECTION -----
+        if (this.currentTool === 'select' && this.mode === 'pixel') {
+            this.startPixelSelection(pos);
             return;
         }
     
-        // ----- MOVE TOOL -----
-        if (this.currentTool === 'move') {
-            this.startMoving(pos);
+        // ----- PIXEL MOVE -----
+        if (this.currentTool === 'move' && this.mode === 'pixel') {
+            this.startPixelMove(pos);
             return;
         }
     
@@ -390,17 +390,15 @@ class JerryEditor {
         this.lastPos = pos;
         if (this.strokePath) this.strokePath.push(pos);
     
-        // ----- SELECTION TOOL -----
-        if (this.currentTool === 'select') {
-            if (!this.selecting) this.startSelection(pos);
-            this.updateSelection(pos);
+        // ----- PIXEL SELECTION -----
+        if (this.currentTool === 'select' && this.mode === 'pixel') {
+            this.updatePixelSelection(pos);
             return;
         }
     
-        // ----- MOVE TOOL -----
-        if (this.currentTool === 'move') {
-            if (!this.movingSelection) this.startMoving(pos);
-            this.updateMove(pos);
+        // ----- PIXEL MOVE -----
+        if (this.currentTool === 'move' && this.mode === 'pixel') {
+            this.updatePixelMove(pos);
             return;
         }
     
@@ -642,16 +640,14 @@ class JerryEditor {
     stopDrawing() {
         if (!this.isDrawing) return;
     
-        // ----- Selection -----
-        if (this.currentTool === 'select' && this.selecting) {
-            this.finalizeSelection();
-            this.selecting = false;
+        // ----- PIXEL SELECTION -----
+        if (this.currentTool === 'select' && this.mode === 'pixel') {
+            this.finalizePixelSelection();
         }
     
-        // ----- Move -----
-        if (this.currentTool === 'move' && this.movingSelection) {
-            this.finalizeMove();
-            this.movingSelection = false;
+        // ----- PIXEL MOVE -----
+        if (this.currentTool === 'move' && this.mode === 'pixel') {
+            this.finalizePixelMove();
         }
     
         // ----- Sketch shapes -----
@@ -675,170 +671,147 @@ class JerryEditor {
     }
 
     
-    // ----- SELECTION -----
-    startSelection(pos) {
+    // ----- PIXEL SELECTION METHODS -----
+    startPixelSelection(pos) {
+        this.clearPixelSelection();
+        this.pixelSelection = {
+            startX: pos.x,
+            startY: pos.y,
+            endX: pos.x,
+            endY: pos.y,
+            active: true
+        };
         this.selecting = true;
-        this.selectionStart = pos;
-        this.lastPos = pos;
-        this.clearSelection();
-        this.selectionData = null; // reset old selection
     }
     
-    updateSelection(pos) {
-        this.clearSelection();
-    
-        const x1 = Math.min(this.selectionStart.x, pos.x);
-        const y1 = Math.min(this.selectionStart.y, pos.y);
-        const x2 = Math.max(this.selectionStart.x, pos.x);
-        const y2 = Math.max(this.selectionStart.y, pos.y);
-    
-        this.selectionCtx.strokeStyle = '#fff';
-        this.selectionCtx.setLineDash([5, 5]);
-        this.selectionCtx.lineWidth = 1;
-        this.selectionCtx.strokeRect(x1, y1, x2 - x1, y2 - y1);
-    
-        this.lastPos = pos;
+    updatePixelSelection(pos) {
+        if (!this.pixelSelection) return;
+        this.pixelSelection.endX = pos.x;
+        this.pixelSelection.endY = pos.y;
+        this.drawPixelSelectionOverlay();
     }
     
-    finalizeSelection() {
-        if (!this.selectionStart || !this.lastPos) return;
-    
-        const x1 = Math.min(this.selectionStart.x, this.lastPos.x);
-        const y1 = Math.min(this.selectionStart.y, this.lastPos.y);
-        const x2 = Math.max(this.selectionStart.x, this.lastPos.x);
-        const y2 = Math.max(this.selectionStart.y, this.lastPos.y);
-    
-        if (x2 - x1 > 1 && y2 - y1 > 1) {
-            this.selection = { x: x1, y: y1, width: x2 - x1, height: y2 - y1 };
-    
-            // Copy selected pixels
-            const layer = this.layers[this.currentLayer];
-            this.selectionData = [];
-            for (let y = 0; y < this.selection.height; y++) {
-                this.selectionData[y] = [];
-                for (let x = 0; x < this.selection.width; x++) {
-                    const px = this.selection.x + x;
-                    const py = this.selection.y + y;
-                    this.selectionData[y][x] = layer.pixels[py]?.[px] ?? null;
+    finalizePixelSelection() {
+        if (!this.pixelSelection) return;
+        
+        const minX = Math.min(this.pixelSelection.startX, this.pixelSelection.endX);
+        const maxX = Math.max(this.pixelSelection.startX, this.pixelSelection.endX);
+        const minY = Math.min(this.pixelSelection.startY, this.pixelSelection.endY);
+        const maxY = Math.max(this.pixelSelection.startY, this.pixelSelection.endY);
+        
+        if (maxX > minX || maxY > minY) {
+            // Store selected pixels
+            this.pixelSelectionData = [];
+            for (let y = minY; y <= maxY; y++) {
+                this.pixelSelectionData[y - minY] = [];
+                for (let x = minX; x <= maxX; x++) {
+                    this.pixelSelectionData[y - minY][x - minX] = this.grid[y] ? this.grid[y][x] : 'transparent';
                 }
             }
+            this.pixelSelection.finalized = true;
         }
-    
         this.selecting = false;
-        this.selectionStart = null;
     }
     
-    clearSelection() {
-        this.selectionCtx.clearRect(0, 0, this.selectionOverlay.width, this.selectionOverlay.height);
-    }
-    
-    // ----- MOVE -----
-    startMoving(pos) {
-        const layer = this.layers[this.currentLayer];
-        if (!layer) return;
-    
-        // Click inside selection -> move selection
-        if (this.selection &&
-            pos.x >= this.selection.x &&
-            pos.x <= this.selection.x + this.selection.width &&
-            pos.y >= this.selection.y &&
-            pos.y <= this.selection.y + this.selection.height) {
-    
-            this.movingSelection = true;
-            this.moveStartPos = { ...pos };
-    
-            // Clear original pixels of selection
-            for (let y = 0; y < this.selection.height; y++) {
-                for (let x = 0; x < this.selection.width; x++) {
-                    const px = this.selection.x + x;
-                    const py = this.selection.y + y;
-                    if (layer.pixels[py]) layer.pixels[py][px] = null;
-                }
-            }
-            this.redrawLayerPixels(layer);
-            return;
-        }
-    
-        // Click outside selection -> deselect only
-        this.clearSelection();
-        this.selection = null;
-        this.selectionData = null;
-    }
-    
-    updateMove(pos) {
-        if (!this.movingSelection || !this.selection || !this.moveStartPos || !this.selectionData) return;
-    
-        const dx = pos.x - this.moveStartPos.x;
-        const dy = pos.y - this.moveStartPos.y;
-        const layer = this.layers[this.currentLayer];
-    
-        // Clear original selection area
-        for (let y = 0; y < layer.height; y++) {
-            for (let x = 0; x < layer.width; x++) {
-                layer.pixels[y][x] = null;
-            }
-        }
-    
-        // Paste selection at new position
-        for (let y = 0; y < this.selection.height; y++) {
-            for (let x = 0; x < this.selection.width; x++) {
-                const px = this.selection.x + x + dx;
-                const py = this.selection.y + y + dy;
-                if (!layer.pixels[py]) layer.pixels[py] = [];
-                layer.pixels[py][px] = this.selectionData[y][x];
-            }
-        }
-    
-        this.redrawLayerPixels(layer);
-    
-        // Draw selection overlay
-        this.clearSelection();
-        this.selectionCtx.strokeStyle = '#fff';
-        this.selectionCtx.setLineDash([5, 5]);
-        this.selectionCtx.lineWidth = 1;
-        this.selectionCtx.strokeRect(this.selection.x + dx, this.selection.y + dy, this.selection.width, this.selection.height);
-    }
-    
-    finalizeMove() {
-        if (!this.movingSelection || !this.selection || !this.moveStartPos) return;
-    
-        const dx = this.lastPos.x - this.moveStartPos.x;
-        const dy = this.lastPos.y - this.moveStartPos.y;
-        const layer = this.layers[this.currentLayer];
-    
-        // Paste selection permanently
-        for (let y = 0; y < this.selection.height; y++) {
-            for (let x = 0; x < this.selection.width; x++) {
-                const px = this.selection.x + x + dx;
-                const py = this.selection.y + y + dy;
-                if (!layer.pixels[py]) layer.pixels[py] = [];
-                layer.pixels[py][px] = this.selectionData[y][x];
-            }
-        }
-    
-        this.selection.x += dx;
-        this.selection.y += dy;
-    
-        this.clearSelection();
-        this.movingSelection = false;
-        this.moveStartPos = null;
-        this.selectionData = null;
-        this.redrawLayerPixels(layer);
-    }
-
-    
-    // ----- HELPER -----
-    redrawLayerPixels(layer) {
-        layer.ctx.clearRect(0, 0, layer.width, layer.height);
-        for (let y = 0; y < layer.height; y++) {
-            for (let x = 0; x < layer.width; x++) {
-                const color = layer.pixels[y]?.[x];
-                if (color) {
-                    layer.ctx.fillStyle = color;
-                    layer.ctx.fillRect(x, y, 1, 1);
+    drawPixelSelectionOverlay() {
+        this.clearPixelSelection();
+        if (!this.pixelSelection) return;
+        
+        const minX = Math.min(this.pixelSelection.startX, this.pixelSelection.endX);
+        const maxX = Math.max(this.pixelSelection.startX, this.pixelSelection.endX);
+        const minY = Math.min(this.pixelSelection.startY, this.pixelSelection.endY);
+        const maxY = Math.max(this.pixelSelection.startY, this.pixelSelection.endY);
+        
+        for (let y = minY; y <= maxY; y++) {
+            for (let x = minX; x <= maxX; x++) {
+                const pixel = this.pixelCanvas.querySelector(`[data-x="${x}"][data-y="${y}"]`);
+                if (pixel) {
+                    pixel.style.outline = '2px dashed #fff';
+                    pixel.style.outlineOffset = '-1px';
                 }
             }
         }
+    }
+    
+    clearPixelSelection() {
+        this.pixelCanvas.querySelectorAll('[data-x]').forEach(pixel => {
+            pixel.style.outline = '';
+            pixel.style.outlineOffset = '';
+        });
+    }
+    
+    // ----- PIXEL MOVE METHODS -----
+    startPixelMove(pos) {
+        if (!this.pixelSelection || !this.pixelSelection.finalized) return;
+        
+        // Check if clicking inside selection
+        const minX = Math.min(this.pixelSelection.startX, this.pixelSelection.endX);
+        const maxX = Math.max(this.pixelSelection.startX, this.pixelSelection.endX);
+        const minY = Math.min(this.pixelSelection.startY, this.pixelSelection.endY);
+        const maxY = Math.max(this.pixelSelection.startY, this.pixelSelection.endY);
+        
+        if (pos.x >= minX && pos.x <= maxX && pos.y >= minY && pos.y <= maxY) {
+            this.movingPixelSelection = true;
+            this.pixelMoveStart = pos;
+            this.originalPixelSelection = { ...this.pixelSelection };
+            
+            // Clear original pixels
+            for (let y = minY; y <= maxY; y++) {
+                for (let x = minX; x <= maxX; x++) {
+                    if (this.grid[y]) this.grid[y][x] = 'transparent';
+                }
+            }
+            this.updatePixelCanvas();
+        }
+    }
+    
+    updatePixelMove(pos) {
+        if (!this.movingPixelSelection || !this.pixelMoveStart) return;
+        
+        const dx = pos.x - this.pixelMoveStart.x;
+        const dy = pos.y - this.pixelMoveStart.y;
+        
+        this.pixelSelection.startX = this.originalPixelSelection.startX + dx;
+        this.pixelSelection.endX = this.originalPixelSelection.endX + dx;
+        this.pixelSelection.startY = this.originalPixelSelection.startY + dy;
+        this.pixelSelection.endY = this.originalPixelSelection.endY + dy;
+        
+        this.drawMovedPixels();
+        this.drawPixelSelectionOverlay();
+    }
+    
+    drawMovedPixels() {
+        if (!this.pixelSelectionData || !this.pixelSelection) return;
+        
+        // Clear and redraw entire canvas
+        this.updatePixelCanvas();
+        
+        // Draw selection at new position
+        const startX = Math.min(this.pixelSelection.startX, this.pixelSelection.endX);
+        const startY = Math.min(this.pixelSelection.startY, this.pixelSelection.endY);
+        
+        for (let y = 0; y < this.pixelSelectionData.length; y++) {
+            for (let x = 0; x < this.pixelSelectionData[y].length; x++) {
+                const newX = startX + x;
+                const newY = startY + y;
+                
+                if (newX >= 0 && newX < this.canvasWidth && 
+                    newY >= 0 && newY < this.canvasHeight) {
+                    if (this.pixelSelectionData[y][x] !== 'transparent') {
+                        this.grid[newY][newX] = this.pixelSelectionData[y][x];
+                        const pixel = this.pixelCanvas.querySelector(`[data-x="${newX}"][data-y="${newY}"]`);
+                        if (pixel) pixel.style.backgroundColor = this.pixelSelectionData[y][x];
+                    }
+                }
+            }
+        }
+    }
+    
+    finalizePixelMove() {
+        this.movingPixelSelection = false;
+        this.pixelMoveStart = null;
+        this.originalPixelSelection = null;
+        this.updatePixelCanvas();
     }
 
     
