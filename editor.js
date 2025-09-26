@@ -609,30 +609,28 @@ class JerryEditor {
 
         const grid = this.canvasGrid;
 
-        // Set size to match canvas exactly
-        grid.style.width = `${this.canvasWidth * this.pixelSize}px`;
-        grid.style.height = `${this.canvasHeight * this.pixelSize}px`;
-
-        // Center grid in wrapper
-        grid.style.position = 'absolute';
-        grid.style.top = '50%';
-        grid.style.left = '50%';
-        grid.style.transform = 'translate(-50%, -50%)';
-        grid.style.pointerEvents = 'none';
-        grid.style.zIndex = '10';
-
         // Respect the showGrid toggle
         if (!this.showGrid) {
             grid.style.display = 'none';
             return;
         }
 
+        // Set grid size to match pixel canvas
+        grid.style.width = `${this.canvasWidth * this.pixelSize}px`;
+        grid.style.height = `${this.canvasHeight * this.pixelSize}px`;
+        grid.style.position = 'absolute';
+        grid.style.top = '0';
+        grid.style.left = '0';
+        grid.style.pointerEvents = 'none';
+        grid.style.zIndex = '10';
+
+        // Grid lines style
         const lineColor = 'rgba(255, 255, 255, 0.2)';
         const offset = 0.5;
 
         grid.style.backgroundImage = `
             repeating-linear-gradient(
-                to right, 
+                to right,
                 transparent,
                 transparent ${this.pixelSize - offset}px,
                 ${lineColor} ${this.pixelSize - offset}px,
@@ -648,7 +646,8 @@ class JerryEditor {
         `;
         grid.style.backgroundSize = `${this.pixelSize}px ${this.pixelSize}px`;
         grid.style.backgroundPosition = `${offset}px ${offset}px`;
-        grid.style.display = 'grid';
+
+        grid.style.display = 'block';
     }
 
 
