@@ -1573,7 +1573,7 @@ input[type="checkbox"],
   }
 }
 
-/* Mobile Landscape - Fixed version */
+/* Mobile Landscape - Tools Vertical Spread Fix */
 @media (max-width: 1024px) and (orientation: landscape) {
   html, body {
     width: 100%;
@@ -1588,11 +1588,10 @@ input[type="checkbox"],
     display: grid;
     grid-template-areas: "sidebar canvas panels";
     grid-template-columns: 65px 1fr 280px;
-    grid-template-rows: 1fr; /* Single row takes full height */
+    grid-template-rows: 1fr;
     width: 100vw;
-    height: 100vh; /* Full viewport height */
+    height: 100vh;
     gap: 1px;
-    /* Remove any min-height or max-height constraints */
     min-height: unset;
     max-height: unset;
   }
@@ -1600,51 +1599,10 @@ input[type="checkbox"],
   /* Remove header completely in landscape */
   #header,
   .header {
-    grid-area: header;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 0 12px; /* Reduced padding */
-    height: 45px; /* Fixed compact height */
-    min-height: 45px;
-    max-height: 45px;
+    display: none;
   }
 
-  #logo,
-  .logo {
-    font-size: 16px; /* Smaller font */
-  }
-  
-   /* Compact mode toggle */
-  #mode-toggle,
-  .mode-toggle {
-    margin-left: 8px; /* Less margin */
-    padding: 1px; /* Tighter padding */
-  }
-
-  #mode-btn,
-  .mode-btn {
-    padding: 4px 8px; /* Smaller buttons */
-    font-size: 11px; /* Smaller text */
-    min-width: 50px; /* Narrower buttons */
-  }
-
-  /* Compact header controls */
-  #header-controls,
-  .header-controls {
-    gap: 4px; /* Tighter spacing */
-  }
-
-  #header-btn,
-  .header-btn,
-  #newProject,
-  #saveProject,
-  #exportPNG {
-    padding: 4px 8px; /* Smaller buttons */
-    font-size: 10px; /* Smaller text */
-  }
-
-  /* Sidebar - adjust for smaller header */
+  /* Sidebar - force full height */
   #sidebar,
   .sidebar {
     grid-area: sidebar;
@@ -1653,14 +1611,14 @@ input[type="checkbox"],
     align-items: center;
     justify-content: flex-start;
     
-    height: calc(100vh - 45px); /* Subtract header height */
-    min-height: calc(100vh - 45px);
-    max-height: calc(100vh - 45px);
+    height: 100vh;
+    min-height: 100vh;
+    max-height: 100vh;
     
     overflow-y: auto;
     overflow-x: hidden;
-    padding: 8px 0;
-    gap: 4px;
+    padding: 8px 0; /* Reduced padding for more tool space */
+    gap: 4px; /* Tighter gap for more tools */
     border-right: 2px solid #333;
     border-top: none;
     border-bottom: none;
@@ -1669,7 +1627,7 @@ input[type="checkbox"],
     flex-grow: 0;
   }
 
-  /* Tool groups - CRITICAL FIX: Remove ALL height and flex constraints */
+  /* CRITICAL FIX: Tool groups - force expansion */
   #tool-group,
   .tool-group {
     display: flex;
@@ -1677,10 +1635,11 @@ input[type="checkbox"],
     align-items: center;
     gap: 4px; /* Tighter spacing */
     width: 100%;
-    /* Remove ALL constraints */
-    min-height: 0;
-    max-height: none;
-    height: auto;
+    /* Force expansion */
+    min-height: 0 !important;
+    max-height: none !important;
+    height: auto !important;
+    flex: 0 0 auto !important;
     flex-shrink: 0;
     flex-grow: 0;
     flex-basis: auto;
@@ -1695,10 +1654,11 @@ input[type="checkbox"],
     align-items: center;
     gap: 4px; /* Tighter spacing */
     width: 100%;
-    /* Remove ALL constraints */
-    min-height: 0;
-    max-height: none;
-    height: auto;
+    /* Force expansion */
+    min-height: 0 !important;
+    max-height: none !important;
+    height: auto !important;
+    flex: 0 0 auto !important;
     flex-shrink: 0;
     flex-grow: 0;
     flex-basis: auto;
@@ -1713,45 +1673,45 @@ input[type="checkbox"],
     align-items: center;
     gap: 4px; /* Tighter spacing */
     width: 100%;
-    /* Remove ALL constraints - this is the key fix */
-    min-height: 0;
-    max-height: none;
-    height: auto;
+    /* CRITICAL: Force expansion with !important */
+    min-height: 0 !important;
+    max-height: none !important;
+    height: auto !important;
+    flex: 0 0 auto !important;
     flex-shrink: 0;
     flex-grow: 0;
     flex-basis: auto;
-    /* Ensure content can expand */
-    overflow: visible;
+    overflow: visible !important;
   }
 
-  /* Tool buttons - make them smaller to fit more */
+  /* Tool buttons - compact for more space */
   #tool-btn,
   .tool-btn {
-    width: 42px; /* Slightly smaller */
+    width: 42px; /* Smaller for more tools */
     height: 42px;
     font-size: 14px; /* Smaller font */
-    flex-shrink: 0; /* Never shrink */
-    flex-grow: 0; /* Never grow */
-    margin: 0; /* Remove any margins */
+    flex-shrink: 0;
+    flex-grow: 0;
+    margin: 0;
   }
 
   #tool-btn.symmetric-tool,
   .tool-btn.symmetric-tool {
-    font-size: 12px; /* Even smaller for symmetric tools */
+    font-size: 12px;
   }
 
-  /* Tool separator - make smaller */
+  /* Tool separator - compact */
   #tool-separator,
   .tool-separator {
     width: 70%;
     height: 1px; /* Thinner */
-    margin: 3px 0; /* Less margin */
+    margin: 2px 0; /* Less margin */
     background: linear-gradient(90deg, transparent 0%, #444 50%, transparent 100%);
     flex-shrink: 0;
     flex-grow: 0;
   }
 
-  /* Add specific overrides for any parent containers that might be constraining */
+  /* IMPORTANT: Override any parent container constraints */
   .sidebar .tool-group,
   .sidebar .pixel-tools,
   .sidebar .sketch-tools,
@@ -1762,17 +1722,20 @@ input[type="checkbox"],
     height: auto !important;
     flex: 0 0 auto !important;
     overflow: visible !important;
+    /* Ensure they can expand vertically */
+    flex-basis: auto !important;
+    flex-shrink: 0 !important;
+    flex-grow: 0 !important;
   }
 
-  /* Panels - force full height */
+  /* Panels - same height fixes */
   #panels,
   .panels {
     grid-area: panels;
     display: flex;
     flex-direction: column;
     
-    /* Critical height fixes */
-    height: 100vh; /* Force full viewport height */
+    height: 100vh;
     min-height: 100vh;
     max-height: 100vh;
     
@@ -1781,17 +1744,14 @@ input[type="checkbox"],
     border-left: 2px solid #333;
     border-top: none;
     
-    /* Remove flex constraints */
     flex-shrink: 0;
     flex-grow: 0;
   }
 
-  /* Individual panels - remove height constraints */
   #panel,
   .panel {
     background: #1e1e1e;
     border-bottom: 1px solid #333;
-    /* Remove any height constraints */
     min-height: unset;
     max-height: unset;
     flex-shrink: 0;
@@ -1801,14 +1761,13 @@ input[type="checkbox"],
   .panel-content {
     padding: 12px;
     display: block;
-    /* Remove height constraints that might be limiting content */
     min-height: unset;
     max-height: unset;
     height: auto;
-    overflow: visible; /* Allow content to expand */
+    overflow: visible;
   }
 
-  /* Canvas area - center and fill remaining space */
+  /* Canvas area */
   #canvas-area,
   .canvas-area {
     grid-area: canvas;
@@ -1817,19 +1776,17 @@ input[type="checkbox"],
     align-items: center;
     overflow: hidden;
     width: 100%;
-    height: calc(100vh - 45px);
+    height: 100vh;
     padding: 10px;
     
-    /* Remove height constraints */
     min-height: unset;
     max-height: unset;
   }
 
-  /* Canvas wrapper */
   #canvas-wrapper,
   .canvas-wrapper {
     max-width: calc(100% - 20px);
-    max-height: calc(100vh - 65px);
+    max-height: calc(100vh - 20px);
     display: flex;
     justify-content: center;
     align-items: center;
@@ -1837,17 +1794,15 @@ input[type="checkbox"],
     height: auto;
   }
 
-  /* Control groups - remove height constraints */
+  /* Control groups */
   #control-group,
   .control-group {
     margin-bottom: 15px;
-    /* Remove height constraints */
     min-height: unset;
     max-height: unset;
     flex-shrink: 0;
   }
 
-  /* Button groups */
   #btn-group,
   .btn-group {
     display: flex;
@@ -1867,12 +1822,11 @@ input[type="checkbox"],
     padding: 6px 8px;
   }
 
-  /* Layer list - remove height restrictions */
+  /* Layer list */
   #layerList,
   .layer-list {
-    /* Remove the max-height that's limiting it */
     max-height: none; 
-    min-height: 100px; /* Give it a reasonable minimum */
+    min-height: 100px;
     overflow-y: auto;
     border: 2px solid #444;
     margin-bottom: 12px;
@@ -1881,7 +1835,6 @@ input[type="checkbox"],
     flex-shrink: 0;
   }
 }
-
 /* Tablet specific adjustments */
 @media (min-width: 768px) and (max-width: 1024px) {
   #editor-container,
