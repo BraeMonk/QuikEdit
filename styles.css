@@ -1596,6 +1596,13 @@ input[type="checkbox"],
     padding: 0 16px;
   }
 
+  #sidebar,
+  .sidebar {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+  }
+
   #logo,
   .logo {
     font-size: 18px;
