@@ -1582,30 +1582,43 @@ input[type="checkbox"],
     overflow: hidden; /* prevent scrolling */
   }
 
-  /* Editor grid: left toolbar, canvas, right controls */
+  /* Editor container keeps desktop-style grid */
   #editor-container,
   .editor-container {
     display: grid;
     grid-template-columns: 55px 1fr 260px; /* left toolbar, canvas, right panel */
-    grid-template-rows: 100%; /* full height */
+    grid-template-rows: 1fr; /* full height */
     width: 100vw;
     height: 100vh;
   }
 
-  /* Left toolbar scrolls independently */
+  /* Left toolbar */
   #toolbar,
   .tool-bar {
-    grid-column: 1 / 2;
     height: 100%;
-    overflow-y: auto;
     display: flex;
-    flex-direction: column;
+    flex-direction: column; /* top to bottom */
+    overflow-y: auto; /* scroll if content exceeds screen */
   }
 
-  /* Canvas stays centered and resizable */
+  /* Right panel / controls */
+  #panel,
+  .panel {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto; /* scroll if content exceeds screen */
+  }
+
+  /* Force scrollable content to stretch full height */
+  #toolbar > *, .tool-bar > *,
+  #panel > *, .panel > * {
+    flex: 1 0 auto; /* stretch to fill vertically if content is short */
+  }
+
+  /* Canvas area fills the middle column */
   #canvas-area,
   .canvas-area {
-    grid-column: 2 / 3;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -1614,17 +1627,19 @@ input[type="checkbox"],
     height: 100%;
   }
 
+  /* Canvas wrapper keeps scaling correct */
   #canvas-wrapper,
   .canvas-wrapper {
     max-width: 100%;
     max-height: 100%;
-    width: auto;
-    height: auto;
     display: flex;
     justify-content: center;
     align-items: center;
+    width: auto;
+    height: auto;
   }
 
+  /* Canvases scale correctly */
   #canvas,
   #sketchCanvas,
   #selectionOverlay {
@@ -1634,16 +1649,6 @@ input[type="checkbox"],
     max-height: 100%;
     object-fit: contain;
     display: block;
-  }
-
-  /* Right panel scrolls independently */
-  #panel,
-  .panel {
-    grid-column: 3 / 4;
-    height: 100%;
-    overflow-y: auto;
-    display: flex;
-    flex-direction: column;
   }
 }
 
