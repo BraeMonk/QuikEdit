@@ -1636,8 +1636,8 @@ input[type="checkbox"],
   .pixel-tools,
   #sketch-tools,
   .sketch-tools {
-    display: flex !important;
-    flex-direction: column !important;
+    display: flex;
+    flex-direction: column;
     flex-wrap: nowrap;
     overflow: hidden;
     width: auto;
