@@ -1573,77 +1573,18 @@ input[type="checkbox"],
   }
 }
 
-/* Mobile Landscape - Keep desktop-like layout but smaller */
+/* Minimal desktop-look for small landscape screens */
 @media (max-width: 1024px) and (orientation: landscape) {
   #editor-container,
   .editor-container {
-    grid-template-columns: 55px 1fr 260px;
-    grid-template-rows: 50px 1fr;
-    gap: 1px;
-    height: 100vh;
-    overflow: hidden;
+    grid-template-columns: 55px 1fr 260px; /* same as desktop */
+    grid-template-rows: 50px 1fr;         /* same as desktop */
   }
 
-  /* Canvas wrapper adjustments */
-  #canvas-wrapper,
-  .canvas-wrapper {
-    max-width: 100%;
-    max-height: 100%;
-    width: max-content;
-    height: max-content;
-    border-radius: 10px;
-    box-shadow: 0 6px 18px rgba(0,0,0,0.25);
-    background: transparent;
-  }
-
-  /* Sidebar horizontal for landscape phones */
-  #sidebar,
-  .sidebar {
-    flex-direction: column; /* keep vertical if possible */
-    width: 55px;
-    padding: 8px 0;
-    gap: 4px;
-    border-right: 2px solid #333;
-    overflow-y: auto;
-    overflow-x: hidden;
-    min-width: 55px;
-    max-width: 55px;
-  }
-
-  #tool-btn,
-  .tool-btn {
-    width: 44px;
-    height: 44px;
-    font-size: 16px;
-  }
-
-  /* Panels slightly narrower */
-  #panels,
-  .panels {
-    width: 260px;
-  }
-
-  /* Header smaller height */
-  #header,
-  .header {
-    height: 50px;
-    padding: 0 16px;
-  }
-
-  /* Reduce button sizes slightly */
-  #header-btn,
-  .header-btn,
-  #newProject,
-  #saveProject,
-  #exportPNG {
-    padding: 6px 12px;
-    font-size: 12px;
-  }
-
-  /* Canvas Grid remains fully visible */
-  #canvasGrid,
-  .canvas-grid {
-    opacity: 0.35;
+  #canvas-area,
+  .canvas-area {
+    width: 100%;
+    height: 100%;
   }
 }
 
