@@ -283,8 +283,12 @@ class JerryEditor {
 
     toggleGrid() {
         this.showGrid = !this.showGrid;
-        this.canvasGrid.style.display = this.showGrid ? 'grid' : 'none';
-        this.updateGrid(); // redraw grid lines
+
+        if (this.mode === 'pixel') {
+            this.canvasGrid.style.display = this.showGrid ? 'grid' : 'none';
+        }
+
+        this.updateGrid(); // redraw background & sizing
     }
 
 
@@ -636,12 +640,6 @@ class JerryEditor {
         grid.style.transform = 'translate(-50%, -50%)';
         grid.style.pointerEvents = 'none';
         grid.style.zIndex = '10';
-
-        // Respect the showGrid toggle
-        if (!this.showGrid) {
-            grid.style.display = 'none';
-            return;
-        }
 
         const lineColor = 'rgba(255, 255, 255, 0.2)';
         const offset = 0.5;
