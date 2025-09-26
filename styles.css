@@ -356,14 +356,14 @@ body {
   position: absolute;
   top: 0;
   left: 0;
-  width: 100%;  /* match canvas width exactly */
-  height: 100%; /* match canvas height exactly */
   display: grid;
   pointer-events: none;
   opacity: 0.4;
   z-index: 10;
-  grid-template-columns: repeat(var(--cols, 16), 1fr);
-  grid-template-rows: repeat(var(--rows, 16), 1fr);
+  grid-template-columns: repeat(var(--cols, 16), var(--cellSize, 20px));
+  grid-template-rows: repeat(var(--rows, 16), var(--cellSize, 20px));
+  width: calc(var(--cols, 16) * var(--cellSize, 20px));
+  height: calc(var(--rows, 16) * var(--cellSize, 20px));
 }
 
 
