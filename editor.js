@@ -552,6 +552,8 @@ class JerryEditor {
         this.canvasGrid.style.height = `${canvasHeightPx}px`;
         this.canvasGrid.style.gridTemplateColumns = `repeat(${this.canvasWidth}, ${this.pixelSize}px)`;
         this.canvasGrid.style.gridTemplateRows = `repeat(${this.canvasHeight}, ${this.pixelSize}px)`;
+        this.canvasGrid.style.setProperty('--cols', this.canvasWidth);
+        this.canvasGrid.style.setProperty('--rows', this.canvasHeight);
     
         // Populate pixels
         for (let y = 0; y < this.canvasHeight; y++) {
