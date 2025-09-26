@@ -21,7 +21,6 @@ class JerryEditor {
         this.sprites = [{ name: 'Sprite 1', data: null }];
         this.currentSprite = 0;
         this.showGrid = true;
-        this.canvasGrid.style.display = 'grid';  // force initial display
         
         // Sketch art properties
         this.layers = [];
