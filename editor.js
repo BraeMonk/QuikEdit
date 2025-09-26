@@ -741,7 +741,7 @@ class JerryEditor {
             this.movingSelection = true;
             this.moveStartPos = { ...pos };
     
-            // Clear original pixels
+            // Clear original pixels of selection
             for (let y = 0; y < this.selection.height; y++) {
                 for (let x = 0; x < this.selection.width; x++) {
                     const px = this.selection.x + x;
@@ -753,32 +753,20 @@ class JerryEditor {
             return;
         }
     
-        // Click outside selection -> deselect and move whole layer
+        // Click outside selection -> deselect only
         this.clearSelection();
-        this.selection = { x: 0, y: 0, width: layer.width, height: layer.height };
-        this.moveStartPos = { ...pos };
-        this.movingSelection = true;
-    
-        // Copy entire layer pixels
-        this.selectionData = [];
-        for (let y = 0; y < layer.height; y++) {
-            this.selectionData[y] = [];
-            for (let x = 0; x < layer.width; x++) {
-                this.selectionData[y][x] = layer.pixels[y]?.[x] ?? null;
-                layer.pixels[y][x] = null;
-            }
-        }
-        this.redrawLayerPixels(layer);
+        this.selection = null;
+        this.selectionData = null;
     }
     
     updateMove(pos) {
-        if (!this.selection || !this.moveStartPos || !this.selectionData) return;
+        if (!this.movingSelection || !this.selection || !this.moveStartPos || !this.selectionData) return;
     
         const dx = pos.x - this.moveStartPos.x;
         const dy = pos.y - this.moveStartPos.y;
         const layer = this.layers[this.currentLayer];
     
-        // Clear layer
+        // Clear original selection area
         for (let y = 0; y < layer.height; y++) {
             for (let x = 0; x < layer.width; x++) {
                 layer.pixels[y][x] = null;
@@ -806,7 +794,7 @@ class JerryEditor {
     }
     
     finalizeMove() {
-        if (!this.selection || !this.moveStartPos) return;
+        if (!this.movingSelection || !this.selection || !this.moveStartPos) return;
     
         const dx = this.lastPos.x - this.moveStartPos.x;
         const dy = this.lastPos.y - this.moveStartPos.y;
@@ -831,6 +819,7 @@ class JerryEditor {
         this.selectionData = null;
         this.redrawLayerPixels(layer);
     }
+
     
     // ----- HELPER -----
     redrawLayerPixels(layer) {
