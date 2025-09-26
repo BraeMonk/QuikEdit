@@ -1617,7 +1617,7 @@ input[type="checkbox"],
   .panel-content {
     padding: 14px;
     overflow-y: auto;
-    max-height: 100%;
+    height: 100%;
   }
 
   #palette-grid,
@@ -1633,7 +1633,7 @@ input[type="checkbox"],
     height: 24px;
   }
 
-  /* Ensure pixel/sketch tools stay vertical in landscape with scrolling */ 
+  /* Ensure pixel/sketch tools stay vertical in landscape with scrolling */
   #pixel-tools,
   .pixel-tools,
   #sketch-tools,
