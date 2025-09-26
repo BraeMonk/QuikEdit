@@ -2178,6 +2178,7 @@ class JerryEditor {
         canvasWrapper.style.transform = `scale(${this.zoom})`;
         
         this.zoomIndicator.textContent = `${Math.round(this.zoom * 100)}%`;
+        this.updateGrid();
     }
     
     // Undo/Redo system
