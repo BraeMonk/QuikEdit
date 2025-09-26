@@ -20,8 +20,9 @@ class JerryEditor {
         this.grid = [];
         this.sprites = [{ name: 'Sprite 1', data: null }];
         this.currentSprite = 0;
-        this.showGrid = true;
-        
+        this.showGrid = true;  // grid visible on start
+        this.canvasGrid.style.display = 'grid';
+        this.updateGrid();
         // Sketch art properties
         this.layers = [];
         this.currentLayer = 0;
@@ -54,10 +55,7 @@ class JerryEditor {
         this.setupEventListeners();
         this.loadPalettes();
         this.initializeCanvas();
-        this.switchMode('pixel');
-        // Force initial grid visibility
-        this.canvasGrid.style.display = this.showGrid ? 'grid' : 'none';
-        this.updateGrid();
+        this.switchMode('pixel')
         this.loadProject();
         this.updateUI();
         this.initializePanels();
@@ -607,49 +605,42 @@ class JerryEditor {
 
         const grid = this.canvasGrid;
 
-        // Hide if grid is disabled
+        // Set size to match canvas exactly
+        grid.style.width = `${this.canvasWidth * this.pixelSize}px`;
+        grid.style.height = `${this.canvasHeight * this.pixelSize}px`;
+
+        // Center grid in wrapper
+        grid.style.pointerEvents = 'none';
+        grid.style.zIndex = '10';
+
+        // Respect the showGrid toggle
         if (!this.showGrid) {
             grid.style.display = 'none';
             return;
         }
-
-        // Make sure grid overlay covers the pixel canvas exactly
-        const canvasRect = this.pixelCanvas.getBoundingClientRect();
-        grid.style.width = `${canvasRect.width}px`;
-        grid.style.height = `${canvasRect.height}px`;
-        grid.style.position = 'absolute';
-        grid.style.top = '0';
-        grid.style.left = '0';
-        grid.style.pointerEvents = 'none';
-        grid.style.zIndex = '10';
-
-        // Calculate actual pixel size on screen (accounts for zoom & canvas scaling)
-        const cellWidth = canvasRect.width / this.canvasWidth;
-        const cellHeight = canvasRect.height / this.canvasHeight;
 
         const lineColor = 'rgba(255, 255, 255, 0.2)';
         const offset = 0.5;
 
         grid.style.backgroundImage = `
             repeating-linear-gradient(
-                to right,
+                to right, 
                 transparent,
-                transparent ${cellWidth - offset}px,
-                ${lineColor} ${cellWidth - offset}px,
-                ${lineColor} ${cellWidth}px
+                transparent ${this.pixelSize - offset}px,
+                ${lineColor} ${this.pixelSize - offset}px,
+                ${lineColor} ${this.pixelSize}px
             ),
             repeating-linear-gradient(
                 to bottom,
                 transparent,
-                transparent ${cellHeight - offset}px,
-                ${lineColor} ${cellHeight - offset}px,
-                ${lineColor} ${cellHeight}px
+                transparent ${this.pixelSize - offset}px,
+                ${lineColor} ${this.pixelSize - offset}px,
+                ${lineColor} ${this.pixelSize}px
             )
         `;
-        grid.style.backgroundSize = `${cellWidth}px ${cellHeight}px`;
+        grid.style.backgroundSize = `${this.pixelSize}px ${this.pixelSize}px`;
         grid.style.backgroundPosition = `${offset}px ${offset}px`;
-
-        grid.style.display = 'block';
+        grid.style.display = 'grid';
     }
     
     getCanvasPos(e) {
