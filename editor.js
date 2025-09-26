@@ -555,6 +555,16 @@ class JerryEditor {
         this.pixelCanvas.style.gridTemplateColumns = `repeat(${this.canvasWidth}, ${this.pixelSize}px)`;
         this.pixelCanvas.style.gridTemplateRows = `repeat(${this.canvasHeight}, ${this.pixelSize}px)`;
         this.pixelCanvas.style.backgroundColor = 'transparent';
+        this.pixelCanvas.style.position = 'relative';
+        this.pixelCanvas.style.top = '0';
+        this.pixelCanvas.style.left = '0';
+        this.pixelCanvas.style.transform = 'none'; // remove old scaling
+    
+        // Update wrapper CSS variables (checkerboard/grid support)
+        this.canvasWrapper.style.setProperty('--cellSize', `${this.pixelSize}px`);
+        this.canvasWrapper.style.setProperty('--halfCell', `${this.pixelSize / 2}px`);
+        this.canvasWrapper.style.setProperty('--cols', this.canvasWidth);
+        this.canvasWrapper.style.setProperty('--rows', this.canvasHeight);
     
         // Update grid overlay to match exactly
         this.canvasGrid.style.width = `${canvasWidthPx}px`;
@@ -562,6 +572,7 @@ class JerryEditor {
         this.canvasGrid.style.setProperty('--cols', this.canvasWidth);
         this.canvasGrid.style.setProperty('--rows', this.canvasHeight);
         this.canvasGrid.style.setProperty('--cellSize', `${this.pixelSize}px`);
+        this.canvasGrid.style.transform = 'translate(-50%, -50%)'; // ensure grid stays centered
     
         // Populate pixels
         for (let y = 0; y < this.canvasHeight; y++) {
@@ -579,34 +590,27 @@ class JerryEditor {
         }
     }
 
+
     
     updateGrid() {
-        if (this.mode !== 'pixel') return;
+        if (this.mode !== 'pixel' || !this.showGrid) return;
     
         const grid = this.canvasGrid;
-        const wrapper = document.querySelector('.canvas-wrapper');
-        const scaleX = wrapper.clientWidth / (this.canvasWidth * this.pixelSize);
-        const scaleY = wrapper.clientHeight / (this.canvasHeight * this.pixelSize);
-        const scale = Math.min(scaleX, scaleY); // uniform scale
     
-        if (!this.showGrid) {
-            grid.style.display = 'none';
-            return;
-        }
-    
-        grid.style.display = 'block';
-        grid.style.position = 'absolute';
-        grid.style.top = '0';
-        grid.style.left = '0';
+        // Set size to match canvas exactly
         grid.style.width = `${this.canvasWidth * this.pixelSize}px`;
         grid.style.height = `${this.canvasHeight * this.pixelSize}px`;
+    
+        // Center grid in wrapper
+        grid.style.position = 'absolute';
+        grid.style.top = '50%';
+        grid.style.left = '50%';
+        grid.style.transform = 'translate(-50%, -50%)';
         grid.style.pointerEvents = 'none';
         grid.style.zIndex = '10';
-        grid.style.transformOrigin = 'top left';
-        grid.style.transform = `scale(${scale})`;
     
         const lineColor = 'rgba(255, 255, 255, 0.2)';
-        const offset = 0.5; // keep lines crisp
+        const offset = 0.5;
     
         grid.style.backgroundImage = `
             repeating-linear-gradient(
@@ -627,6 +631,7 @@ class JerryEditor {
         grid.style.backgroundSize = `${this.pixelSize}px ${this.pixelSize}px`;
         grid.style.backgroundPosition = `${offset}px ${offset}px`;
     }
+
 
     
     getCanvasPos(e) {
@@ -2084,23 +2089,23 @@ class JerryEditor {
         const maxDisplaySize = 512; // Maximum display size in px
         this.pixelSize = Math.floor(maxDisplaySize / Math.max(newWidth, newHeight));
     
-        // --- 3. Resize canvas to match pixel grid ---
-        this.pixelCanvas.width = newWidth * this.pixelSize;
-        this.pixelCanvas.height = newHeight * this.pixelSize;
-    
-        // --- 4. Update canvas and grid overlay ---
-        this.updatePixelCanvas();
-        this.updateGrid();
-        this.updateCanvasInfo();
-
-        // After calculating pixelSize, canvasWidth, canvasHeight
+        // --- 3. Update wrapper CSS variables for scaling/checkerboard ---
         const wrapper = this.canvasWrapper;
         wrapper.style.setProperty('--cellSize', `${this.pixelSize}px`);
         wrapper.style.setProperty('--halfCell', `${this.pixelSize / 2}px`);
         wrapper.style.setProperty('--cols', this.canvasWidth);
         wrapper.style.setProperty('--rows', this.canvasHeight);
-
+    
+        // --- 4. Update canvas and grid overlay ---
+        this.updatePixelCanvas();
+        this.updateGrid();
+        this.updateCanvasInfo();
+    
+        // --- 5. Center canvas inside wrapper ---
+        this.pixelCanvas.style.margin = '0 auto';
+        this.canvasGrid.style.transform = 'none';
     }
+
 
     
     resizeSketchCanvas(width, height) {
