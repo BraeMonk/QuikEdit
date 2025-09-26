@@ -1596,13 +1596,6 @@ input[type="checkbox"],
     padding: 0 16px;
   }
 
-  #sidebar,
-  .sidebar {
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-  }
-
   #logo,
   .logo {
     font-size: 18px;
@@ -1620,11 +1613,21 @@ input[type="checkbox"],
     font-size: 13px;
   }
 
-  #panel-content,
+  /* Ensure sidebar and panels fill full height */
+  .sidebar {
+    height: 100%;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .panels {
+    height: 100%;
+    overflow-y: auto;
+  }
+
   .panel-content {
     padding: 14px;
-    overflow-y: auto;
-    height: 100%;
   }
 
   #palette-grid,
@@ -1641,9 +1644,7 @@ input[type="checkbox"],
   }
 
   /* Ensure pixel/sketch tools stay vertical in landscape with scrolling */
-  #pixel-tools,
   .pixel-tools,
-  #sketch-tools,
   .sketch-tools {
     display: flex;
     flex-direction: column;
@@ -1654,6 +1655,14 @@ input[type="checkbox"],
     height: 100%;
     gap: 6px;
     padding: 4px 0;
+  }
+
+  /* Make tool groups fill available space */
+  .tool-group {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
   }
 }
 
