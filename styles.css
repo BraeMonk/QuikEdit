@@ -321,7 +321,7 @@ body {
   height: max-content;
   border-radius: 12px;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
-  border: 2px solid #333;
+  border: none;
   background: transparent;
 }
 
@@ -1413,10 +1413,21 @@ input[type="checkbox"],
     padding: 0;
     border-radius: 12px;
     box-shadow: 0 8px 24px rgba(0,0,0,0.3);
-    border: 2px solid #333;
+    border: none;
     background: transparent;
     overflow: hidden;
     position: relative;
+  }
+
+  /* Checkerboard background scaled with pixel size */
+  #canvas-wrapper.checkerboard {
+    background-image:
+      linear-gradient(45deg, #2a2a2a 25%, transparent 25%),
+      linear-gradient(-45deg, #2a2a2a 25%, transparent 25%),
+      linear-gradient(45deg, transparent 75%, #2a2a2a 75%),
+      linear-gradient(-45deg, transparent 75%, #2a2a2a 75%);
+    background-size: var(--cellSize, 20px) var(--cellSize, 20px);
+    background-position: 0 0, 0 var(--halfCell, 10px), var(--halfCell, 10px) -var(--halfCell, 10px), -var(--halfCell, 10px) 0px;
   }
 
   /* Ensure the grid overlay is visible by default in portrait mode */
