@@ -1576,6 +1576,9 @@ input[type="checkbox"],
 /* ============================= */
 /* Desktop-style layout on small landscape screens */
 /* ============================= */
+/* ============================= */
+/* Desktop-style layout on small landscape screens */
+/* ============================= */
 @media (max-width: 1024px) and (orientation: landscape) {
   html, body {
     width: 100%;
@@ -1601,7 +1604,7 @@ input[type="checkbox"],
     display: flex;
     justify-content: center;
     align-items: center;
-    overflow: hidden;
+    overflow: hidden; /* prevents oversized background */
     height: 100%;
     width: 100%;
   }
@@ -1635,6 +1638,13 @@ input[type="checkbox"],
   .tool-icons {
     flex-direction: row;
     overflow-x: auto;
+  }
+
+  /* Side panel tweaks to ensure visibility */
+  #panel,
+  .panel {
+    max-height: 100%;
+    overflow-y: auto;
   }
 }
 
