@@ -1589,41 +1589,48 @@ input[type="checkbox"],
   #editor-container,
   .editor-container {
     display: grid;
-    grid-template-columns: 55px 1fr 260px; /* same as desktop */
-    grid-template-rows: 50px 1fr;         /* same as desktop */
+    grid-template-columns: 55px 1fr 260px;
+    grid-template-rows: 50px 1fr;
     width: 100vw;
     height: 100vh;
   }
 
-  /* Canvas area fills available grid space */
+  /* Canvas area fills available grid space but stays centered */
   #canvas-area,
   .canvas-area {
-    width: 100%;
-    height: 100%;
     display: flex;
     justify-content: center;
     align-items: center;
+    overflow: hidden;
+    height: 100%;
+    width: 100%;
   }
 
-  /* Wrapper ensures canvas scales proportionally */
-  #canvas-wrapper {
-    width: 100%;
-    height: 100%;
-    display: grid;
+  /* Canvas wrapper sizes itself to canvas without overexpanding */
+  #canvas-wrapper,
+  .canvas-wrapper {
+    max-width: 100%;
+    max-height: 100%;
+    width: auto;
+    height: auto;
+    display: flex;
+    justify-content: center;
+    align-items: center;
   }
 
   /* Canvases scale to fit wrapper without stretching */
   #canvas,
   #sketchCanvas,
   #selectionOverlay {
-    width: 100%;
+    width: auto;
     height: 100%;
     max-width: 100%;
     max-height: 100%;
-    object-fit: contain; /* maintain aspect ratio */
+    object-fit: contain;
+    display: block;
   }
 
-  /* Optional: adjust toolbar icons horizontally if needed */
+  /* Toolbar icons horizontal */
   .tool-bar,
   .tool-icons {
     flex-direction: row;
