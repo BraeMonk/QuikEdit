@@ -1422,7 +1422,6 @@ input[type="checkbox"],
   /* Ensure the grid overlay is visible by default in portrait mode */
   #canvasGrid,
   .canvas-grid {
-    display: grid;   /* force it to grid by default */
     position: absolute;
     top: 0;
     left: 0;
