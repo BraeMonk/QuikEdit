@@ -284,7 +284,7 @@ class JerryEditor {
     toggleGrid() {
         this.showGrid = !this.showGrid;
 
-        if (this.mode === 'pixel') {
+        if (this.mode === 'pixel' && this.canvasGrid) {
             this.canvasGrid.style.display = this.showGrid ? 'grid' : 'none';
         }
 
