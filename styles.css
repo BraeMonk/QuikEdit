@@ -1600,9 +1600,51 @@ input[type="checkbox"],
   /* Remove header completely in landscape */
   #header,
   .header {
-    display: none;
+    grid-area: header;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 12px; /* Reduced padding */
+    height: 45px; /* Fixed compact height */
+    min-height: 45px;
+    max-height: 45px;
   }
 
+  #logo,
+  .logo {
+    font-size: 16px; /* Smaller font */
+  }
+  
+   /* Compact mode toggle */
+  #mode-toggle,
+  .mode-toggle {
+    margin-left: 8px; /* Less margin */
+    padding: 1px; /* Tighter padding */
+  }
+
+  #mode-btn,
+  .mode-btn {
+    padding: 4px 8px; /* Smaller buttons */
+    font-size: 11px; /* Smaller text */
+    min-width: 50px; /* Narrower buttons */
+  }
+
+  /* Compact header controls */
+  #header-controls,
+  .header-controls {
+    gap: 4px; /* Tighter spacing */
+  }
+
+  #header-btn,
+  .header-btn,
+  #newProject,
+  #saveProject,
+  #exportPNG {
+    padding: 4px 8px; /* Smaller buttons */
+    font-size: 10px; /* Smaller text */
+  }
+
+  /* Sidebar - adjust for smaller header */
   #sidebar,
   .sidebar {
     grid-area: sidebar;
@@ -1611,14 +1653,14 @@ input[type="checkbox"],
     align-items: center;
     justify-content: flex-start;
     
-    height: 100vh;
-    min-height: 100vh;
-    max-height: 100vh;
+    height: calc(100vh - 45px); /* Subtract header height */
+    min-height: calc(100vh - 45px);
+    max-height: calc(100vh - 45px);
     
     overflow-y: auto;
     overflow-x: hidden;
-    padding: 8px 0; /* Reduced padding for more space */
-    gap: 4px; /* Reduced gap for tighter spacing */
+    padding: 8px 0;
+    gap: 4px;
     border-right: 2px solid #333;
     border-top: none;
     border-bottom: none;
