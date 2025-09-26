@@ -54,7 +54,7 @@ class JerryEditor {
         this.setupEventListeners();
         this.loadPalettes();
         this.initializeCanvas();
-        this.switchMode(this.mode);
+        this.switchMode('pixel');
         this.loadProject();
         this.updateUI();
         this.initializePanels();
