@@ -1610,7 +1610,6 @@ input[type="checkbox"],
     flex-direction: column;
     
     height: 100%;
-    align-self: stretch;
     
     overflow-y: auto;
     overflow-x: hidden;
