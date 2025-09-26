@@ -1579,66 +1579,64 @@ input[type="checkbox"],
     height: 100%;
     margin: 0;
     padding: 0;
-    overflow: hidden;
+    overflow: hidden; /* prevent scrolling of the whole page */
   }
 
-  /* Editor container: left toolbar, canvas, right panel */
+  /* Editor container grid: left toolbar, canvas, right panel */
   #editor-container,
   .editor-container {
     display: grid;
-    grid-template-columns: 55px 1fr 260px;
-    grid-template-rows: 1fr;
+    grid-template-areas: "toolbar canvas panel";
+    grid-template-columns: 55px 1fr 260px; /* fixed width for tool/panel, canvas flexible */
+    grid-template-rows: 1fr; /* full height */
     width: 100vw;
     height: 100vh;
   }
 
-  /* Left toolbar scrolls independently */
+  /* Left toolbar vertical */
   #toolbar,
   .tool-bar {
+    grid-area: toolbar;
     display: flex;
-    flex-direction: column;
-    height: 100%;
-    overflow-y: auto;
+    flex-direction: column; /* top to bottom */
+    overflow-y: auto;       /* scroll if content exceeds screen */
     overflow-x: hidden;
-    gap: 6px;
-    padding: 6px 0;
+    height: 100%;
   }
 
-  /* Right panel scrolls independently */
+  /* Right panel vertical */
   #panel,
   .panel {
+    grid-area: panel;
     display: flex;
     flex-direction: column;
-    height: 100%;
-    overflow-y: auto;
+    overflow-y: auto;       /* scroll if content exceeds screen */
     overflow-x: hidden;
-    gap: 6px;
-    padding: 6px 0;
+    height: 100%;
   }
 
-  /* Canvas area fills middle column */
+  /* Center canvas area */
   #canvas-area,
   .canvas-area {
+    grid-area: canvas;
     display: flex;
     justify-content: center;
     align-items: center;
-    overflow: hidden;
+    overflow: hidden; /* prevents canvas overflow */
     width: 100%;
     height: 100%;
-    position: relative;
   }
 
-  /* Canvas wrapper scales with zoom/resizing */
+  /* Canvas wrapper keeps scaling correct */
   #canvas-wrapper,
   .canvas-wrapper {
+    max-width: 100%;
+    max-height: 100%;
     display: flex;
     justify-content: center;
     align-items: center;
-    max-width: 100%;
-    max-height: 100%;
     width: auto;
     height: auto;
-    position: relative;
   }
 
   /* Canvases scale correctly */
@@ -1653,18 +1651,10 @@ input[type="checkbox"],
     display: block;
   }
 
-  /* Toolbar buttons: prevent crushing, maintain spacing */
-  #toolbar > *,
-  .tool-bar > * {
-    flex: 0 0 auto; /* do not stretch */
-    margin: 2px 0;
-  }
-
-  /* Panel content: prevent crushing, maintain spacing */
-  #panel > *,
-  .panel > * {
-    flex: 0 0 auto; /* do not stretch */
-    margin: 2px 0;
+  /* Ensure toolbar/panel children don’t stretch weirdly */
+  #toolbar > *, .tool-bar > *,
+  #panel > *, .panel > * {
+    flex: 0 0 auto;
   }
 }
 
