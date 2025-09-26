@@ -1633,8 +1633,8 @@ input[type="checkbox"],
     padding: 12px;
     display: flex;
     flex-direction: column;
-    justify-content: space-evenly;
-    align-items: center;
+    justify-content: stretch;
+    align-items: stretch;
     gap: 8px;
   }
 
