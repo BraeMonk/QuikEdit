@@ -57,6 +57,7 @@ class JerryEditor {
         this.switchMode('pixel');
         // Force initial grid visibility
         this.canvasGrid.style.display = this.showGrid ? 'grid' : 'none';
+        this.updateGrid();
         this.loadProject();
         this.updateUI();
         this.initializePanels();
