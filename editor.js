@@ -1874,107 +1874,94 @@ class JerryEditor {
         ctx.globalAlpha = currentAlpha;
     }
     
-    gaussianRandom() {
-        // Box-Muller transform for gaussian distribution
-        let u = 0, v = 0;
-        while(u === 0) u = Math.random(); // Converting [0,1) to (0,1)
-        while(v === 0) v = Math.random();
-        return Math.sqrt(-2.0 * Math.log(u)) * Math.cos(2.0 * Math.PI * v);
-    }
-    
-    smudge(ctx, pos) {
-        if (!this.lastPos || !this.isDrawing) return;
-        
-        const radius = Math.floor(this.brushSize / 2);
-        if (radius < 2) return;
-        
-        try {
-            // Get image data from around the current position
-            const imageData = ctx.getImageData(
-                Math.max(0, pos.x - radius), 
-                Math.max(0, pos.y - radius), 
-                Math.min(ctx.canvas.width - Math.max(0, pos.x - radius), radius * 2), 
-                Math.min(ctx.canvas.height - Math.max(0, pos.y - radius), radius * 2)
-            );
-            
-            // Calculate smudge direction and distance
-            const dx = (pos.x - this.lastPos.x) * 0.5;
-            const dy = (pos.y - this.lastPos.y) * 0.5;
-            
-            const smudgeStrength = this.brushOpacity / 100;
-            ctx.globalAlpha = smudgeStrength * 0.7;
-            ctx.globalCompositeOperation = 'source-over';
-            
-            // Create smooth smudging with multiple offset copies
-            for (let i = 1; i <= 4; i++) {
-                const offsetX = dx * (i / 4);
-                const offsetY = dy * (i / 4);
-                const alpha = smudgeStrength * (1 - i / 5);
-                
-                ctx.globalAlpha = alpha;
-                ctx.putImageData(
-                    imageData, 
-                    Math.max(0, pos.x - radius) + offsetX, 
-                    Math.max(0, pos.y - radius) + offsetY
-                );
-            }
-        } catch (e) {
-            console.warn('Smudge tool failed:', e);
-        }
-    }
-    
+    // ----- SKETCH BLUR TOOL -----
     blur(ctx, pos) {
-        const radius = Math.floor(this.brushSize / 3);
-        if (radius < 2) return;
+        if (!this.lastPos) return;
+        
+        const radius = Math.max(2, Math.floor(this.brushSize / 2));
         
         try {
-            const imageData = ctx.getImageData(
-                Math.max(0, pos.x - radius), 
-                Math.max(0, pos.y - radius), 
-                Math.min(ctx.canvas.width - Math.max(0, pos.x - radius), radius * 2), 
-                Math.min(ctx.canvas.height - Math.max(0, pos.y - radius), radius * 2)
-            );
+            // Get image data around brush area
+            const x = Math.max(0, pos.x - radius);
+            const y = Math.max(0, pos.y - radius);
+            const width = Math.min(radius * 2, ctx.canvas.width - x);
+            const height = Math.min(radius * 2, ctx.canvas.height - y);
             
-            const data = imageData.data;
-            const width = imageData.width;
-            const height = imageData.height;
+            const imageData = ctx.getImageData(x, y, width, height);
+            const blurred = this.gaussianBlur(imageData, Math.floor(radius / 2));
             
-            // Apply gaussian blur
-            const blurRadius = Math.min(4, radius);
-            const outputData = new Uint8ClampedArray(data);
-            
-            // Horizontal pass
-            for (let y = 0; y < height; y++) {
-                for (let x = blurRadius; x < width - blurRadius; x++) {
-                    let r = 0, g = 0, b = 0, a = 0;
-                    let totalWeight = 0;
-                    
-                    for (let dx = -blurRadius; dx <= blurRadius; dx++) {
-                        const weight = Math.exp(-(dx * dx) / (2 * blurRadius * blurRadius));
-                        const idx = (y * width + (x + dx)) * 4;
-                        
-                        r += data[idx] * weight;
-                        g += data[idx + 1] * weight;
-                        b += data[idx + 2] * weight;
-                        a += data[idx + 3] * weight;
-                        totalWeight += weight;
-                    }
-                    
-                    const idx = (y * width + x) * 4;
-                    outputData[idx] = r / totalWeight;
-                    outputData[idx + 1] = g / totalWeight;
-                    outputData[idx + 2] = b / totalWeight;
-                    outputData[idx + 3] = a / totalWeight;
-                }
-            }
-            
-            const blurredImageData = new ImageData(outputData, width, height);
-            ctx.putImageData(blurredImageData, Math.max(0, pos.x - radius), Math.max(0, pos.y - radius));
+            ctx.putImageData(blurred, x, y);
         } catch (e) {
-            console.warn('Blur tool failed:', e);
+            console.warn('Blur failed:', e);
         }
     }
-
+    
+    // ----- SKETCH SMUDGE TOOL -----
+    smudge(ctx, pos) {
+        if (!this.lastPos) return;
+        
+        const radius = Math.max(2, Math.floor(this.brushSize / 2));
+        
+        try {
+            // Get source area
+            const sourceX = Math.max(0, this.lastPos.x - radius);
+            const sourceY = Math.max(0, this.lastPos.y - radius);
+            const width = Math.min(radius * 2, ctx.canvas.width - sourceX);
+            const height = Math.min(radius * 2, ctx.canvas.height - sourceY);
+            
+            const imageData = ctx.getImageData(sourceX, sourceY, width, height);
+            
+            // Calculate smudge direction
+            const dx = (pos.x - this.lastPos.x) * 0.8;
+            const dy = (pos.y - this.lastPos.y) * 0.8;
+            
+            // Apply smudge effect
+            ctx.globalAlpha = this.brushOpacity / 100 * 0.7;
+            ctx.putImageData(imageData, sourceX + dx, sourceY + dy);
+            ctx.globalAlpha = 1;
+            
+        } catch (e) {
+            console.warn('Smudge failed:', e);
+        }
+    }
+    
+    // Helper for blur
+    gaussianBlur(imageData, radius) {
+        const data = new Uint8ClampedArray(imageData.data);
+        const width = imageData.width;
+        const height = imageData.height;
+        
+        // Simple box blur approximation
+        for (let y = 0; y < height; y++) {
+            for (let x = 0; x < width; x++) {
+                let r = 0, g = 0, b = 0, a = 0, count = 0;
+                
+                for (let dy = -radius; dy <= radius; dy++) {
+                    for (let dx = -radius; dx <= radius; dx++) {
+                        const nx = x + dx;
+                        const ny = y + dy;
+                        
+                        if (nx >= 0 && nx < width && ny >= 0 && ny < height) {
+                            const idx = (ny * width + nx) * 4;
+                            r += imageData.data[idx];
+                            g += imageData.data[idx + 1];
+                            b += imageData.data[idx + 2];
+                            a += imageData.data[idx + 3];
+                            count++;
+                        }
+                    }
+                }
+                
+                const idx = (y * width + x) * 4;
+                data[idx] = r / count;
+                data[idx + 1] = g / count;
+                data[idx + 2] = b / count;
+                data[idx + 3] = a / count;
+            }
+        }
+        
+        return new ImageData(data, width, height);
+    }
     
     drawSketchLine(ctx, start, end, color) {
         ctx.strokeStyle = color;
