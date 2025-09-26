@@ -1609,9 +1609,8 @@ input[type="checkbox"],
     display: flex;
     flex-direction: column;
     
-    height: 100vh;
-    min-height: 100vh;
-    max-height: 100vh;
+    height: 100%;
+    align-self: stretch;
     
     overflow-y: auto;
     overflow-x: hidden;
@@ -1619,7 +1618,6 @@ input[type="checkbox"],
     border-top: none;
     
     flex-shrink: 0;
-    flex-grow: 0;
   }
 
   /* Tool groups - copy panel structure exactly */
