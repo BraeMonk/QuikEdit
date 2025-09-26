@@ -379,43 +379,45 @@ class JerryEditor {
     
     draw(e) {
         const pos = this.mode === 'pixel' ? this.getPixelPos(e) : this.getCanvasPos(e);
-    
+
         if (!this.isDrawing) {
             if (this.mode === 'sketch' && ['brush','pen','marker','pencilSketch','charcoal','eraser'].includes(this.currentTool)) {
                 this.showBrushPreview(pos);
             }
             return;
         }
-    
-        this.lastPos = pos;
+
         if (this.strokePath) this.strokePath.push(pos);
-    
+
         // ----- PIXEL SELECTION -----
         if (this.currentTool === 'select' && this.mode === 'pixel') {
             this.updatePixelSelection(pos);
             return;
         }
-    
+
         // ----- PIXEL MOVE -----
         if (this.currentTool === 'move' && this.mode === 'pixel') {
             this.updatePixelMove(pos);
             return;
         }
-    
+
         // ----- SKETCH SHAPES -----
         if (this.mode === 'sketch' && ['lineSketch','rectSketch','circleSketch'].includes(this.currentTool) && this.shapeStartPos) {
             this.clearShapePreview();
             this.previewShape(this.shapeStartPos, pos);
             return;
         }
-    
-        // ----- PIXEL SHAPES / TOOLS -----
+
+        // ----- PIXEL / SKETCH TOOLS -----
         if (this.mode === 'pixel') {
             const rightClick = e.buttons === 2;
             this.handlePixelTool(pos, rightClick, false, false);
         } else {
             this.handleSketchTool(pos, e);
         }
+
+        // update lastPos only AFTER drawing
+        this.lastPos = pos;
     }
 
     // Add this method to improve getCanvasPos for better coordinate calculation
