@@ -570,47 +570,52 @@ class JerryEditor {
 
     
     updateGrid() {
-        if (this.mode !== 'pixel') return;
-    
-        const grid = this.canvasGrid;
-        
-        // Update CSS custom properties for checkerboard
-        const wrapper = document.querySelector('.canvas-wrapper');
-        wrapper.style.setProperty('--cellSize', `${this.pixelSize}px`);
-        wrapper.style.setProperty('--halfCell', `${this.pixelSize / 2}px`);
-        wrapper.style.setProperty('--cols', this.canvasWidth);
-        wrapper.style.setProperty('--rows', this.canvasHeight);
-    
-        if (!this.showGrid) {
-            grid.style.display = 'none';
-            return;
-        }
-    
-        // Show and configure grid
-        grid.style.display = 'grid';
-        grid.style.position = 'absolute';
-        grid.style.top = '0';
-        grid.style.left = '0';
-        grid.style.width = `${this.canvasWidth * this.pixelSize}px`;
-        grid.style.height = `${this.canvasHeight * this.pixelSize}px`;
-        grid.style.gridTemplateColumns = `repeat(${this.canvasWidth}, ${this.pixelSize}px)`;
-        grid.style.gridTemplateRows = `repeat(${this.canvasHeight}, ${this.pixelSize}px)`;
-        grid.style.pointerEvents = 'none';
-        grid.style.zIndex = '10';
-        
-        // Clear and rebuild grid cells
-        grid.innerHTML = '';
-        const totalCells = this.canvasWidth * this.canvasHeight;
-        
-        for (let i = 0; i < totalCells; i++) {
-            const cell = document.createElement('div');
-            cell.className = 'grid-cell';
-            cell.style.border = 'none';
-            cell.style.outline = "1px solid rgba(255,255,255,0.2)";
-            cell.style.boxSizing = 'border-box';
-            grid.appendChild(cell);
-        }
+    if (this.mode !== 'pixel') return;
+
+    const grid = this.canvasGrid;
+    const wrapper = document.querySelector('.canvas-wrapper');
+    const scaleX = wrapper.clientWidth / (this.canvasWidth * this.pixelSize);
+    const scaleY = wrapper.clientHeight / (this.canvasHeight * this.pixelSize);
+    const scale = Math.min(scaleX, scaleY); // uniform scale
+
+    if (!this.showGrid) {
+        grid.style.display = 'none';
+        return;
     }
+
+    grid.style.display = 'block';
+    grid.style.position = 'absolute';
+    grid.style.top = '0';
+    grid.style.left = '0';
+    grid.style.width = `${this.canvasWidth * this.pixelSize}px`;
+    grid.style.height = `${this.canvasHeight * this.pixelSize}px`;
+    grid.style.pointerEvents = 'none';
+    grid.style.zIndex = '10';
+    grid.style.transformOrigin = 'top left';
+    grid.style.transform = `scale(${scale})`;
+
+    const lineColor = 'rgba(255, 255, 255, 0.2)';
+    const offset = 0.5; // keep lines crisp
+
+    grid.style.backgroundImage = `
+        repeating-linear-gradient(
+            to right,
+            transparent,
+            transparent ${this.pixelSize - offset}px,
+            ${lineColor} ${this.pixelSize - offset}px,
+            ${lineColor} ${this.pixelSize}px
+        ),
+        repeating-linear-gradient(
+            to bottom,
+            transparent,
+            transparent ${this.pixelSize - offset}px,
+            ${lineColor} ${this.pixelSize - offset}px,
+            ${lineColor} ${this.pixelSize}px
+        )
+    `;
+    grid.style.backgroundSize = `${this.pixelSize}px ${this.pixelSize}px`;
+    grid.style.backgroundPosition = `${offset}px ${offset}px`;
+}
 
     
     getCanvasPos(e) {
