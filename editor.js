@@ -453,6 +453,17 @@ class JerryEditor {
             sketchTools.style.display = mode === 'sketch' ? 'flex' : 'none';
         }
 
+        // ----- CONTROLS -----
+        const pixelControls = document.querySelector('.pixel-controls');
+        const sketchControls = document.querySelector('.sketch-controls');
+
+        if (pixelControls) {
+            pixelControls.style.display = mode === 'pixel' ? 'block' : 'none';
+        }
+        if (sketchControls) {
+            sketchControls.style.display = mode === 'sketch' ? 'block' : 'none';
+        }
+        
         // ----- CANVASES -----
         this.pixelCanvas.style.display = mode === 'pixel' ? 'grid' : 'none';
         this.sketchCanvas.style.display = mode === 'sketch' ? 'block' : 'none';
