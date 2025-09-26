@@ -1578,92 +1578,77 @@ input[type="checkbox"],
 /* ============================= */
 @media (max-width: 1024px) and (orientation: landscape) {
   html, body {
-    width: 100%;
-    height: 100%;
     margin: 0;
     padding: 0;
-    overflow: hidden; /* prevent scrolling */
+    width: 100%;
+    height: 100%;
+    overflow: hidden; /* no viewport scrolling */
   }
 
-  /* Editor container keeps desktop-like grid */
+  /* Editor container: grid layout */
   #editor-container,
   .editor-container {
     display: grid;
-    grid-template-columns: 55px 1fr 260px; /* toolbar | canvas | side panel */
-    grid-template-rows: 50px 1fr;          /* top bar | main area */
+    grid-template-columns: 60px 1fr 280px; /* left toolbar | canvas | right controls */
+    grid-template-rows: 100%;
     width: 100vw;
     height: 100vh;
-    box-sizing: border-box;
+    gap: 0;
   }
 
-  /* Top bar stays at the top */
-  #top-bar,
-  .top-bar {
-    grid-column: 1 / 4;
-    grid-row: 1 / 2;
-  }
-
-  /* Toolbar stays on left */
-  #tool-bar,
-  .tool-bar {
-    grid-column: 1 / 2;
-    grid-row: 2 / 3;
+  /* Left toolbar: scrollable vertically */
+  .tool-bar,
+  .tool-icons {
     display: flex;
     flex-direction: column;
     overflow-y: auto;
+    overflow-x: hidden;
     height: 100%;
   }
 
-  /* Canvas area fills middle grid column */
+  /* Right panel: scrollable vertically as one unit */
+  #panel,
+  .panel {
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    overflow-x: hidden;
+    height: 100%;
+  }
+
+  /* Canvas area: fixed center, does not scroll with panels */
   #canvas-area,
   .canvas-area {
-    grid-column: 2 / 3;
-    grid-row: 2 / 3;
     display: flex;
     justify-content: center;
     align-items: center;
-    overflow: hidden;
+    overflow: hidden; /* prevents canvas from overlapping panels */
     width: 100%;
     height: 100%;
-    position: relative;
   }
 
-  /* Canvas wrapper scales with canvas area */
+  /* Canvas wrapper: scale to fit container */
   #canvas-wrapper,
   .canvas-wrapper {
-    width: 100%;
-    height: 100%;
     max-width: 100%;
     max-height: 100%;
+    width: auto;
+    height: auto;
     display: flex;
     justify-content: center;
     align-items: center;
   }
 
-  /* Canvases scale correctly without overlapping panels */
+  /* Canvases: maintain aspect ratio */
   #canvas,
   #sketchCanvas,
   #selectionOverlay {
-    width: 100%;
+    width: auto;
     height: 100%;
+    max-width: 100%;
+    max-height: 100%;
     object-fit: contain;
     display: block;
-  }
-
-  /* Side panel stays on right */
-  #panel,
-  .panel {
-    grid-column: 3 / 4;
-    grid-row: 2 / 3;
-    max-height: 100%;
-    overflow-y: auto;
-  }
-
-  /* Horizontal tool icons (if toolbar is horizontal at top) */
-  .tool-icons {
-    display: flex;
-    flex-direction: row;
-    overflow-x: auto;
   }
 }
 
