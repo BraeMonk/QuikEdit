@@ -664,7 +664,6 @@ class JerryEditor {
         `;
         grid.style.backgroundSize = `${this.pixelSize}px ${this.pixelSize}px`;
         grid.style.backgroundPosition = `${offset}px ${offset}px`;
-        grid.style.display = 'grid'; // use block, not grid
     }
     
     getCanvasPos(e) {
