@@ -1416,6 +1416,7 @@ input[type="checkbox"],
     border: 2px solid #333;
     background: transparent;
     overflow: hidden; /* hide anything outside */
+    position: relative;
   }
   
   #canvas-area,
