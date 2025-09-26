@@ -601,30 +601,32 @@ class JerryEditor {
             }
         }
     }
-
-
     
     updateGrid() {
         if (this.mode !== 'pixel') return;
 
         const grid = this.canvasGrid;
 
-        // Respect the showGrid toggle
+        // Hide if grid is disabled
         if (!this.showGrid) {
             grid.style.display = 'none';
             return;
         }
 
-        // Set grid size to match pixel canvas
-        grid.style.width = `${this.canvasWidth * this.pixelSize}px`;
-        grid.style.height = `${this.canvasHeight * this.pixelSize}px`;
+        // Make sure grid overlay covers the pixel canvas exactly
+        const canvasRect = this.pixelCanvas.getBoundingClientRect();
+        grid.style.width = `${canvasRect.width}px`;
+        grid.style.height = `${canvasRect.height}px`;
         grid.style.position = 'absolute';
         grid.style.top = '0';
         grid.style.left = '0';
         grid.style.pointerEvents = 'none';
         grid.style.zIndex = '10';
 
-        // Grid lines style
+        // Calculate actual pixel size on screen (accounts for zoom & canvas scaling)
+        const cellWidth = canvasRect.width / this.canvasWidth;
+        const cellHeight = canvasRect.height / this.canvasHeight;
+
         const lineColor = 'rgba(255, 255, 255, 0.2)';
         const offset = 0.5;
 
@@ -632,25 +634,23 @@ class JerryEditor {
             repeating-linear-gradient(
                 to right,
                 transparent,
-                transparent ${this.pixelSize - offset}px,
-                ${lineColor} ${this.pixelSize - offset}px,
-                ${lineColor} ${this.pixelSize}px
+                transparent ${cellWidth - offset}px,
+                ${lineColor} ${cellWidth - offset}px,
+                ${lineColor} ${cellWidth}px
             ),
             repeating-linear-gradient(
                 to bottom,
                 transparent,
-                transparent ${this.pixelSize - offset}px,
-                ${lineColor} ${this.pixelSize - offset}px,
-                ${lineColor} ${this.pixelSize}px
+                transparent ${cellHeight - offset}px,
+                ${lineColor} ${cellHeight - offset}px,
+                ${lineColor} ${cellHeight}px
             )
         `;
-        grid.style.backgroundSize = `${this.pixelSize}px ${this.pixelSize}px`;
+        grid.style.backgroundSize = `${cellWidth}px ${cellHeight}px`;
         grid.style.backgroundPosition = `${offset}px ${offset}px`;
 
         grid.style.display = 'block';
     }
-
-
     
     getCanvasPos(e) {
         const rect = (this.mode === 'pixel' ? this.pixelCanvas : this.sketchCanvas).getBoundingClientRect();
