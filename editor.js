@@ -743,64 +743,67 @@ class JerryEditor {
     // ----- PIXEL MOVE METHODS -----
     startPixelMove(pos) {
         if (!this.pixelSelection || !this.pixelSelection.finalized) return;
-        
-        // Check if clicking inside selection
+    
         const minX = Math.min(this.pixelSelection.startX, this.pixelSelection.endX);
         const maxX = Math.max(this.pixelSelection.startX, this.pixelSelection.endX);
         const minY = Math.min(this.pixelSelection.startY, this.pixelSelection.endY);
         const maxY = Math.max(this.pixelSelection.startY, this.pixelSelection.endY);
-        
+    
         if (pos.x >= minX && pos.x <= maxX && pos.y >= minY && pos.y <= maxY) {
             this.movingPixelSelection = true;
             this.pixelMoveStart = pos;
             this.originalPixelSelection = { ...this.pixelSelection };
-            
-            // Clear original pixels
-            for (let y = minY; y <= maxY; y++) {
-                for (let x = minX; x <= maxX; x++) {
-                    if (this.grid[y]) this.grid[y][x] = 'transparent';
+    
+            // Copy original selection pixels (don't clear grid yet)
+            this.movingPixelData = [];
+            for (let y = 0; y <= maxY - minY; y++) {
+                this.movingPixelData[y] = [];
+                for (let x = 0; x <= maxX - minX; x++) {
+                    this.movingPixelData[y][x] = this.grid[minY + y][minX + x];
+                    // Temporarily clear the grid for ghost effect
+                    this.grid[minY + y][minX + x] = 'transparent';
                 }
             }
+    
             this.updatePixelCanvas();
         }
     }
     
     updatePixelMove(pos) {
         if (!this.movingPixelSelection || !this.pixelMoveStart) return;
-        
+    
         const dx = pos.x - this.pixelMoveStart.x;
         const dy = pos.y - this.pixelMoveStart.y;
-        
+    
         this.pixelSelection.startX = this.originalPixelSelection.startX + dx;
         this.pixelSelection.endX = this.originalPixelSelection.endX + dx;
         this.pixelSelection.startY = this.originalPixelSelection.startY + dy;
         this.pixelSelection.endY = this.originalPixelSelection.endY + dy;
-        
+    
         this.drawMovedPixels();
         this.drawPixelSelectionOverlay();
     }
     
     drawMovedPixels() {
-        if (!this.pixelSelectionData || !this.pixelSelection) return;
-        
+        if (!this.pixelSelection || !this.movingPixelData) return;
+    
         // Clear and redraw entire canvas
         this.updatePixelCanvas();
-        
-        // Draw selection at new position
+    
         const startX = Math.min(this.pixelSelection.startX, this.pixelSelection.endX);
         const startY = Math.min(this.pixelSelection.startY, this.pixelSelection.endY);
-        
-        for (let y = 0; y < this.pixelSelectionData.length; y++) {
-            for (let x = 0; x < this.pixelSelectionData[y].length; x++) {
+    
+        // Draw the "ghost" selection without committing to grid
+        for (let y = 0; y < this.movingPixelData.length; y++) {
+            for (let x = 0; x < this.movingPixelData[y].length; x++) {
                 const newX = startX + x;
                 const newY = startY + y;
-                
-                if (newX >= 0 && newX < this.canvasWidth && 
+    
+                if (newX >= 0 && newX < this.canvasWidth &&
                     newY >= 0 && newY < this.canvasHeight) {
-                    if (this.pixelSelectionData[y][x] !== 'transparent') {
-                        this.grid[newY][newX] = this.pixelSelectionData[y][x];
+                    if (this.movingPixelData[y][x] !== 'transparent') {
                         const pixel = this.pixelCanvas.querySelector(`[data-x="${newX}"][data-y="${newY}"]`);
-                        if (pixel) pixel.style.backgroundColor = this.pixelSelectionData[y][x];
+                        if (pixel) pixel.style.backgroundColor = this.movingPixelData[y][x];
                     }
                 }
             }
@@ -808,9 +811,28 @@ class JerryEditor {
     }
     
     finalizePixelMove() {
+        if (!this.pixelSelection || !this.movingPixelData) return;
+    
+        const startX = Math.min(this.pixelSelection.startX, this.pixelSelection.endX);
+        const startY = Math.min(this.pixelSelection.startY, this.pixelSelection.endY);
+    
+        // Commit moved pixels to grid
+        for (let y = 0; y < this.movingPixelData.length; y++) {
+            for (let x = 0; x < this.movingPixelData[y].length; x++) {
+                const newX = startX + x;
+                const newY = startY + y;
+                if (newX >= 0 && newX < this.canvasWidth &&
+                    newY >= 0 && newY < this.canvasHeight) {
+                    this.grid[newY][newX] = this.movingPixelData[y][x];
+                }
+            }
+        }
+    
         this.movingPixelSelection = false;
         this.pixelMoveStart = null;
         this.originalPixelSelection = null;
+        this.movingPixelData = null;
+    
         this.updatePixelCanvas();
     }
 
@@ -1442,51 +1464,60 @@ class JerryEditor {
     // Add these improved drawing methods to your JerryEditor class
 
     drawSmoothBrush(ctx, pos, color) {
-        // Save current alpha
-        const currentAlpha = ctx.globalAlpha;
-        
+        // Determine effective alpha
+        let alpha = this.currentTool === 'eraser' ? 1 : (this.brushOpacity / 100) * (this.brushFlow / 100);
+    
         if (!this.lastPos || !this.isDrawing) {
             // Initial dot
             const gradient = ctx.createRadialGradient(pos.x, pos.y, 0, pos.x, pos.y, this.brushSize / 2);
-            gradient.addColorStop(0, this.hexToRgba(color, currentAlpha));
-            gradient.addColorStop(this.brushHardness / 100, this.hexToRgba(color, currentAlpha * 0.7));
+            gradient.addColorStop(0, this.hexToRgba(color, alpha));
+            gradient.addColorStop(this.brushHardness / 100, this.hexToRgba(color, alpha * 0.7));
             gradient.addColorStop(1, this.hexToRgba(color, 0));
-            
+    
             ctx.fillStyle = gradient;
+    
+            if (this.currentTool === 'eraser') {
+                ctx.globalCompositeOperation = 'destination-out';
+            }
+    
             ctx.beginPath();
             ctx.arc(pos.x, pos.y, this.brushSize / 2, 0, 2 * Math.PI);
             ctx.fill();
+    
+            if (this.currentTool === 'eraser') ctx.globalCompositeOperation = this.layers[this.currentLayer].blendMode;
             return;
         }
-        
+    
         // Calculate distance for smooth interpolation
-        const distance = Math.sqrt(
-            Math.pow(pos.x - this.lastPos.x, 2) + 
-            Math.pow(pos.y - this.lastPos.y, 2)
-        );
-        
-        // Draw connecting stroke with interpolation
+        const distance = Math.hypot(pos.x - this.lastPos.x, pos.y - this.lastPos.y);
+    
         if (distance > 1) {
-            const steps = Math.max(1, Math.ceil(distance / 2)); // Increase density for smoother lines
-            
+            const steps = Math.max(1, Math.ceil(distance / 2));
             for (let i = 0; i <= steps; i++) {
                 const t = i / steps;
                 const x = this.lastPos.x + (pos.x - this.lastPos.x) * t;
                 const y = this.lastPos.y + (pos.y - this.lastPos.y) * t;
-                
-                // Create brush stroke at interpolated position
+    
                 const gradient = ctx.createRadialGradient(x, y, 0, x, y, this.brushSize / 2);
-                gradient.addColorStop(0, this.hexToRgba(color, currentAlpha));
-                gradient.addColorStop(this.brushHardness / 100, this.hexToRgba(color, currentAlpha * 0.7));
+                gradient.addColorStop(0, this.hexToRgba(color, alpha));
+                gradient.addColorStop(this.brushHardness / 100, this.hexToRgba(color, alpha * 0.7));
                 gradient.addColorStop(1, this.hexToRgba(color, 0));
-                
+    
                 ctx.fillStyle = gradient;
+    
+                if (this.currentTool === 'eraser') {
+                    ctx.globalCompositeOperation = 'destination-out';
+                }
+    
                 ctx.beginPath();
                 ctx.arc(x, y, this.brushSize / 2, 0, 2 * Math.PI);
                 ctx.fill();
+    
+                if (this.currentTool === 'eraser') ctx.globalCompositeOperation = this.layers[this.currentLayer].blendMode;
             }
         }
     }
+
     
     drawSmoothPen(ctx, pos, color) {
         if (!this.lastPos || !this.isDrawing) {
@@ -1712,31 +1743,55 @@ class JerryEditor {
     // ----- SKETCH SMUDGE TOOL -----
     smudge(ctx, pos) {
         if (!this.lastPos) return;
-        
+    
         const radius = Math.max(2, Math.floor(this.brushSize / 2));
-        
+        const alpha = this.brushOpacity / 100;
+    
         try {
-            // Get source area
-            const sourceX = Math.max(0, this.lastPos.x - radius);
-            const sourceY = Math.max(0, this.lastPos.y - radius);
-            const width = Math.min(radius * 2, ctx.canvas.width - sourceX);
-            const height = Math.min(radius * 2, ctx.canvas.height - sourceY);
-            
-            const imageData = ctx.getImageData(sourceX, sourceY, width, height);
-            
-            // Calculate smudge direction
-            const dx = (pos.x - this.lastPos.x) * 0.8;
-            const dy = (pos.y - this.lastPos.y) * 0.8;
-            
-            // Apply smudge effect
-            ctx.globalAlpha = this.brushOpacity / 100 * 0.7;
-            ctx.putImageData(imageData, sourceX + dx, sourceY + dy);
-            ctx.globalAlpha = 1;
-            
+            // Get source area around last position
+            const sx = Math.max(0, this.lastPos.x - radius);
+            const sy = Math.max(0, this.lastPos.y - radius);
+            const sw = Math.min(radius * 2, ctx.canvas.width - sx);
+            const sh = Math.min(radius * 2, ctx.canvas.height - sy);
+    
+            const imageData = ctx.getImageData(sx, sy, sw, sh);
+            const data = imageData.data;
+    
+            // Calculate movement vector
+            const dx = pos.x - this.lastPos.x;
+            const dy = pos.y - this.lastPos.y;
+    
+            // Blend pixels in the direction of movement
+            const strength = 0.3; // fraction of movement applied per frame
+            const offsetX = Math.round(dx * strength);
+            const offsetY = Math.round(dy * strength);
+    
+            const temp = new Uint8ClampedArray(data); // copy original pixels
+    
+            for (let y = 0; y < sh; y++) {
+                for (let x = 0; x < sw; x++) {
+                    const srcIdx = (y * sw + x) * 4;
+                    const destX = x + offsetX;
+                    const destY = y + offsetY;
+    
+                    if (destX >= 0 && destX < sw && destY >= 0 && destY < sh) {
+                        const destIdx = (destY * sw + destX) * 4;
+    
+                        // Blend original into destination
+                        data[destIdx]     = temp[srcIdx] * alpha + data[destIdx] * (1 - alpha);
+                        data[destIdx + 1] = temp[srcIdx + 1] * alpha + data[destIdx + 1] * (1 - alpha);
+                        data[destIdx + 2] = temp[srcIdx + 2] * alpha + data[destIdx + 2] * (1 - alpha);
+                        // Keep alpha channel unchanged
+                    }
+                }
+            }
+    
+            ctx.putImageData(imageData, sx, sy);
         } catch (e) {
             console.warn('Smudge failed:', e);
         }
     }
+
     
     // Helper for blur
     gaussianBlur(imageData, radius) {
