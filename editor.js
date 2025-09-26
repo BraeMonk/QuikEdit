@@ -53,7 +53,7 @@ class JerryEditor {
         this.setupEventListeners();
         this.loadPalettes();
         this.initializeCanvas();
-        this.switchMode('pixel');   // sets up pixel canvas properly
+        this.switchMode('pixel');  // builds pixel canvas fully
         this.loadProject();
         this.updateUI();
         this.initializePanels();
@@ -64,9 +64,9 @@ class JerryEditor {
         document.querySelector('.sketch-tools').style.display = 'none';
         document.querySelector('.sketch-tools').classList.remove('active');
 
-        // Grid visible by default
+        // ENABLE GRID BY DEFAULT
         this.showGrid = true;
-        this.updateGrid();  // <-- call this last to ensure grid shows
+        this.updateGrid();  // <-- after canvas fully built
     }
     
     setupElements() {
@@ -612,6 +612,10 @@ class JerryEditor {
         grid.style.height = `${this.canvasHeight * this.pixelSize}px`;
 
         // Center grid in wrapper
+        grid.style.position = 'absolute';
+        grid.style.top = '50%';
+        grid.style.left = '50%';
+        grid.style.transform = 'translate(-50%, -50%)';
         grid.style.pointerEvents = 'none';
         grid.style.zIndex = '10';
 
@@ -626,7 +630,7 @@ class JerryEditor {
 
         grid.style.backgroundImage = `
             repeating-linear-gradient(
-                to right, 
+                to right,
                 transparent,
                 transparent ${this.pixelSize - offset}px,
                 ${lineColor} ${this.pixelSize - offset}px,
@@ -642,7 +646,7 @@ class JerryEditor {
         `;
         grid.style.backgroundSize = `${this.pixelSize}px ${this.pixelSize}px`;
         grid.style.backgroundPosition = `${offset}px ${offset}px`;
-        grid.style.display = 'grid';
+        grid.style.display = 'block'; // use block, not grid
     }
     
     getCanvasPos(e) {
