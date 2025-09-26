@@ -288,6 +288,12 @@ body {
   margin: 6px 0;
 }
 
+.pixel-selected {
+    outline: 2px dashed #fff !important;
+    outline-offset: -1px !important;
+    z-index: 10 !important;
+}
+
 /* ============================= */
 /* Canvas Area                   */
 /* ============================= */
