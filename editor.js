@@ -381,46 +381,46 @@ class JerryEditor {
         const pos = this.mode === 'pixel' ? this.getPixelPos(e) : this.getCanvasPos(e);
     
         if (!this.isDrawing) {
-            // Show brush preview for sketch mode
+            // Show brush preview for sketch mode even if not drawing
             if (this.mode === 'sketch' && ['brush','pen','marker','pencilSketch','charcoal','eraser'].includes(this.currentTool)) {
                 this.showBrushPreview(pos);
             }
             return;
         }
     
-        // ----- Selection -----
+        // Always update lastPos immediately
+        this.lastPos = pos;
+        if (this.strokePath) this.strokePath.push(pos);
+    
+        // ----- SELECTION TOOL -----
         if (this.currentTool === 'select' && this.selecting) {
             this.updateSelection(pos);
             return;
         }
     
+        // ----- MOVE TOOL -----
         if (this.currentTool === 'move' && this.movingSelection) {
             this.updateMove(pos);
             return;
         }
     
-        // ----- Sketch shapes -----
+        // ----- SKETCH SHAPES -----
         if (this.mode === 'sketch' && ['lineSketch','rectSketch','circleSketch'].includes(this.currentTool) && this.shapeStartPos) {
             this.clearShapePreview();
             this.previewShape(this.shapeStartPos, pos);
             return;
         }
     
-        // ----- Pixel shapes / tools -----
+        // ----- PIXEL SHAPES / TOOLS -----
         if (this.mode === 'pixel') {
             const rightClick = e.buttons === 2;
-            const isDragEnd = false; // will handle commit on pointerup
+            const isDragEnd = false; // commit handled on pointerup
             this.handlePixelTool(pos, rightClick, false, isDragEnd);
         } else {
-            // Sketch drawing tools
+            // Regular sketch tools
             this.handleSketchTool(pos, e);
         }
-    
-        this.lastPos = pos;
-        if (this.strokePath) this.strokePath.push(pos);
     }
-
-
     
     // Add this method to improve getCanvasPos for better coordinate calculation
     getCanvasPos(e) {
