@@ -1639,7 +1639,7 @@ input[type="checkbox"],
     min-height: 0 !important;
     max-height: none !important;
     height: auto !important;
-    flex: 0 0 auto !important;
+    flex: 1 0 auto !important;
     flex-shrink: 0;
     flex-grow: 0;
     flex-basis: auto;
@@ -1677,7 +1677,7 @@ input[type="checkbox"],
     min-height: 0 !important;
     max-height: none !important;
     height: auto !important;
-    flex: 0 0 auto !important;
+    flex: 1 0 auto !important;
     flex-shrink: 0;
     flex-grow: 0;
     flex-basis: auto;
