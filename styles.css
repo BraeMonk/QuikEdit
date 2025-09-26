@@ -1398,36 +1398,41 @@ input[type="checkbox"],
 
   #canvas-wrapper,
   .canvas-wrapper {
-    min-height: 250px;        /* minimum visible height */
-    max-height: 70vh;         /* leave space for panels */
-    max-width: 100%;          /* don’t overflow viewport width */
-    padding: 0;               /* remove extra spacing */
+    min-height: 250px;
+    max-height: 70vh;
+    max-width: 100%;
     display: flex;
-    justify-content: center;  /* center canvas horizontally */
-    align-items: center;      /* center canvas vertically */
-    overflow: hidden;           /* allow scroll if canvas is bigger than viewport */
+    justify-content: center;
+    align-items: center;
+    padding: 0;
     border-radius: 12px;
     box-shadow: 0 8px 24px rgba(0,0,0,0.3);
     border: 2px solid #333;
     background: transparent;
+    overflow: hidden; /* hide anything outside */
   }
-
+  
   #canvas-area,
   .canvas-area {
-    padding: 8px;             /* optional internal padding */
-    min-height: 0;            /* reset desktop min-height */
     display: flex;
     justify-content: center;
     align-items: center;
+    width: 100%;
+    height: 100%;
+    padding: 0;
   }
-
-  /* Optional: scale grid/pixels to fit smaller screens */
+  
   #canvas,
   #canvasGrid,
   .canvas-grid {
-    transform-origin: top left;   /* allow scaling from top-left corner */
-    image-rendering: pixelated;   /* keep pixel clarity */
+    /* Fill wrapper while keeping aspect ratio */
+    width: 100%;
+    height: auto;           /* scale height automatically */
+    max-height: 100%;       /* don't exceed wrapper height */
+    transform-origin: top left;
+    image-rendering: pixelated;
   }
+
 
   /* Sidebar becomes horizontal */
   #sidebar,
