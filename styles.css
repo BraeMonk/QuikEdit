@@ -1545,6 +1545,22 @@ input[type="checkbox"],
     gap: 8px;
     padding: 6px 0;
   }
+
+  #pixel-canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 5;
+    display: grid; /* default pixel canvas display */
+  }
+
+   #sketch-canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 4; /* below pixel canvas by default */
+    display: none; /* hidden until sketch mode */
+  }
 }
 
 /* Mobile Landscape - Keep desktop-like but smaller */
