@@ -1576,9 +1576,6 @@ input[type="checkbox"],
 /* ============================= */
 /* Desktop-style layout on small landscape screens */
 /* ============================= */
-/* ============================= */
-/* Desktop-style layout on small landscape screens */
-/* ============================= */
 @media (max-width: 1024px) and (orientation: landscape) {
   html, body {
     width: 100%;
@@ -1588,63 +1585,85 @@ input[type="checkbox"],
     overflow: hidden; /* prevent scrolling */
   }
 
-  /* Editor container keeps desktop grid */
+  /* Editor container keeps desktop-like grid */
   #editor-container,
   .editor-container {
     display: grid;
-    grid-template-columns: 55px 1fr 260px;
-    grid-template-rows: 50px 1fr;
+    grid-template-columns: 55px 1fr 260px; /* toolbar | canvas | side panel */
+    grid-template-rows: 50px 1fr;          /* top bar | main area */
     width: 100vw;
     height: 100vh;
+    box-sizing: border-box;
   }
 
-  /* Canvas area fills available grid space but stays centered */
+  /* Top bar stays at the top */
+  #top-bar,
+  .top-bar {
+    grid-column: 1 / 4;
+    grid-row: 1 / 2;
+  }
+
+  /* Toolbar stays on left */
+  #tool-bar,
+  .tool-bar {
+    grid-column: 1 / 2;
+    grid-row: 2 / 3;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    height: 100%;
+  }
+
+  /* Canvas area fills middle grid column */
   #canvas-area,
   .canvas-area {
+    grid-column: 2 / 3;
+    grid-row: 2 / 3;
     display: flex;
     justify-content: center;
     align-items: center;
-    overflow: hidden; /* prevents oversized background */
-    height: 100%;
+    overflow: hidden;
     width: 100%;
+    height: 100%;
+    position: relative;
   }
 
-  /* Canvas wrapper sizes itself to canvas without overexpanding */
+  /* Canvas wrapper scales with canvas area */
   #canvas-wrapper,
   .canvas-wrapper {
+    width: 100%;
+    height: 100%;
     max-width: 100%;
     max-height: 100%;
-    width: auto;
-    height: auto;
     display: flex;
     justify-content: center;
     align-items: center;
   }
 
-  /* Canvases scale to fit wrapper without stretching */
+  /* Canvases scale correctly without overlapping panels */
   #canvas,
   #sketchCanvas,
   #selectionOverlay {
-    width: auto;
+    width: 100%;
     height: 100%;
-    max-width: 100%;
-    max-height: 100%;
     object-fit: contain;
     display: block;
   }
 
-  /* Toolbar icons horizontal */
-  .tool-bar,
-  .tool-icons {
-    flex-direction: row;
-    overflow-x: auto;
-  }
-
-  /* Side panel tweaks to ensure visibility */
+  /* Side panel stays on right */
   #panel,
   .panel {
+    grid-column: 3 / 4;
+    grid-row: 2 / 3;
     max-height: 100%;
     overflow-y: auto;
+  }
+
+  /* Horizontal tool icons (if toolbar is horizontal at top) */
+  .tool-icons {
+    display: flex;
+    flex-direction: row;
+    overflow-x: auto;
   }
 }
 
