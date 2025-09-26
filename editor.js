@@ -21,6 +21,7 @@ class JerryEditor {
         this.sprites = [{ name: 'Sprite 1', data: null }];
         this.currentSprite = 0;
         this.showGrid = true;
+        this.canvasGrid.style.display = 'grid';  // force initial display
         
         // Sketch art properties
         this.layers = [];
@@ -260,6 +261,13 @@ class JerryEditor {
         setInterval(() => this.autoSave(), 30000);
     }
 
+    toggleGrid() {
+        this.showGrid = !this.showGrid;
+        this.canvasGrid.style.display = this.showGrid ? 'grid' : 'none';
+        this.updateGrid(); // redraw grid lines
+    }
+
+
     initializePanels() {
         document.querySelectorAll('.panel-content').forEach(content => {
             content.style.maxHeight = 'none';
@@ -467,7 +475,9 @@ class JerryEditor {
         // ----- CANVASES -----
         this.pixelCanvas.style.display = mode === 'pixel' ? 'grid' : 'none';
         this.sketchCanvas.style.display = mode === 'sketch' ? 'block' : 'none';
-        this.canvasGrid.style.display = (mode === 'pixel' && this.showGrid) ? 'grid' : 'none';
+        if (mode === 'pixel') {
+            this.canvasGrid.style.display = this.showGrid ? 'grid' : 'none';
+        }
         this.selectionOverlay.style.display = mode === 'sketch' ? 'block' : 'none';
 
         // ----- INITIALIZE MODE -----
