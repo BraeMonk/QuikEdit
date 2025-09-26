@@ -74,7 +74,7 @@ class JerryEditor {
         this.showGrid = true;
 
         if (this.canvasGrid) {
-            this.canvasGrid.style.display = 'grid'; // ensure visible
+            this.canvasGrid.style.display = 'block'; // make grid visible immediately
         }
 
         const gridToggle = document.getElementById('gridToggle');
