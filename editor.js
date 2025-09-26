@@ -666,6 +666,10 @@ class JerryEditor {
             this.shapeStartPos = null;
             this.originalGrid = null;
         }
+
+        if (this.mode === 'sketch' && ['brush','pen','marker','pencilSketch','charcoal','eraser','smudge','blur','sprayPaint'].includes(this.currentTool)) {
+            this.saveState(); // commit freehand strokes to undo history
+        }
     
         this.isDrawing = false;
         this.lastPos = null;
