@@ -1415,10 +1415,10 @@ input[type="checkbox"],
     box-shadow: 0 8px 24px rgba(0,0,0,0.3);
     border: 2px solid #333;
     background: transparent;
-    overflow: hidden; /* hide anything outside */
+    overflow: hidden;
     position: relative;
   }
-  
+
   #canvas-area,
   .canvas-area {
     display: flex;
@@ -1428,19 +1428,6 @@ input[type="checkbox"],
     height: 100%;
     padding: 0;
   }
-  
-  #canvas,
-  #canvasGrid,
-  .canvas-grid {
-    /* Fill wrapper while keeping aspect ratio */
-    width: 100%;
-    height: auto;           /* scale height automatically */
-    max-height: 100%;       /* don't exceed wrapper height */
-    object-fit: contain;
-    transform-origin: top left;
-    image-rendering: pixelated;
-  }
-
 
   /* Sidebar becomes horizontal */
   #sidebar,
