@@ -53,9 +53,7 @@ class JerryEditor {
         this.setupEventListeners();
         this.loadPalettes();
         this.initializeCanvas();
-        this.switchMode('pixel')
-        this.showGrid = true;  // grid visible on start
-        this.updateGrid()
+        this.switchMode('pixel');   // sets up pixel canvas properly
         this.loadProject();
         this.updateUI();
         this.initializePanels();
@@ -65,6 +63,10 @@ class JerryEditor {
         document.querySelector('.pixel-tools').classList.add('active');
         document.querySelector('.sketch-tools').style.display = 'none';
         document.querySelector('.sketch-tools').classList.remove('active');
+
+        // Grid visible by default
+        this.showGrid = true;
+        this.updateGrid();  // <-- call this last to ensure grid shows
     }
     
     setupElements() {
