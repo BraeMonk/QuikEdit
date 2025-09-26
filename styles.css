@@ -305,15 +305,17 @@ body {
   border-top: 1px solid #333;
 }
 
-/* Wrapper around canvas and grid */
 #canvas-wrapper,
 .canvas-wrapper {
   position: relative;
-  display: inline-block;
+  display: inline-flex; /* better for centering content */
+  align-items: center;
+  justify-content: center;
+  width: max-content; /* shrink-to-fit the canvas exactly */
+  height: max-content;
   border-radius: 12px;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
   border: 2px solid #333;
-  transition: transform 0.3s ease;
   background: transparent;
 }
 
