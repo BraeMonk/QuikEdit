@@ -1577,6 +1577,9 @@ input[type="checkbox"],
 @media (max-width: 1024px) and (orientation: landscape) {
   #editor-container,
   .editor-container {
+    height: 100%;
+    margin: 0;
+    padding: 0;
     grid-template-columns: 55px 1fr 260px;
     grid-template-rows: 50px 1fr;
   }
