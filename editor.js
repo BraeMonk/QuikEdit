@@ -21,8 +21,6 @@ class JerryEditor {
         this.sprites = [{ name: 'Sprite 1', data: null }];
         this.currentSprite = 0;
         this.showGrid = true;  // grid visible on start
-        this.canvasGrid.style.display = 'grid';
-        this.updateGrid();
         // Sketch art properties
         this.layers = [];
         this.currentLayer = 0;
@@ -56,6 +54,9 @@ class JerryEditor {
         this.loadPalettes();
         this.initializeCanvas();
         this.switchMode('pixel')
+
+        this.canvasGrid.style.display = 'grid';
+        this.updateGrid()
         this.loadProject();
         this.updateUI();
         this.initializePanels();
