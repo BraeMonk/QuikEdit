@@ -1636,6 +1636,7 @@ input[type="checkbox"],
     justify-content: stretch;
     align-items: stretch;
     gap: 8px;
+    overflow-y: auto;
   }
 
   #pixel-tools,
@@ -1679,6 +1680,7 @@ input[type="checkbox"],
     height: 42px;
     font-size: 14px;
     display: flex;
+    flex: 0 0 auto;
     align-items: center;
     justify-content: center;
     margin: 0;
