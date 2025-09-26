@@ -58,7 +58,7 @@ class JerryEditor {
         this.updateUI();
         this.initializePanels();
 
-        // Force initial tool visibility update
+        // Force initial tool visibility update safely
         const pixelTools = document.querySelector('.pixel-tools');
         const sketchTools = document.querySelector('.sketch-tools');
         if (pixelTools) {
@@ -73,14 +73,17 @@ class JerryEditor {
         // ENABLE GRID BY DEFAULT
         this.showGrid = true;
 
+        // ensure the overlay exists then make it grid (important: use 'grid' not 'block')
         if (this.canvasGrid) {
-            this.canvasGrid.style.display = 'block'; // make grid visible immediately
+            this.canvasGrid.style.display = 'grid'; // use grid so grid-template-* works
         }
 
+        // Sync the UI toggle
         const gridToggle = document.getElementById('gridToggle');
-        if (gridToggle) gridToggle.checked = true; // sync checkbox
+        if (gridToggle) gridToggle.checked = true;
 
-        this.updateGrid();  // redraw grid lines
+        // finally redraw (this-updateGrid respects this.showGrid)
+        this.updateGrid();
     }
     
     setupElements() {
@@ -91,7 +94,8 @@ class JerryEditor {
         this.selectionOverlay = document.getElementById('selectionOverlay');
         this.selectionCtx = this.selectionOverlay.getContext('2d');
         this.canvasGrid = document.getElementById('canvasGrid');
-        
+        // <--- ADD THIS LINE: reference the wrapper the code expects
+        this.canvasWrapper = document.querySelector('.canvas-wrapper');
         // UI elements
         this.canvasInfo = document.getElementById('canvasInfo');
         this.zoomIndicator = document.getElementById('zoomIndicator');
@@ -660,7 +664,7 @@ class JerryEditor {
         `;
         grid.style.backgroundSize = `${this.pixelSize}px ${this.pixelSize}px`;
         grid.style.backgroundPosition = `${offset}px ${offset}px`;
-        grid.style.display = 'block'; // use block, not grid
+        grid.style.display = 'grid'; // use block, not grid
     }
     
     getCanvasPos(e) {
