@@ -1586,7 +1586,7 @@ input[type="checkbox"],
   #editor-container,
   .editor-container {
     display: grid;
-    grid-template-areas: “sidebar canvas panels”;
+    grid-template-areas: "sidebar canvas panels";
     grid-template-columns: 65px 1fr 280px;
     grid-template-rows: 1fr;
     width: 100vw;
@@ -1678,8 +1678,9 @@ input[type="checkbox"],
     width: 42px;
     height: 42px;
     font-size: 14px;
-    flex-shrink: 0;
-    flex-grow: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     margin: 0;
   }
   
