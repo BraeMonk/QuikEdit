@@ -59,14 +59,28 @@ class JerryEditor {
         this.initializePanels();
 
         // Force initial tool visibility update
-        document.querySelector('.pixel-tools').style.display = 'flex';
-        document.querySelector('.pixel-tools').classList.add('active');
-        document.querySelector('.sketch-tools').style.display = 'none';
-        document.querySelector('.sketch-tools').classList.remove('active');
+        const pixelTools = document.querySelector('.pixel-tools');
+        const sketchTools = document.querySelector('.sketch-tools');
+        if (pixelTools) {
+            pixelTools.style.display = 'flex';
+            pixelTools.classList.add('active');
+        }
+        if (sketchTools) {
+            sketchTools.style.display = 'none';
+            sketchTools.classList.remove('active');
+        }
 
         // ENABLE GRID BY DEFAULT
         this.showGrid = true;
-        this.updateGrid();  // <-- after canvas fully built
+
+        if (this.canvasGrid) {
+            this.canvasGrid.style.display = 'grid'; // ensure visible
+        }
+
+        const gridToggle = document.getElementById('gridToggle');
+        if (gridToggle) gridToggle.checked = true; // sync checkbox
+
+        this.updateGrid();  // redraw grid lines
     }
     
     setupElements() {
