@@ -1575,237 +1575,232 @@ input[type="checkbox"],
 
 /* Mobile Landscape - Tools Vertical Spread Fix */
 @media (max-width: 1024px) and (orientation: landscape) {
-html, body {
-width: 100%;
-height: 100%;
-margin: 0;
-padding: 0;
-overflow: hidden;
+  html, body {
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+  }
+  
+  #editor-container,
+  .editor-container {
+    display: grid;
+    grid-template-areas: “sidebar canvas panels”;
+    grid-template-columns: 65px 1fr 280px;
+    grid-template-rows: 1fr;
+    width: 100vw;
+    height: 100vh;
+    gap: 1px;
+    min-height: unset;
+    max-height: unset;
+  }
+  
+  /* Remove header completely in landscape */
+  #header,
+  .header {
+    display: none;
+  }
+  
+  /* Sidebar - same as panels */
+  #sidebar,
+  .sidebar {
+    grid-area: sidebar;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    
+    height: 100vh;
+    min-height: 100vh;
+    max-height: 100vh;
+    
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 8px 0;
+    gap: 4px;
+    border-right: 2px solid #333;
+    border-top: none;
+    border-bottom: none;
+    
+    flex-shrink: 0;
+    flex-grow: 0;
+  
+  }
+  
+  /* Tool groups - simple fill */
+  #tool-group,
+  .tool-group {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    width: 100%;
+    height: 100vh;
+  }
+  
+  #pixel-tools,
+  .pixel-tools,
+  #sketch-tools,
+  .sketch-tools {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    width: 100%;
+    height: 100vh;
+  }
+  
+  #pixel-tools.active,
+  .pixel-tools.active,
+  #sketch-tools.active,
+  .sketch-tools.active {
+    display: flex !important;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    width: 100%;
+    height: 100vh;
+    overflow: visible !important;
+  }
+  
+  /* Tool buttons - compact for more space */
+  #tool-btn,
+  .tool-btn {
+    width: 42px;
+    height: 42px;
+    font-size: 14px;
+    flex-shrink: 0;
+    flex-grow: 0;
+    margin: 0;
+  }
+  
+  #tool-btn.symmetric-tool,
+  .tool-btn.symmetric-tool {
+    font-size: 12px;
+  }
+  
+  /* Tool separator - compact */
+  #tool-separator,
+  .tool-separator {
+    width: 70%;
+    height: 1px;
+    margin: 2px 0;
+    background: linear-gradient(90deg, transparent 0%, #444 50%, transparent 100%);
+    flex-shrink: 0;
+    flex-grow: 0;
+  }
+  
+  /* Panels - same height fixes */
+  #panels,
+  .panels {
+    grid-area: panels;
+    display: flex;
+    flex-direction: column;
+    
+    height: 100vh;
+    min-height: 100vh;
+    max-height: 100vh;
+    
+    overflow-y: auto;
+    overflow-x: hidden;
+    border-left: 2px solid #333;
+    border-top: none;
+    
+    flex-shrink: 0;
+    flex-grow: 0;
+  
+  }
+  
+  #panel,
+  .panel {
+    background: #1e1e1e;
+    border-bottom: 1px solid #333;
+    min-height: unset;
+    max-height: unset;
+    flex-shrink: 0;
+  }
+  
+  #panel-content,
+  .panel-content {
+    padding: 12px;
+    display: block;
+    min-height: unset;
+    max-height: unset;
+    height: auto;
+    overflow: visible;
+  }
+  
+  /* Canvas area */
+  #canvas-area,
+  .canvas-area {
+    grid-area: canvas;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+    width: 100%;
+    height: 100vh;
+    padding: 10px;
+  
+  
+    min-height: unset;
+    max-height: unset;
+  }
+  
+  #canvas-wrapper,
+  .canvas-wrapper {
+    max-width: calc(100% - 20px);
+    max-height: calc(100vh - 20px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: auto;
+    height: auto;
+  }
+  
+  /* Control groups */
+  #control-group,
+  .control-group {
+    margin-bottom: 15px;
+    min-height: unset;
+    max-height: unset;
+    flex-shrink: 0;
+  }
+  
+  #btn-group,
+  .btn-group {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 6px;
+    flex-wrap: wrap;
+    flex-shrink: 0;
+  }
+  
+  #btn-group .btn,
+  .btn-group .btn,
+  #btn-group button,
+  .btn-group button {
+    flex: 1 1 auto;
+    min-width: 60px;
+    font-size: 11px;
+    padding: 6px 8px;
+  }
+  
+  /* Layer list */
+  #layerList,
+  .layer-list {
+    max-height: none;
+    min-height: 100px;
+    overflow-y: auto;
+    border: 2px solid #444;
+    margin-bottom: 12px;
+    background: linear-gradient(135deg, #2a2a2a 0%, #252525 100%);
+    border-radius: 6px;
+    flex-shrink: 0;
+  }
 }
 
-#editor-container,
-.editor-container {
-display: grid;
-grid-template-areas: “sidebar canvas panels”;
-grid-template-columns: 65px 1fr 280px;
-grid-template-rows: 1fr;
-width: 100vw;
-height: 100vh;
-gap: 1px;
-min-height: unset;
-max-height: unset;
-}
-
-/* Remove header completely in landscape */
-#header,
-.header {
-display: none;
-}
-
-/* Sidebar - same as panels */
-#sidebar,
-.sidebar {
-grid-area: sidebar;
-display: flex;
-flex-direction: column;
-align-items: center;
-justify-content: flex-start;
-
-```
-height: 100vh;
-min-height: 100vh;
-max-height: 100vh;
-
-overflow-y: auto;
-overflow-x: hidden;
-padding: 8px 0;
-gap: 4px;
-border-right: 2px solid #333;
-border-top: none;
-border-bottom: none;
-
-flex-shrink: 0;
-flex-grow: 0;
-```
-
-}
-
-/* Tool groups - simple fill */
-#tool-group,
-.tool-group {
-display: flex;
-flex-direction: column;
-align-items: center;
-gap: 4px;
-width: 100%;
-height: 100vh;
-}
-
-#pixel-tools,
-.pixel-tools,
-#sketch-tools,
-.sketch-tools {
-display: none;
-flex-direction: column;
-align-items: center;
-gap: 4px;
-width: 100%;
-height: 100vh;
-}
-
-#pixel-tools.active,
-.pixel-tools.active,
-#sketch-tools.active,
-.sketch-tools.active {
-display: flex !important;
-flex-direction: column;
-align-items: center;
-gap: 4px;
-width: 100%;
-height: 100vh;
-overflow: visible !important;
-}
-
-/* Tool buttons - compact for more space */
-#tool-btn,
-.tool-btn {
-width: 42px;
-height: 42px;
-font-size: 14px;
-flex-shrink: 0;
-flex-grow: 0;
-margin: 0;
-}
-
-#tool-btn.symmetric-tool,
-.tool-btn.symmetric-tool {
-font-size: 12px;
-}
-
-/* Tool separator - compact */
-#tool-separator,
-.tool-separator {
-width: 70%;
-height: 1px;
-margin: 2px 0;
-background: linear-gradient(90deg, transparent 0%, #444 50%, transparent 100%);
-flex-shrink: 0;
-flex-grow: 0;
-}
-
-/* Panels - same height fixes */
-#panels,
-.panels {
-grid-area: panels;
-display: flex;
-flex-direction: column;
-
-```
-height: 100vh;
-min-height: 100vh;
-max-height: 100vh;
-
-overflow-y: auto;
-overflow-x: hidden;
-border-left: 2px solid #333;
-border-top: none;
-
-flex-shrink: 0;
-flex-grow: 0;
-```
-
-}
-
-#panel,
-.panel {
-background: #1e1e1e;
-border-bottom: 1px solid #333;
-min-height: unset;
-max-height: unset;
-flex-shrink: 0;
-}
-
-#panel-content,
-.panel-content {
-padding: 12px;
-display: block;
-min-height: unset;
-max-height: unset;
-height: auto;
-overflow: visible;
-}
-
-/* Canvas area */
-#canvas-area,
-.canvas-area {
-grid-area: canvas;
-display: flex;
-justify-content: center;
-align-items: center;
-overflow: hidden;
-width: 100%;
-height: 100vh;
-padding: 10px;
-
-```
-min-height: unset;
-max-height: unset;
-```
-
-}
-
-#canvas-wrapper,
-.canvas-wrapper {
-max-width: calc(100% - 20px);
-max-height: calc(100vh - 20px);
-display: flex;
-justify-content: center;
-align-items: center;
-width: auto;
-height: auto;
-}
-
-/* Control groups */
-#control-group,
-.control-group {
-margin-bottom: 15px;
-min-height: unset;
-max-height: unset;
-flex-shrink: 0;
-}
-
-#btn-group,
-.btn-group {
-display: flex;
-gap: 4px;
-margin-bottom: 6px;
-flex-wrap: wrap;
-flex-shrink: 0;
-}
-
-#btn-group .btn,
-.btn-group .btn,
-#btn-group button,
-.btn-group button {
-flex: 1 1 auto;
-min-width: 60px;
-font-size: 11px;
-padding: 6px 8px;
-}
-
-/* Layer list */
-#layerList,
-.layer-list {
-max-height: none;
-min-height: 100px;
-overflow-y: auto;
-border: 2px solid #444;
-margin-bottom: 12px;
-background: linear-gradient(135deg, #2a2a2a 0%, #252525 100%);
-border-radius: 6px;
-flex-shrink: 0;
-}
-}
 /* Tablet specific adjustments */
 @media (min-width: 768px) and (max-width: 1024px) {
   #editor-container,
