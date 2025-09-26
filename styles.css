@@ -1580,13 +1580,13 @@ input[type="checkbox"],
     height: 100%;
     margin: 0;
     padding: 0;
-    overflow: hidden;
+   overflow: hidden;
   }
 
   #editor-container,
   .editor-container {
     display: grid;
-    grid-template-areas: "sidebar canvas panels";
+    grid-template-areas: “sidebar canvas panels”;
     grid-template-columns: 65px 1fr 280px;
     grid-template-rows: 1fr;
     width: 100vw;
@@ -1602,47 +1602,41 @@ input[type="checkbox"],
     display: none;
   }
 
-  /* Sidebar - force full height */
+  /* Sidebar - force full height and distribute space */
   #sidebar,
   .sidebar {
     grid-area: sidebar;
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: flex-start;
-    
+    justify-content: space-between;
     height: 100vh;
     min-height: 100vh;
     max-height: 100vh;
-    
-    overflow-y: auto;
+
+    overflow-y: visible;
     overflow-x: hidden;
-    padding: 8px 0; /* Reduced padding for more tool space */
-    gap: 4px; /* Tighter gap for more tools */
+    padding: 8px 0;
+    gap: 0;
     border-right: 2px solid #333;
     border-top: none;
     border-bottom: none;
-    
+
     flex-shrink: 0;
     flex-grow: 0;
   }
 
-  /* CRITICAL FIX: Tool groups - force expansion */
+  /* CRITICAL FIX: Tool groups - expand to fill available space */
   #tool-group,
   .tool-group {
-    display: flex;
+    display: flex; 
     flex-direction: column;
     align-items: center;
-    gap: 4px; /* Tighter spacing */
+    justify-content: space-evenly;
+    gap: 2px;
     width: 100%;
-    /* Force expansion */
-    min-height: 0 !important;
-    max-height: none !important;
-    height: auto !important;
-    flex: 1 1 100% !important;
-    flex-shrink: 0;
-    flex-grow: 0;
-    flex-basis: auto;
+    flex: 1;
+    min-height: calc(100vh - 16px); 
   }
 
   #pixel-tools,
@@ -1652,44 +1646,34 @@ input[type="checkbox"],
     display: none;
     flex-direction: column;
     align-items: center;
-    gap: 4px; /* Tighter spacing */
+    justify-content: space-evenly;
+    gap: 2px;
     width: 100%;
-    /* Force expansion */
-    min-height: 0 !important;
-    max-height: none !important;
-    height: auto !important;
-    flex: 1 1 100% !important;
-    flex-shrink: 0;
-    flex-grow: 0;
-    flex-basis: auto;
+    flex: 1;
+    min-height: calc(100vh - 16px);
   }
 
   #pixel-tools.active,
   .pixel-tools.active,
   #sketch-tools.active,
   .sketch-tools.active {
-    display: flex !important; /* Force display */
+    display: flex !important;
     flex-direction: column;
     align-items: center;
-    gap: 4px; /* Tighter spacing */
+    justify-content: space-evenly;
+    gap: 2px;
     width: 100%;
-    /* CRITICAL: Force expansion with !important */
-    min-height: 0 !important;
-    max-height: none !important;
-    height: auto !important;
-    flex: 1 1 100% !important;
-    flex-shrink: 0;
-    flex-grow: 0;
-    flex-basis: auto;
+    flex: 1; 
+    min-height: calc(100vh - 16px);
     overflow: visible !important;
   }
 
   /* Tool buttons - compact for more space */
   #tool-btn,
   .tool-btn {
-    width: 42px; /* Smaller for more tools */
+    width: 42px;
     height: 42px;
-    font-size: 14px; /* Smaller font */
+    font-size: 14px;
     flex-shrink: 0;
     flex-grow: 0;
     margin: 0;
@@ -1704,46 +1688,29 @@ input[type="checkbox"],
   #tool-separator,
   .tool-separator {
     width: 70%;
-    height: 1px; /* Thinner */
-    margin: 2px 0; /* Less margin */
+    height: 1px;
+    margin: 2px 0;
     background: linear-gradient(90deg, transparent 0%, #444 50%, transparent 100%);
     flex-shrink: 0;
     flex-grow: 0;
-  }
-
-  /* IMPORTANT: Override any parent container constraints */
-  .sidebar .tool-group,
-  .sidebar .pixel-tools,
-  .sidebar .sketch-tools,
-  .sidebar .pixel-tools.active,
-  .sidebar .sketch-tools.active {
-    min-height: 0 !important;
-    max-height: none !important;
-    height: auto !important;
-    flex: 0 0 auto !important;
-    overflow: visible !important;
-    /* Ensure they can expand vertically */
-    flex-basis: auto !important;
-    flex-shrink: 0 !important;
-    flex-grow: 0 !important;
   }
 
   /* Panels - same height fixes */
   #panels,
   .panels {
     grid-area: panels;
-    display: flex;
+    display: flex; 
     flex-direction: column;
-    
+
     height: 100vh;
     min-height: 100vh;
     max-height: 100vh;
-    
+
     overflow-y: auto;
     overflow-x: hidden;
     border-left: 2px solid #333;
     border-top: none;
-    
+
     flex-shrink: 0;
     flex-grow: 0;
   }
@@ -1778,7 +1745,7 @@ input[type="checkbox"],
     width: 100%;
     height: 100vh;
     padding: 10px;
-    
+
     min-height: unset;
     max-height: unset;
   }
@@ -1825,7 +1792,7 @@ input[type="checkbox"],
   /* Layer list */
   #layerList,
   .layer-list {
-    max-height: none; 
+    max-height: none;
     min-height: 100px;
     overflow-y: auto;
     border: 2px solid #444;
