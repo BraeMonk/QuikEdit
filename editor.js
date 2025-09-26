@@ -535,15 +535,25 @@ class JerryEditor {
     
     updatePixelCanvas() {
         this.pixelCanvas.innerHTML = '';
-        
-        // Set canvas dimensions first
+    
+        const canvasWidthPx = this.canvasWidth * this.pixelSize;
+        const canvasHeightPx = this.canvasHeight * this.pixelSize;
+    
+        // Set pixel canvas dimensions
         this.pixelCanvas.style.display = 'grid';
-        this.pixelCanvas.style.width = `${this.canvasWidth * this.pixelSize}px`;
-        this.pixelCanvas.style.height = `${this.canvasHeight * this.pixelSize}px`;
+        this.pixelCanvas.style.width = `${canvasWidthPx}px`;
+        this.pixelCanvas.style.height = `${canvasHeightPx}px`;
         this.pixelCanvas.style.gridTemplateColumns = `repeat(${this.canvasWidth}, ${this.pixelSize}px)`;
         this.pixelCanvas.style.gridTemplateRows = `repeat(${this.canvasHeight}, ${this.pixelSize}px)`;
         this.pixelCanvas.style.backgroundColor = 'transparent';
-        
+    
+        // Update grid overlay to match exactly
+        this.canvasGrid.style.width = `${canvasWidthPx}px`;
+        this.canvasGrid.style.height = `${canvasHeightPx}px`;
+        this.canvasGrid.style.gridTemplateColumns = `repeat(${this.canvasWidth}, ${this.pixelSize}px)`;
+        this.canvasGrid.style.gridTemplateRows = `repeat(${this.canvasHeight}, ${this.pixelSize}px)`;
+    
+        // Populate pixels
         for (let y = 0; y < this.canvasHeight; y++) {
             for (let x = 0; x < this.canvasWidth; x++) {
                 const pixel = document.createElement('div');
@@ -558,6 +568,7 @@ class JerryEditor {
             }
         }
     }
+
     
     updateGrid() {
         if (this.mode !== 'pixel') return;
