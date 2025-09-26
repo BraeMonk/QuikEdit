@@ -1405,7 +1405,7 @@ input[type="checkbox"],
     display: flex;
     justify-content: center;  /* center canvas horizontally */
     align-items: center;      /* center canvas vertically */
-    overflow: auto;           /* allow scroll if canvas is bigger than viewport */
+    overflow: hidden;           /* allow scroll if canvas is bigger than viewport */
     border-radius: 12px;
     box-shadow: 0 8px 24px rgba(0,0,0,0.3);
     border: 2px solid #333;
@@ -1425,8 +1425,8 @@ input[type="checkbox"],
   #canvas,
   #canvasGrid,
   .canvas-grid {
-    max-width: 100%;
-    max-height: 100%;
+    transform-origin: top left;   /* allow scaling from top-left corner */
+    image-rendering: pixelated;   /* keep pixel clarity */
   }
 
   /* Sidebar becomes horizontal */
