@@ -1419,6 +1419,25 @@ input[type="checkbox"],
     position: relative;
   }
 
+  /* Ensure the grid overlay is visible by default in portrait mode */
+  #canvasGrid,
+  .canvas-grid {
+    display: grid !important;   /* force it to grid by default */
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    opacity: 0.4;
+    z-index: 10;
+  }
+
+  #canvasGrid.hidden,
+  .canvas-grid.hidden {
+    display: none !important;   /* allow toggle to hide */
+  }
+
   #canvas-area,
   .canvas-area {
     display: flex;
