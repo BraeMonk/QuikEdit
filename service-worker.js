@@ -1,5 +1,5 @@
 // service-worker.js
-const CACHE_NAME = 'jerry-editor-v6';
+const CACHE_NAME = 'jerry-editor-v7';
 const urlsToCache = [
   './',
   './index.html',
