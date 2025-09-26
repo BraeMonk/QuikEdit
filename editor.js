@@ -381,25 +381,25 @@ class JerryEditor {
         const pos = this.mode === 'pixel' ? this.getPixelPos(e) : this.getCanvasPos(e);
     
         if (!this.isDrawing) {
-            // Show brush preview for sketch mode even if not drawing
             if (this.mode === 'sketch' && ['brush','pen','marker','pencilSketch','charcoal','eraser'].includes(this.currentTool)) {
                 this.showBrushPreview(pos);
             }
             return;
         }
     
-        // Always update lastPos immediately
         this.lastPos = pos;
         if (this.strokePath) this.strokePath.push(pos);
     
         // ----- SELECTION TOOL -----
-        if (this.currentTool === 'select' && this.selecting) {
+        if (this.currentTool === 'select') {
+            if (!this.selecting) this.startSelection(pos);
             this.updateSelection(pos);
             return;
         }
     
         // ----- MOVE TOOL -----
-        if (this.currentTool === 'move' && this.movingSelection) {
+        if (this.currentTool === 'move') {
+            if (!this.movingSelection) this.startMoving(pos);
             this.updateMove(pos);
             return;
         }
@@ -414,14 +414,12 @@ class JerryEditor {
         // ----- PIXEL SHAPES / TOOLS -----
         if (this.mode === 'pixel') {
             const rightClick = e.buttons === 2;
-            const isDragEnd = false; // commit handled on pointerup
-            this.handlePixelTool(pos, rightClick, false, isDragEnd);
+            this.handlePixelTool(pos, rightClick, false, false);
         } else {
-            // Regular sketch tools
             this.handleSketchTool(pos, e);
         }
     }
-    
+
     // Add this method to improve getCanvasPos for better coordinate calculation
     getCanvasPos(e) {
         const canvas = this.mode === 'pixel' ? this.pixelCanvas : this.sketchCanvas;
