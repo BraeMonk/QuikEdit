@@ -605,7 +605,7 @@ class JerryEditor {
         for (let i = 0; i < totalCells; i++) {
             const cell = document.createElement('div');
             cell.className = 'grid-cell';
-            cell.style.border = '0.5px solid rgba(255, 255, 255, 0.2)';
+            cell.style.border = '1px solid rgba(255, 255, 255, 0.2)';
             cell.style.boxSizing = 'border-box';
             grid.appendChild(cell);
         }
