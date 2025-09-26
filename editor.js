@@ -189,7 +189,7 @@ class JerryEditor {
         document.getElementById('clear').addEventListener('click', () => this.clearCanvas());
         document.getElementById('gridToggle').addEventListener('change', (e) => {
             this.showGrid = e.target.checked;
-            this.updateGrid();
+            this.toggleGrid();
         });
         
         // Transform controls
@@ -281,8 +281,12 @@ class JerryEditor {
         setInterval(() => this.autoSave(), 30000);
     }
 
-    toggleGrid() {
-        this.showGrid = !this.showGrid;
+    toggleGrid(forceState) {
+        if (typeof forceState === 'boolean') {
+            this.showGrid = forceState;
+        } else {
+            this.showGrid = !this.showGrid;
+        }
 
         if (this.mode === 'pixel' && this.canvasGrid) {
             this.canvasGrid.style.display = this.showGrid ? 'grid' : 'none';
