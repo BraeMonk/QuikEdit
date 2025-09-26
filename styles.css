@@ -1396,16 +1396,37 @@ input[type="checkbox"],
     overflow: hidden;
   }
 
-  #canvas-area,
-  .canvas-area {
-    padding: 12px;
-    min-height: 0;
-  }
-
   #canvas-wrapper,
   .canvas-wrapper {
-    min-height: 250px;
-    padding: 16px;
+    min-height: 250px;        /* minimum visible height */
+    max-height: 70vh;         /* leave space for panels */
+    max-width: 100%;          /* don’t overflow viewport width */
+    padding: 0;               /* remove extra spacing */
+    display: flex;
+    justify-content: center;  /* center canvas horizontally */
+    align-items: center;      /* center canvas vertically */
+    overflow: auto;           /* allow scroll if canvas is bigger than viewport */
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+    border: 2px solid #333;
+    background: transparent;
+  }
+
+  #canvas-area,
+  .canvas-area {
+    padding: 8px;             /* optional internal padding */
+    min-height: 0;            /* reset desktop min-height */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+
+  /* Optional: scale grid/pixels to fit smaller screens */
+  #canvas,
+  #canvasGrid,
+  .canvas-grid {
+    max-width: 100%;
+    max-height: 100%;
   }
 
   /* Sidebar becomes horizontal */
