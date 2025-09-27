@@ -1388,7 +1388,7 @@ input[type="checkbox"],
 /* ============================= */
 
 /* Mobile Portrait - Stack everything vertically */
-@media (max-width: 768px) and (orientation: portrait) {
+@media (orientation: portrait) {
   #editor-container,
   .editor-container {
     grid-template-areas: 
@@ -1574,7 +1574,7 @@ input[type="checkbox"],
 }
 
 /* Mobile Landscape - Full Height Three Column Layout */
-@media (max-width: 1024px) and (orientation: landscape) {
+@media (orientation: landscape) {
   /* Hide header completely in landscape */
   #header,
   .header {
