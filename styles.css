@@ -1877,21 +1877,21 @@ input[type="checkbox"],
     color: #888;
   }
 
-    /* Canvas overlays remain fixed */
-    #canvasInfo, #zoomIndicator {
-      position: absolute;
-      background: linear-gradient(135deg, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.9) 100%);
-      color: #e8e8e8;
-      padding: 6px 10px;
-      border-radius: 6px;
-      font-size: 11px;
-      font-family: 'Consolas','Monaco',monospace;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.4);
-      border: 1px solid rgba(255,255,255,0.1);
-      backdrop-filter: blur(4px);
-    }
-    #canvasInfo { bottom: 8px; left: 8px; }
-    #zoomIndicator { top: 8px; right: 8px; font-weight: 600; }
+  /* Canvas overlays remain fixed */
+  #canvasInfo, #zoomIndicator {
+    position: absolute;
+    background: linear-gradient(135deg, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.9) 100%);
+    color: #e8e8e8;
+    padding: 6px 10px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-family: 'Consolas','Monaco',monospace;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+    border: 1px solid rgba(255,255,255,0.1);
+    backdrop-filter: blur(4px);
+  }
+  #canvasInfo { bottom: 8px; left: 8px; }
+  #zoomIndicator { top: 8px; right: 8px; font-weight: 600; }
 
   /* ================== Responsive Adjustments ================== */
   @media (min-width: 768px) and (max-width: 1024px) {
