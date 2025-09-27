@@ -469,7 +469,6 @@ class JerryEditor {
         if (pixelTools) {
             if (mode === 'pixel') {
                 pixelTools.classList.add('active');
-                pixelTools.style.display = ''; // let CSS handle
             } else {
                 pixelTools.classList.remove('active');
             }
@@ -478,7 +477,6 @@ class JerryEditor {
         if (sketchTools) {
             if (mode === 'sketch') {
                 sketchTools.classList.add('active');
-                sketchTools.style.display = '';
             } else {
                 sketchTools.classList.remove('active');
             }
