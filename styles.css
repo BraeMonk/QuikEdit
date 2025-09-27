@@ -1624,8 +1624,7 @@ input[type="checkbox"],
   }
 
   /* Tool groups (pixel/sketch tools) */
-  .tool-group,
-  #tool-group {
+  .tool-group {
     display: none;
   }
 
