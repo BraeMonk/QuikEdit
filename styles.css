@@ -1713,20 +1713,14 @@ input[type="checkbox"],
     background-position: 0 0, 0 var(--halfCell, 10px), var(--halfCell,10px) -var(--halfCell,10px), -var(--halfCell,10px) 0;
   }
 
-  /* ============================= */
-  /* RIGHT PANELS - COMPLETE REWRITE */
-  /* ============================= */
-  
-  /* DESKTOP - Panels Container */
+  /* PANELS CONTAINER - FULL WIDTH OF CONTAINER */
   #panels,
   .panels {
     grid-area: panels;
+    width: 100%; /* Full width of grid area */
+    height: 100vh; /* Full height */
     display: flex;
     flex-direction: column;
-    height: 100vh;
-    min-height: 100vh;
-    max-height: 100vh;
-    width: 100%;
     background: linear-gradient(180deg, #1e1e1e 0%, #1a1a1a 100%);
     border-left: 2px solid #333;
     box-shadow: -2px 0 8px rgba(0, 0, 0, 0.2);
@@ -1734,42 +1728,34 @@ input[type="checkbox"],
     overflow-x: hidden;
     z-index: 40;
   }
-  
+
   /* Panels scrollbar */
   #panels::-webkit-scrollbar,
   .panels::-webkit-scrollbar {
     width: 6px;
   }
-  
   #panels::-webkit-scrollbar-track,
   .panels::-webkit-scrollbar-track {
     background: #1a1a1a;
   }
-  
   #panels::-webkit-scrollbar-thumb,
   .panels::-webkit-scrollbar-thumb {
     background: #444;
     border-radius: 3px;
   }
-  
-  #panels::-webkit-scrollbar-thumb:hover,
-  .panels::-webkit-scrollbar-thumb:hover {
-    background: #555;
-  }
-  
-  /* Individual Panel */
+
+  /* Individual Panel - Full Width */
   #panel,
   .panel {
-    display: flex;
-    flex-direction: column;
     width: 100%;
     background: #1e1e1e;
     border-bottom: 1px solid #333;
     flex-shrink: 0;
-    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
   }
-  
-  /* Panel Header - Full Width, Clickable */
+
+  /* Panel Header - Full Width */
   #panel-header,
   .panel-header {
     width: 100%;
@@ -1784,25 +1770,25 @@ input[type="checkbox"],
     justify-content: space-between;
     align-items: center;
     transition: all 0.2s ease;
-    flex-shrink: 0;
     box-sizing: border-box;
     user-select: none;
+    flex-shrink: 0;
   }
-  
+
   #panel-header:hover,
   .panel-header:hover {
     background: linear-gradient(135deg, #333 0%, #404040 100%);
     color: #fff;
   }
-  
+
   /* Panel Header Arrow */
   #panel-header span,
   .panel-header span {
     transition: transform 0.3s ease;
     font-size: 12px;
   }
-  
-  /* Panel Content */
+
+  /* Panel Content - Vertically Expandable */
   #panel-content,
   .panel-content {
     width: 100%;
@@ -1810,228 +1796,128 @@ input[type="checkbox"],
     background: linear-gradient(180deg, #1e1e1e 0%, #1a1a1a 100%);
     display: flex;
     flex-direction: column;
+    flex: 1; /* Expand to fill available space */
     gap: 16px;
     transition: all 0.3s ease;
     overflow: hidden;
-    max-height: none;
     opacity: 1;
     box-sizing: border-box;
   }
-  
+
   /* Collapsed Panel State */
   .panel.collapsed .panel-content {
     max-height: 0 !important;
     padding: 0 18px !important;
     opacity: 0 !important;
-    margin: 0 !important;
+    flex: none !important;
   }
-  
+
   .panel.collapsed .panel-header span {
     transform: rotate(-90deg);
   }
-  
+
   /* ============================= */
-  /* CONTROL GROUPS & ELEMENTS */
+  /* ALL CONTROLS - VERTICALLY EXPANDABLE */
   /* ============================= */
-  
-  /* Control Group */
+
+  /* Control Groups - Vertically Expandable */
   #control-group,
   .control-group {
+    width: 100%;
     display: flex;
     flex-direction: column;
-    width: 100%;
+    flex: 1; /* Expand vertically */
     margin-bottom: 16px;
     box-sizing: border-box;
   }
-  
+
   .control-group:last-child {
     margin-bottom: 0;
   }
-  
-  /* Control Group Labels */
+
+  /* Labels - Full Width */
   #control-group label,
   .control-group label {
     display: block;
+    width: 100%;
     font-size: 13px;
     font-weight: 600;
     color: #ccc;
     margin-bottom: 8px;
     text-transform: uppercase;
     letter-spacing: 0.5px;
-    width: 100%;
+    box-sizing: border-box;
+    flex-shrink: 0;
   }
-  
-  /* Control Rows */
+
+  /* Control Rows - Full Width, Vertically Expandable */
   #control-row,
   .control-row {
     display: flex;
+    width: 100%;
+    flex: 1; /* Expand vertically */
     gap: 8px;
-    align-items: center;
-    width: 100%;
+    align-items: stretch; /* Stretch children vertically */
     flex-wrap: wrap;
+    margin-bottom: 8px;
     box-sizing: border-box;
   }
-  
-  /* Button Groups */
+
+  /* Button Groups - Vertically Expandable */
   #btn-group,
-  .btn-group {
+  .btn-group,
+  .symmetry-controls {
     display: flex;
-    gap: 6px;
     width: 100%;
+    flex: 1; /* Expand vertically */
+    gap: 6px;
+    align-items: stretch; /* Stretch buttons vertically */
     flex-wrap: wrap;
+    margin-bottom: 8px;
     box-sizing: border-box;
   }
-  
-  .btn-group .btn {
-    flex: 1;
-    min-width: 0;
-  }
-  
-  /* ============================= */
-  /* BUTTONS - ALL TYPES */
-  /* ============================= */
-  
-  /* Base Button Styles */
-  #btn,
-  .btn,
-  button:not(.tool-btn):not(.mode-btn):not(.header-btn) {
-    background: linear-gradient(135deg, #404040 0%, #333 100%);
-    border: 2px solid #555;
-    color: #e8e8e8;
-    padding: 10px 16px;
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 13px;
-    font-weight: 500;
-    transition: all 0.2s ease;
-    white-space: nowrap;
-    text-align: center;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-    display: inline-block;
-    box-sizing: border-box;
-  }
-  
-  #btn:hover,
-  .btn:hover,
-  button:not(.tool-btn):not(.mode-btn):not(.header-btn):hover {
-    background: linear-gradient(135deg, #4a4a4a 0%, #3a3a3a 100%);
-    border-color: #666;
-    transform: translateY(-1px);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
-  }
-  
-  #btn:active,
-  .btn:active,
-  button:not(.tool-btn):not(.mode-btn):not(.header-btn):active {
-    transform: translateY(0);
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
-  }
-  
-  /* Primary Buttons */
-  #btn.primary,
-  .btn.primary,
-  #exportJSON,
-  #saveCustomPalette,
-  #addLayer {
-    background: linear-gradient(135deg, #4CAF50 0%, #66BB6A 100%);
-    border-color: #66BB6A;
-    color: #000;
-    font-weight: 600;
-  }
-  
-  #btn.primary:hover,
-  .btn.primary:hover,
-  #exportJSON:hover,
-  #saveCustomPalette:hover,
-  #addLayer:hover {
-    background: linear-gradient(135deg, #66BB6A 0%, #81C784 100%);
-    border-color: #81C784;
-  }
-  
-  /* Danger Buttons */
-  #btn.danger,
-  .btn.danger,
-  #clear,
-  #deleteSprite {
-    background: linear-gradient(135deg, #f44336 0%, #e57373 100%);
-    border-color: #e57373;
-    color: #fff;
-    font-weight: 600;
-  }
-  
-  #btn.danger:hover,
-  .btn.danger:hover,
-  #clear:hover,
-  #deleteSprite:hover {
-    background: linear-gradient(135deg, #e57373 0%, #ef5350 100%);
-    border-color: #ef5350;
-  }
-  
-  /* Small Buttons */
-  #btn.btn-sm,
-  .btn.btn-sm {
-    padding: 6px 12px;
-    font-size: 12px;
-  }
-  
-  /* ============================= */
-  /* FORM INPUTS */
-  /* ============================= */
-  
-  /* All Input Types */
+
+  /* ALL INPUTS - Full Width, Vertically Expandable */
   select,
   input[type="number"],
-  input[type="range"],
   input[type="color"],
   input[type="file"],
-  textarea {
+  textarea,
+  #paletteSelector,
+  #canvasWidth,
+  #canvasHeight,
+  #sketchColor,
+  #blendMode,
+  #output,
+  #importFile,
+  #spriteSelector {
+    width: 100%;
+    flex: 1; /* Expand vertically */
     background: linear-gradient(135deg, #333 0%, #2a2a2a 100%);
     border: 2px solid #555;
     color: #e8e8e8;
     padding: 8px 12px;
     border-radius: 6px;
     font-size: 13px;
-    width: 100%;
     transition: all 0.2s ease;
     box-sizing: border-box;
+    min-height: 40px; /* Minimum usable height */
   }
-  
-  select:hover,
-  input[type="number"]:hover,
-  input[type="range"]:hover,
-  input[type="color"]:hover,
-  input[type="file"]:hover,
-  textarea:hover {
-    border-color: #666;
-    background: linear-gradient(135deg, #404040 0%, #333 100%);
-  }
-  
-  select:focus,
-  input[type="number"]:focus,
-  input[type="range"]:focus,
-  input[type="color"]:focus,
-  input[type="file"]:focus,
-  textarea:focus {
-    outline: none;
-    border-color: #4CAF50;
-    box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.2);
-  }
-  
-  /* Color Inputs */
-  input[type="color"] {
-    height: 40px;
-    padding: 4px;
-    cursor: pointer;
-    border-radius: 8px;
-  }
-  
-  /* Range Sliders */
-  input[type="range"] {
+
+  /* Range sliders - Full Width */
+  input[type="range"],
+  #brushSize,
+  #brushOpacity,
+  #brushHardness,
+  #brushFlow,
+  #layerOpacity {
+    width: 100%;
     padding: 6px 0;
     background: #2a2a2a;
     border: 2px solid #444;
+    box-sizing: border-box;
   }
-  
+
   input[type="range"]::-webkit-slider-thumb {
     -webkit-appearance: none;
     width: 18px;
@@ -2042,118 +1928,110 @@ input[type="checkbox"],
     border: 2px solid #333;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
   }
-  
+
   input[type="range"]::-webkit-slider-track {
     -webkit-appearance: none;
     height: 6px;
     border-radius: 3px;
     background: linear-gradient(90deg, #333 0%, #555 100%);
   }
-  
-  /* Checkboxes */
-  input[type="checkbox"] {
+
+  /* Checkboxes - Keep natural size */
+  input[type="checkbox"],
+  #gridToggle {
     width: auto;
+    flex: none;
     margin-right: 8px;
     accent-color: #4CAF50;
     transform: scale(1.2);
   }
-  
-  /* ============================= */
-  /* COLOR SWATCHES & PALETTE */
-  /* ============================= */
-  
-  /* Swatch Container */
-  #swatches,
-  .swatches {
-    display: grid;
-    grid-template-columns: repeat(6, 1fr);
-    gap: 6px;
+
+  /* ALL BUTTONS - Full Width, Vertically Expandable */
+  #btn,
+  .btn,
+  #resizeCanvas,
+  #zoomIn,
+  #zoomOut,
+  #zoomReset,
+  #undo,
+  #redo,
+  #clear,
+  #rotateLeft,
+  #rotateRight,
+  #rotate180,
+  #flipHorizontal,
+  #flipVertical,
+  #newSprite,
+  #duplicateSprite,
+  #deleteSprite,
+  #addLayer,
+  #exportJSON,
+  #exportPNG2,
+  #saveCustomPalette,
+  button:not(.tool-btn):not(.mode-btn):not(.header-btn) {
     width: 100%;
-    margin-top: 12px;
-  }
-  
-  /* Primary/Secondary Color Swatches */
-  #primaryColor,
-  #secondaryColor,
-  .swatch {
-    width: 32px;
-    height: 32px;
-    border: 3px solid #555;
+    flex: 1; /* Expand vertically */
+    background: linear-gradient(135deg, #404040 0%, #333 100%);
+    border: 2px solid #555;
+    color: #e8e8e8;
+    padding: 10px 16px;
     border-radius: 6px;
     cursor: pointer;
+    font-size: 13px;
+    font-weight: 500;
     transition: all 0.2s ease;
-    position: relative;
-    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.3);
-    flex-shrink: 0;
-  }
-  
-  #primaryColor:hover,
-  #secondaryColor:hover,
-  .swatch:hover {
-    transform: scale(1.05);
-    border-color: #777;
-  }
-  
-  .swatch.primary,
-  #primaryColor {
-    border-color: #4CAF50;
-    box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.3), 0 3px 6px rgba(0, 0, 0, 0.3);
-    transform: scale(1.05);
-  }
-  
-  .swatch.secondary,
-  #secondaryColor {
-    border-color: #ffff00;
-    border-style: dashed;
-    box-shadow: 0 0 0 2px rgba(255, 255, 0, 0.3), 0 3px 6px rgba(0, 0, 0, 0.3);
-  }
-  
-  /* Palette Grid */
-  .palette-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(24px, 1fr));
-    gap: 4px;
-    width: 100%;
-  }
-  
-  /* Color Pickers Grid */
-  #colorPickers {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 8px;
-    margin-bottom: 12px;
-    width: 100%;
-  }
-  
-  .color-picker {
-    width: 100% !important;
-    height: 28px;
-    padding: 0 !important;
-    border: 2px solid #555 !important;
-    border-radius: 4px;
-    cursor: pointer;
-    transition: all 0.2s ease;
-  }
-  
-  .color-picker:hover {
-    border-color: #777 !important;
-    transform: scale(1.05);
-  }
-  
-  /* ============================= */
-  /* SYMMETRY CONTROLS */
-  /* ============================= */
-  
-  .symmetry-controls {
-    display: flex;
-    gap: 6px;
-    width: 100%;
+    text-align: center;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    box-sizing: border-box;
     margin-bottom: 8px;
+    min-height: 40px; /* Minimum usable height */
   }
-  
+
+  /* Buttons in groups - Share width equally, expand vertically */
+  .btn-group .btn,
+  .btn-group button,
+  .symmetry-controls .btn,
+  .symmetry-controls .symmetry-btn {
+    flex: 1; /* Expand both horizontally and vertically */
+    margin-bottom: 0;
+  }
+
+  /* Button hover states */
+  #btn:hover,
+  .btn:hover,
+  button:not(.tool-btn):not(.mode-btn):not(.header-btn):hover {
+    background: linear-gradient(135deg, #4a4a4a 0%, #3a3a3a 100%);
+    border-color: #666;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+  }
+
+  /* Primary buttons */
+  #btn.primary,
+  .btn.primary,
+  #exportJSON,
+  #saveCustomPalette,
+  #addLayer {
+    background: linear-gradient(135deg, #4CAF50 0%, #66BB6A 100%);
+    border-color: #66BB6A;
+    color: #000;
+    font-weight: 600;
+  }
+
+  /* Danger buttons */
+  #btn.danger,
+  .btn.danger,
+  #clear,
+  #deleteSprite {
+    background: linear-gradient(135deg, #f44336 0%, #e57373 100%);
+    border-color: #e57373;
+    color: #fff;
+    font-weight: 600;
+  }
+
+  /* Symmetry buttons */
   .symmetry-btn {
-    flex: 1;
-    min-width: 0;
+    flex: 1; /* Expand both ways */
     background: linear-gradient(135deg, #333 0%, #2a2a2a 100%);
     border: 2px solid #555;
     color: #e0e0e0;
@@ -2164,8 +2042,10 @@ input[type="checkbox"],
     font-weight: 500;
     transition: all 0.2s ease;
     text-align: center;
+    box-sizing: border-box;
+    min-height: 40px;
   }
-  
+
   .symmetry-btn:hover {
     background: linear-gradient(135deg, #4A90E2 0%, #6BB6FF 100%);
     border-color: #6BB6FF;
@@ -2173,7 +2053,7 @@ input[type="checkbox"],
     transform: translateY(-1px);
     box-shadow: 0 4px 8px rgba(74, 144, 226, 0.3);
   }
-  
+
   .symmetry-btn.active {
     background: linear-gradient(135deg, #4A90E2 0%, #6BB6FF 100%);
     border-color: #6BB6FF;
@@ -2181,15 +2061,64 @@ input[type="checkbox"],
     box-shadow: 0 3px 12px rgba(74, 144, 226, 0.4);
     font-weight: 600;
   }
-  
-  /* ============================= */
-  /* BRUSH PREVIEW */
-  /* ============================= */
-  
+
+  /* Primary/Secondary color swatches - Fixed size */
+  .control-row .swatch,
+  #primaryColor,
+  #secondaryColor {
+    width: 32px;
+    height: 32px;
+    border: 3px solid #555;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.3);
+    flex-shrink: 0;
+  }
+
+  /* Palette grids - Full Width, Vertically Expandable */
+  #swatches,
+  .swatches,
+  .palette-grid {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 6px;
+    width: 100%;
+    flex: 1; /* Expand vertically */
+    margin: 12px 0;
+    box-sizing: border-box;
+    align-content: start;
+  }
+
+  #colorPickers {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    width: 100%;
+    flex: 1; /* Expand vertically */
+    margin-bottom: 12px;
+    box-sizing: border-box;
+    align-content: start;
+  }
+
+  .color-picker {
+    width: 100%;
+    aspect-ratio: 1; /* Keep square shape while expanding */
+    padding: 0;
+    border: 2px solid #555;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-sizing: border-box;
+  }
+
+  /* Brush preview - Full Width, Vertically Expandable */
   #brushPreview,
   .brush-preview {
     width: 100%;
-    height: 60px;
+    flex: 1; /* Expand vertically */
+    min-height: 60px; /* Minimum height */
     border: 2px solid #555;
     border-radius: 8px;
     margin: 12px 0;
@@ -2198,44 +2127,26 @@ input[type="checkbox"],
     align-items: center;
     justify-content: center;
     box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3);
+    box-sizing: border-box;
   }
-  
-  /* ============================= */
-  /* LAYER LIST */
-  /* ============================= */
-  
+
+  /* Layer list - Full Width, Vertically Expandable */
   #layerList,
   .layer-list {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    max-height: 140px;
+    width: 100%;
+    flex: 1; /* Expand vertically */
+    min-height: 100px; /* Minimum height */
     overflow-y: auto;
     border: 2px solid #444;
     padding: 8px;
     background: linear-gradient(135deg, #2a2a2a 0%, #252525 100%);
     border-radius: 6px;
-    width: 100%;
     box-sizing: border-box;
+    margin-bottom: 12px;
   }
-  
-  #layerList::-webkit-scrollbar,
-  .layer-list::-webkit-scrollbar {
-    width: 6px;
-  }
-  
-  #layerList::-webkit-scrollbar-track,
-  .layer-list::-webkit-scrollbar-track {
-    background: #2a2a2a;
-  }
-  
-  #layerList::-webkit-scrollbar-thumb,
-  .layer-list::-webkit-scrollbar-thumb {
-    background: #444;
-    border-radius: 3px;
-  }
-  
+
   .layer-item {
+    width: 100%;
     display: flex;
     align-items: center;
     padding: 8px;
@@ -2244,46 +2155,42 @@ input[type="checkbox"],
     transition: all 0.2s ease;
     font-size: 13px;
     border-radius: 4px;
+    box-sizing: border-box;
   }
-  
-  .layer-item:last-child {
-    border-bottom: none;
-  }
-  
+
   .layer-item:hover {
     background: linear-gradient(135deg, #333 0%, #404040 100%);
   }
-  
+
   .layer-item.active {
     background: linear-gradient(135deg, #4CAF50 0%, #66BB6A 100%);
     color: #000;
     font-weight: 600;
   }
-  
-  /* ============================= */
-  /* INFO SECTIONS */
-  /* ============================= */
-  
+
+  /* Info sections - Full Width, Vertically Expandable */
   .symmetry-info,
   .transform-info {
+    width: 100%;
+    flex: 1; /* Expand vertically */
     margin-top: 12px;
     padding: 12px;
     border-radius: 6px;
     box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.2);
-    width: 100%;
     box-sizing: border-box;
+    min-height: 60px;
   }
-  
+
   .symmetry-info {
     background: linear-gradient(135deg, rgba(74, 144, 226, 0.1) 0%, rgba(74, 144, 226, 0.05) 100%);
     border: 2px solid rgba(74, 144, 226, 0.3);
   }
-  
+
   .transform-info {
     background: linear-gradient(135deg, rgba(76, 175, 80, 0.1) 0%, rgba(76, 175, 80, 0.05) 100%);
     border: 2px solid rgba(76, 175, 80, 0.3);
   }
-  
+
   .symmetry-info small,
   .transform-info small {
     color: #bbb;
@@ -2291,18 +2198,19 @@ input[type="checkbox"],
     line-height: 1.5;
     font-style: italic;
   }
-  
-  /* ============================= */
-  /* EXPORT AREA */
-  /* ============================= */
-  
+
+  /* Export area - Full Width, Vertically Expandable */
   .export-area {
     width: 100%;
+    flex: 1; /* Expand vertically */
     margin-top: 16px;
+    box-sizing: border-box;
   }
-  
-  .export-area textarea {
+
+  .export-area textarea,
+  #output {
     width: 100%;
+    flex: 1; /* Expand vertically */
     min-height: 80px;
     background: linear-gradient(135deg, #333 0%, #2a2a2a 100%);
     border: 2px solid #555;
@@ -2315,113 +2223,67 @@ input[type="checkbox"],
     line-height: 1.4;
     box-sizing: border-box;
   }
-  
-  .export-area input[type="file"] {
+
+  .export-area input[type="file"],
+  #importFile {
+    width: 100%;
+    flex: 1;
+    min-height: 40px;
     background: linear-gradient(135deg, #333 0%, #2a2a2a 100%);
     color: #e8e8e8;
     padding: 8px;
     border: 2px solid #555;
     border-radius: 6px;
-    width: 100%;
     font-size: 12px;
     cursor: pointer;
     box-sizing: border-box;
   }
-  
-  /* ============================= */
-  /* MODE-SPECIFIC VISIBILITY */
-  /* ============================= */
-  
-  /* Default state - hide mode-specific panels */
+
+  /* Mode-specific visibility */
   .panel.pixel-controls,
   .panel.sketch-controls {
     display: none;
   }
-  
-  /* Show panels when mode is active via JavaScript */
+
   .panel.pixel-controls[style*="display: flex"],
   .panel.sketch-controls[style*="display: flex"] {
     display: flex !important;
   }
-  
-  /* Nested controls inside panels */
+
   .panel .pixel-controls,
   .panel .sketch-controls {
     display: none;
   }
-  
+
   .panel .pixel-controls[style*="display: flex"],
   .panel .sketch-controls[style*="display: flex"] {
     display: flex !important;
     flex-direction: column;
+    flex: 1;
     width: 100%;
   }
-  
-  /* ============================= */
-  /* MOBILE PORTRAIT OVERRIDES */
-  /* ============================= */
-  
-  @media (orientation: portrait) {
+
+  /* Responsive width adjustments */
+  @media (max-width: 1024px) {
     #panels,
     .panels {
-      max-height: 45vh;
-      min-height: 250px;
-      border-left: none;
-      border-top: 2px solid #333;
-      width: 100%;
+      width: 100%; /* Still full width */
     }
-  
+  }
+
+  @media (max-width: 667px) {
     #panel-content,
     .panel-content {
-      padding: 14px;
+      padding: 10px 12px;
+    }
+    
+    #panel-header,
+    .panel-header {
+      padding: 8px 12px;
+      font-size: 12px;
     }
   }
-  
-  /* ============================= */
-  /* MOBILE LANDSCAPE OVERRIDES */
-  /* ============================= */
-  
-  @media (orientation: landscape) {
-    /* Panels maintain full height in landscape */
-    #panels,
-    .panels {
-      height: 100vh;
-      width: 300px;
-    }
-  
-    /* Responsive width adjustments */
-    @media (max-width: 1024px) {
-      #panels,
-      .panels {
-        width: 280px;
-      }
-    }
-  
-    @media (max-width: 667px) {
-      #panels,
-      .panels {
-        width: 250px;
-      }
-      
-      #panel-content,
-      .panel-content {
-        padding: 10px 12px;
-      }
-      
-      #panel-header,
-      .panel-header {
-        padding: 8px 12px;
-        font-size: 12px;
-      }
-    }
-  
-    @media (max-width: 568px) {
-      #panels,
-      .panels {
-        width: 200px;
-      }
-    }
-  }
+}
 
 /* Tablet specific adjustments */
 @media (min-width: 768px) and (max-width: 1024px) {
