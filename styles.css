@@ -1576,9 +1576,10 @@ input[type="checkbox"],
 /* Mobile Landscape - Full Height Three Column Layout */
 @media (orientation: landscape) {
   html, body {
-    height: 100dvh; /* ensures grid container height works correctly */
+    height: 100dvh;
     margin: 0;
-    overflow: hidden; /* parent scroll handled inside editor */
+    padding: 0;
+    overflow: hidden;
   }
 
   /* Hide header completely in landscape */
@@ -1593,7 +1594,7 @@ input[type="checkbox"],
     display: grid;
     grid-template-areas: "sidebar canvas panels";
     grid-template-columns: 65px 1fr 300px;
-    grid-template-rows: 1fr;
+    grid-template-rows: 100vh;
     width: 100vw;
     height: 100vh;
     position: fixed;
@@ -1602,7 +1603,6 @@ input[type="checkbox"],
     overflow: hidden;
     background: #2a2a2a;
     z-index: 1;
-    min-height: 0; /* <-- critical for iOS flex children */
   }
 
   /* ================== Sidebar ================== */
@@ -1611,46 +1611,85 @@ input[type="checkbox"],
     display: flex;
     flex-direction: column;
     justify-content: flex-start;
-    align-items: stretch;
+    align-items: center;
     width: 65px;
-    height: 100vh;      /* fill parent */
-    min-height: 0;     /* <-- critical */
+    height: 100vh;
     padding: 8px 0;
-    gap: 0;
-    overflow: hidden;  /* inner .tool-group handles scrolling */
+    gap: 6px;
+    overflow-y: auto;
+    overflow-x: hidden;
     grid-area: sidebar;
     background: linear-gradient(180deg, #1e1e1e 0%, #1a1a1a 100%);
     border-right: 2px solid #333;
     box-shadow: 2px 0 8px rgba(0,0,0,0.2);
   }
 
+  #sidebar::-webkit-scrollbar {
+    width: 4px;
+  }
+
+  #sidebar::-webkit-scrollbar-track {
+    background: #1a1a1a;
+  }
+
+  #sidebar::-webkit-scrollbar-thumb {
+    background: #444;
+    border-radius: 3px;
+  }
+
   /* ================== Tool Groups ================== */
-  .tool-group.active {
-    display: flex !important;
-    flex-direction: column;  /* vertical in landscape */
-    align-items: stretch;
-    flex: 1 1 auto;          /* fill remaining sidebar height */
-    min-height: 0;           /* <-- critical for iOS scrolling */
-    overflow-y: auto;        /* scroll if too tall */
-    gap: 4px;
-    padding: 4px 0;
+  #tool-group,
+  .tool-group {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    width: 100%;
+  }
+
+  #pixel-tools,
+  .pixel-tools,
+  #sketch-tools,
+  .sketch-tools {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    width: 100%;
+  }
+
+  #pixel-tools.active,
+  .pixel-tools.active,
+  #sketch-tools.active,
+  .sketch-tools.active {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    width: 100%;
   }
 
   /* Tool buttons */
   #tool-btn, .tool-btn {
-    width: 48px;
-    height: 35px;
+    width: 50px;
+    height: 50px;
     flex-shrink: 0;
     display: flex;
     align-items: center;
     justify-content: center;
+    font-size: 18px;
+  }
+
+  #tool-btn.symmetric-tool,
+  .tool-btn.symmetric-tool {
+    font-size: 16px;
   }
 
   /* Tool separators */
   #tool-separator, .tool-separator {
-    width: 70%;
-    height: 1px;
-    margin: 3px 0;
+    width: 80%;
+    height: 2px;
+    margin: 6px 0;
     flex-shrink: 0;
     background: linear-gradient(90deg, transparent 0%, #444 50%, transparent 100%);
   }
@@ -1674,7 +1713,7 @@ input[type="checkbox"],
   .tool-btn.symmetric-tool {
     background: linear-gradient(135deg, #333 0%, #444 50%, #4A90E2 100%);
     border: 2px solid #4A90E2;
-    font-size: 12px;
+    font-size: 16px;
     box-shadow: 0 2px 6px rgba(74, 144, 226, 0.3);
   }
 
@@ -1685,22 +1724,18 @@ input[type="checkbox"],
     box-shadow: 0 4px 12px rgba(74, 144, 226, 0.6);
   }
   
-  /* Canvas area - center column full height */
+  /* Canvas area - center column full height, no scroll */
   #canvas-area,
   .canvas-area {
     grid-area: canvas;
     background: radial-gradient(circle at center, #1e1e1e 0%, #1a1a1a 100%);
     display: flex;
-    flex-direction: column;
     align-items: center;
     justify-content: center;
     position: relative;
-    overflow: auto;
-    padding: 10px;
-    border-top: 1px solid #333;
+    overflow: hidden;
     height: 100vh;
-    min-height: 100vh;
-    max-height: 100vh;
+    width: 100%;
   }
 
   #canvas-wrapper,
@@ -1741,8 +1776,6 @@ input[type="checkbox"],
     box-shadow: -2px 0 8px rgba(0, 0, 0, 0.2);
     z-index: 40;
     height: 100vh;
-    min-height: 100vh;
-    max-height: 100vh;
   }
 
   #panels::-webkit-scrollbar,
@@ -1795,16 +1828,6 @@ input[type="checkbox"],
     color: #fff;
   }
 
-  #panel-header span,
-  .panel-header span {
-    transition: transform 0.2s ease;
-  }
-
-  #panel.collapsed .panel-header span,
-  .panel.collapsed .panel-header span {
-    transform: rotate(-90deg);
-  }
-
   #panel-content,
   .panel-content {
     padding: 14px;
@@ -1818,164 +1841,6 @@ input[type="checkbox"],
   .panel.collapsed .panel-content {
     max-height: 0;
     padding: 0 14px;
-  }
-
-  /* Control groups - optimized for landscape */
-  #control-group,
-  .control-group {
-    margin-bottom: 16px;
-  }
-
-  #control-group label,
-  .control-group label {
-    display: block;
-    font-size: 12px;
-    font-weight: 500;
-    margin-bottom: 6px;
-    color: #ccc;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-  }
-
-  #control-row,
-  .control-row {
-    display: flex;
-    gap: 8px;
-    align-items: center;
-    margin-bottom: 8px;
-  }
-
-  /* Button groups - compact for landscape */
-  #btn-group,
-  .btn-group {
-    display: flex;
-    gap: 4px;
-    margin-bottom: 6px;
-    flex-wrap: wrap;
-  }
-
-  #btn-group .btn,
-  .btn-group .btn,
-  #btn-group button,
-  .btn-group button {
-    flex: 1;
-    min-width: 55px;
-    font-size: 11px;
-    padding: 6px 8px;
-  }
-
-  /* Form elements */
-  select,
-  input[type="number"],
-  input[type="range"],
-  input[type="color"],
-  input[type="file"],
-  textarea,
-  #canvasWidth,
-  #canvasHeight,
-  #brushSize,
-  #brushOpacity,
-  #brushHardness,
-  #brushFlow,
-  #sketchColor,
-  #layerOpacity,
-  #blendMode,
-  #output,
-  #importFile {
-    background: linear-gradient(135deg, #333 0%, #2a2a2a 100%);
-    border: 2px solid #555;
-    color: #e8e8e8;
-    padding: 6px 10px;
-    border-radius: 6px;
-    font-size: 12px;
-    width: 100%;
-    transition: all 0.2s ease;
-  }
-
-  /* Color swatches - maintain good usability */
-  #swatch,
-  .swatch {
-    width: 28px;
-    height: 28px;
-    border: 3px solid #555;
-    border-radius: 6px;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    position: relative;
-    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.3);
-  }
-
-  #color-swatch,
-  .color-swatch {
-    width: 24px;
-    height: 24px;
-    border: 2px solid #555;
-    cursor: pointer;
-    border-radius: 4px;
-    transition: all 0.2s ease;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-  }
-
-  /* Swatches grid */
-  .swatches,
-  #swatches {
-    display: grid;
-    grid-template-columns: repeat(6, 1fr);
-    gap: 4px;
-    margin-top: 10px;
-  }
-
-  /* Layer list */
-  #layerList,
-  .layer-list {
-    max-height: 120px;
-    overflow-y: auto;
-    border: 2px solid #444;
-    margin-bottom: 10px;
-    background: linear-gradient(135deg, #2a2a2a 0%, #252525 100%);
-    border-radius: 6px;
-  }
-
-  #layer-item,
-  .layer-item {
-    display: flex;
-    align-items: center;
-    padding: 8px 10px;
-    cursor: pointer;
-    border-bottom: 1px solid #333;
-    transition: all 0.2s ease;
-    font-size: 12px;
-  }
-
-  /* Brush preview */
-  #brushPreview {
-    width: 50px;
-    height: 50px;
-    border: 2px solid #555;
-    border-radius: 50%;
-    margin: 10px auto;
-    background: linear-gradient(135deg, #333 0%, #2a2a2a 100%);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3);
-  }
-
-  /* Export area */
-  #export-area textarea,
-  .export-area textarea,
-  #output {
-    width: 100%;
-    height: 80px;
-    background: linear-gradient(135deg, #333 0%, #2a2a2a 100%);
-    border: 2px solid #555;
-    color: #e8e8e8;
-    padding: 10px;
-    border-radius: 6px;
-    font-family: 'Consolas', 'Monaco', monospace;
-    font-size: 11px;
-    resize: vertical;
-    line-height: 1.4;
   }
 
   /* Canvas overlays - compact */
