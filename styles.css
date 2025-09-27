@@ -1610,49 +1610,28 @@ input[type="checkbox"],
     align-items: stretch;
   }
   
-  /* Left sidebar - tools with full height scrolling */
   #sidebar,
   .sidebar {
-    grid-area: sidebar;
-    background: linear-gradient(180deg, #1e1e1e 0%, #1a1a1a 100%);
     display: flex;
-    flex-direction: column;   
+    flex-direction: column;
     align-items: center;
-    padding: 8px 0;
-    gap: 6px; 
-    border-right: 2px solid #333;
-    box-shadow: 2px 0 8px rgba(0, 0, 0, 0.2);
-    z-index: 50;
-    height: 100vh;              /* full grid row height */
-    min-height: 0;              /* allow flex children to shrink */
-    overflow-y: auto;   /* allow scrolling when content exceeds height */
-    overflow-x: hidden;
+    padding: 12px 0;
+    gap: 6px;
+    height: 100vh;           /* full viewport height */
+    overflow-y: auto;        /* scroll if needed */
+    flex-shrink: 0;
   }
 
-  #sidebar::-webkit-scrollbar,
-  .sidebar::-webkit-scrollbar {
-    width: 4px;
+  .tool-group {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    width: 100%;
+    flex-shrink: 0;          /* don’t shrink inside the sidebar */
   }
 
-  #sidebar::-webkit-scrollbar-track,
-  .sidebar::-webkit-scrollbar-track {
-    background: #1a1a1a;
-  }
-
-  #sidebar::-webkit-scrollbar-thumb,
-  .sidebar::-webkit-scrollbar-thumb {
-    background: #444;
-    border-radius: 2px;
-  }
-
-  #sidebar::-webkit-scrollbar-thumb:hover,
-  .sidebar::-webkit-scrollbar-thumb:hover {
-    background: #555;
-  }
-
-  #pixel-tools,
   .pixel-tools,
-  #sketch-tools,
   .sketch-tools {
     display: none;
     flex-direction: column;
@@ -1661,17 +1640,9 @@ input[type="checkbox"],
     width: 100%;
   }
 
-  #tool-group,
-  .tool-group,
-  #pixel-tools.active,
   .pixel-tools.active,
-  #sketch-tools.active,
   .sketch-tools.active {
     display: flex;
-    gap: 6px;
-    width: 100%;          /* fill remaining sidebar height */
-    min-height: 0;              /* critical for Chrome/Safari flex scrolling */
-    overflow-y: visible;           /* scroll when tools exceed sidebar height */
   }
 
   /* Tool buttons - never shrink */
