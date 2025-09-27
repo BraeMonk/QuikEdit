@@ -1591,8 +1591,8 @@ input[type="checkbox"],
   .editor-container {
     display: grid;
     grid-template-areas: "sidebar canvas panels";
-    grid-template-columns: 70px 1fr 260px;
-    grid-template-rows: 1fr;
+    grid-template-columns: 65px 1fr 300px;
+    grid-template-rows: 50px 1fr;
     width: 100vw;
     height: 100vh;
     gap: 1px;
@@ -1608,13 +1608,13 @@ input[type="checkbox"],
   #sidebar,
   .sidebar {
     display: flex;
-    flex-direction: column;   /* vertical stacking */
+    flex-direction: column !important;   /* vertical stacking */
     justify-content: flex-start;
     align-items: stretch;     /* fill sidebar width */
-    width: 70px;
-    height: 100%;            /* full viewport height */
+    width: 65px;
+    max-height: 100vh;            /* full viewport height */
     min-height: 0;
-    padding: 6px 0;
+    padding: 12px 0;
     gap: 6px;
     overflow-y: auto;         /* vertical scroll if needed */
     overflow-x: hidden;
