@@ -1616,8 +1616,8 @@ input[type="checkbox"],
     grid-area: sidebar;
     background: linear-gradient(180deg, #1e1e1e 0%, #1a1a1a 100%);
     display: flex;
-    flex-direction: column !important;
-    align-items: stretch;       /* fill width */
+    flex-direction: column;   
+    align-items: center;
     padding: 8px 0;
     gap: 6px; 
     border-right: 2px solid #333;
@@ -1668,10 +1668,8 @@ input[type="checkbox"],
   #sketch-tools.active,
   .sketch-tools.active {
     display: flex;
-    flex-direction: column;
     gap: 6px;
-    width: 100%;
-    flex: 0 0 auto;            /* fill remaining sidebar height */
+    width: 100%;          /* fill remaining sidebar height */
     min-height: 0;              /* critical for Chrome/Safari flex scrolling */
     overflow-y: visible;           /* scroll when tools exceed sidebar height */
   }
