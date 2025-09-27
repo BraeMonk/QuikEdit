@@ -1575,6 +1575,11 @@ input[type="checkbox"],
 
 /* Mobile Landscape - Full Height Three Column Layout */
 @media (orientation: landscape) {
+  html, body {
+    height: 100%; /* ensures grid container height works correctly */
+    margin: 0;    /* prevent unexpected collapsing due to default margins */
+  }
+  
   /* Hide header completely in landscape */
   #header,
   .header {
