@@ -1600,7 +1600,8 @@ input[type="checkbox"],
     z-index: 1;
     align-items: stretch;
   }
-  
+
+  #sidebar,
   .sidebar {
     display: flex;
     flex-direction: column;
@@ -1615,6 +1616,7 @@ input[type="checkbox"],
     grid-area: sidebar;  /* only for landscape */
   }
 
+  #tool-group,
   .tool-group {
     display: flex;        /* required for flex scrolling */
     flex-direction: column;
@@ -1624,6 +1626,8 @@ input[type="checkbox"],
     flex-shrink: 0;       /* don’t shrink inside sidebar */
   }
 
+  #pixel-tools,
+  #sketch-tools,
   .pixel-tools,
   .sketch-tools {
     display: none;        /* hidden by default */
@@ -1633,6 +1637,8 @@ input[type="checkbox"],
     width: 100%;
   }
 
+  #pixel-tools.active,
+  #sketch-tools.active,
   .pixel-tools.active,
   .sketch-tools.active {
     display: flex;        /* JS toggle adds 'active' */
