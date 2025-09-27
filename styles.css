@@ -1611,49 +1611,34 @@ input[type="checkbox"],
     gap: 6px;
     width: 70px;
     height: 100vh;       /* full viewport height */
-    min-height: 100vh;   /* ensure it fills vertically */
-    max-height: 100vh;
-    min-width: 70px;
-    max-width: 70px;
+    min-height: 0;   /* ensure it fills vertically */
     overflow-y: auto;    /* scroll if needed */
-    flex-shrink: 0;
     grid-area: sidebar;  /* only for landscape */
   }
 
+  .tool-group,
   #tool-group,
-  .tool-group {
-    display: flex;        /* required for flex scrolling */
-    flex-direction: column;
-    align-items: center;
-    gap: 6px;
-    width: 100%;
-    flex-shrink: 0;       /* don’t shrink inside sidebar */
-  }
-
-  #pixel-tools,
-  #sketch-tools,
+  .pixel-tools.active,
+  .sketch-tools.active,
   .pixel-tools,
   .sketch-tools {
-    display: none;        /* hidden by default */
+    display: flex !important; /* ensure JS inline toggles can’t hide flex layout */
     flex-direction: column;
+    flex: 1 1 auto;           /* critical: let this element take the available vertical space */
+    min-height: 0;            /* critical for allowing the element to become scrollable */
+    overflow-y: auto;         /* enable vertical scrolling */
+    overflow-x: hidden;
+    width: 100%;
     align-items: center;
     gap: 6px;
-    width: 100%;
+    padding: 6px 0;
+    -webkit-overflow-scrolling: touch; /* smoother scrolling on iOS */
   }
 
-  #pixel-tools.active,
-  #sketch-tools.active,
-  .pixel-tools.active,
-  .sketch-tools.active {
-    display: flex;        /* JS toggle adds 'active' */
-  }
-
-  /* Tool buttons - never shrink */
+  /* keep tool buttons from shrinking (you already had this) */
   #tool-btn,
   .tool-btn {
     flex-shrink: 0;
-    width: 44px;
-    height: 44px;
   }
 
   /* Separators */
