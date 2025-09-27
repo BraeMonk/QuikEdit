@@ -1615,8 +1615,7 @@ input[type="checkbox"],
     height: 100vh;
     padding: 8px 0;
     gap: 0; /* No gap at sidebar level */
-    overflow-y: auto;
-    overflow-x: hidden;
+    overflow-y: hidden;
     grid-area: sidebar;
     background: linear-gradient(180deg, #1e1e1e 0%, #1a1a1a 100%);
     border-right: 2px solid #333;
@@ -1638,14 +1637,15 @@ input[type="checkbox"],
     padding: 4px 0;
     overflow-y: auto;
     min-height: 0;
+    max-height: 100%;
   }
 
 
   /* Tool buttons */
   #tool-btn,
   .tool-btn {
-    width: 48px;
-    height: 40px;
+    width: 40px;
+    height: 35px;
     flex-shrink: 0;
     background: linear-gradient(135deg, #333 0%, #2a2a2a 100%);
     border: 2px solid #444;
@@ -1655,7 +1655,7 @@ input[type="checkbox"],
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 14px;
+    font-size: 12px;
     transition: all 0.2s ease;
     position: relative;
     line-height: 1;
