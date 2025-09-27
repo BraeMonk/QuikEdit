@@ -1596,7 +1596,9 @@ input[type="checkbox"],
     grid-template-columns: 65px 1fr 300px;
     grid-template-rows: 1fr;
     width: 100vw;
+    height: 100dvh;
     height: 100vh;
+    min-height: -webkit-fill-available;
     position: fixed;
     left: 0;
     top: 0;
@@ -1613,6 +1615,8 @@ input[type="checkbox"],
     align-items: center;
     width: 65px;
     height: 100%; /* fill container */
+    max-height: none !important;
+    min-height: 0 !important;
     padding: 8px 0;
     gap: 6px;
     overflow-y: auto;
@@ -1717,6 +1721,8 @@ input[type="checkbox"],
     height: 100%; /* fill container */
     overflow-y: auto;
     overflow-x: hidden;
+    max-height: none !important;
+    min-height: 0 !important;
     background: linear-gradient(180deg, #1e1e1e 0%, #1a1a1a 100%);
     border-left: 2px solid #333;
     box-shadow: -2px 0 8px rgba(0,0,0,0.2);
