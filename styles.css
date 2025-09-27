@@ -1765,7 +1765,9 @@ input[type="checkbox"],
   /* Panel Content */
   .panel-content {
     padding: 14px;
-    display: block;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
     transition: max-height 0.3s ease, padding 0.3s ease;
     overflow: hidden;
     background: linear-gradient(180deg, #1e1e1e 0%, #1a1a1a 100%);
@@ -1775,6 +1777,11 @@ input[type="checkbox"],
     padding: 0 14px;
   }
 
+  .panel-content.expandable {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+  }
   /* ================== Controls ================== */
   .control-group {
     margin-bottom: 12px;
