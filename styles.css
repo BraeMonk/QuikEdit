@@ -1713,342 +1713,715 @@ input[type="checkbox"],
     background-position: 0 0, 0 var(--halfCell, 10px), var(--halfCell,10px) -var(--halfCell,10px), -var(--halfCell,10px) 0;
   }
 
-  /* ================== FIXED PANELS ================== */
+  /* ============================= */
+  /* RIGHT PANELS - COMPLETE REWRITE */
+  /* ============================= */
+  
+  /* DESKTOP - Panels Container */
+  #panels,
   .panels {
     grid-area: panels;
     display: flex;
     flex-direction: column;
-    height: 100vh; /* Full viewport height */
-    overflow-y: auto; /* Enable scrolling for the entire panel container */
-    overflow-x: hidden;
+    height: 100vh;
+    min-height: 100vh;
+    max-height: 100vh;
+    width: 100%;
     background: linear-gradient(180deg, #1e1e1e 0%, #1a1a1a 100%);
     border-left: 2px solid #333;
-    box-shadow: -2px 0 8px rgba(0,0,0,0.2);
+    box-shadow: -2px 0 8px rgba(0, 0, 0, 0.2);
+    overflow-y: auto;
+    overflow-x: hidden;
     z-index: 40;
-    width: 300px; /* Fixed width to match grid */
   }
-
-  /* Scrollbar for panels container */
-  .panels::-webkit-scrollbar { width: 6px; }
-  .panels::-webkit-scrollbar-track { background: #1a1a1a; }
-  .panels::-webkit-scrollbar-thumb { background: #444; border-radius: 3px; }
-  .panels::-webkit-scrollbar-thumb:hover { background: #555; }
-
-  /* Individual Panel - FIXED */
+  
+  /* Panels scrollbar */
+  #panels::-webkit-scrollbar,
+  .panels::-webkit-scrollbar {
+    width: 6px;
+  }
+  
+  #panels::-webkit-scrollbar-track,
+  .panels::-webkit-scrollbar-track {
+    background: #1a1a1a;
+  }
+  
+  #panels::-webkit-scrollbar-thumb,
+  .panels::-webkit-scrollbar-thumb {
+    background: #444;
+    border-radius: 3px;
+  }
+  
+  #panels::-webkit-scrollbar-thumb:hover,
+  .panels::-webkit-scrollbar-thumb:hover {
+    background: #555;
+  }
+  
+  /* Individual Panel */
+  #panel,
   .panel {
-    background: #1e1e1e;
-    border-bottom: 1px solid #333;
-    flex-shrink: 0; /* Prevent panels from shrinking */
     display: flex;
     flex-direction: column;
-    min-height: 0; /* Allow content to shrink */
-    width: 100%; /* Full width of panels container */
+    width: 100%;
+    background: #1e1e1e;
+    border-bottom: 1px solid #333;
+    flex-shrink: 0;
+    box-sizing: border-box;
   }
-
-  /* Panel Header - FIXED */
+  
+  /* Panel Header - Full Width, Clickable */
+  #panel-header,
   .panel-header {
+    width: 100%;
+    padding: 14px 18px;
     background: linear-gradient(135deg, #2a2a2a 0%, #333 100%);
-    padding: 12px 16px;
-    font-size: 13px;
-    font-weight: 600;
     border-bottom: 2px solid #333;
+    font-size: 14px;
+    font-weight: 600;
+    color: #e8e8e8;
     cursor: pointer;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    width: 100%; /* Full width */
-    box-sizing: border-box; /* Include padding in width calculation */
-    transition: all 0.2s ease; 
-    color: #e8e8e8;
-    flex-shrink: 0; /* Never shrink the header */
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+    box-sizing: border-box;
+    user-select: none;
   }
   
+  #panel-header:hover,
   .panel-header:hover {
     background: linear-gradient(135deg, #333 0%, #404040 100%);
     color: #fff;
   }
-
-  /* Panel Content - FIXED */
-  .panel-content {
-    padding: 14px 16px;
-    display: flex;
-    flex-direction: column;
-    transition: all 0.3s ease;
-    overflow: hidden;
-    background: linear-gradient(180deg, #1e1e1e 0%, #1a1a1a 100%);
-    width: 100%;
-    box-sizing: border-box;
-    flex: 1; /* Allow content to expand */
-    min-height: 0; /* Allow shrinking */
-  }
-
-  /* Collapsed state */
-  .panel.collapsed .panel-content {
-    max-height: 0;
-    padding: 0 16px;
-    opacity: 0;
-  }
-
-  /* Expanded state */
-  .panel.expanded .panel-content,
-  .panel:not(.collapsed) .panel-content {
-    max-height: none; /* No limit on expanded height */
-    padding: 14px 16px;
-    opacity: 1;
-  }
-
-  /* Mode-specific panel visibility - FIXED */
-  .panel.pixel-controls {
-    display: none; /* Hidden by default */
+  
+  /* Panel Header Arrow */
+  #panel-header span,
+  .panel-header span {
+    transition: transform 0.3s ease;
+    font-size: 12px;
   }
   
-  .panel.sketch-controls {
-    display: none; /* Hidden by default */
-  }
-
-  /* When modes are active, show as flex to maintain proper layout */
-  .panel.pixel-controls[style*="display: flex"],
-  .panel.pixel-controls.active {
-    display: flex !important;
-    flex-direction: column;
-  }
-
-  .panel.sketch-controls[style*="display: flex"],
-  .panel.sketch-controls.active {
-    display: flex !important;
-    flex-direction: column;
-  }
-
-  /* Nested controls inside panels - FIXED */
-  .panel .pixel-controls,
-  .panel .sketch-controls {
-    display: none; /* Hidden by default */
-  }
-
-  .panel .pixel-controls[style*="display: flex"],
-  .panel .sketch-controls[style*="display: flex"] {
-    display: flex !important;
-    flex-direction: column;
+  /* Panel Content */
+  #panel-content,
+  .panel-content {
     width: 100%;
+    padding: 18px;
+    background: linear-gradient(180deg, #1e1e1e 0%, #1a1a1a 100%);
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    transition: all 0.3s ease;
+    overflow: hidden;
+    max-height: none;
+    opacity: 1;
+    box-sizing: border-box;
   }
-
-  /* ================== Controls ================== */
+  
+  /* Collapsed Panel State */
+  .panel.collapsed .panel-content {
+    max-height: 0 !important;
+    padding: 0 18px !important;
+    opacity: 0 !important;
+    margin: 0 !important;
+  }
+  
+  .panel.collapsed .panel-header span {
+    transform: rotate(-90deg);
+  }
+  
+  /* ============================= */
+  /* CONTROL GROUPS & ELEMENTS */
+  /* ============================= */
+  
+  /* Control Group */
+  #control-group,
   .control-group {
-    margin-bottom: 12px;
+    display: flex;
+    flex-direction: column;
     width: 100%;
+    margin-bottom: 16px;
+    box-sizing: border-box;
   }
+  
+  .control-group:last-child {
+    margin-bottom: 0;
+  }
+  
+  /* Control Group Labels */
+  #control-group label,
   .control-group label {
     display: block;
-    font-size: 12px;
-    font-weight: 500;
-    margin-bottom: 6px;
+    font-size: 13px;
+    font-weight: 600;
     color: #ccc;
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    width: 100%;
   }
-  .control-row, .btn-group {
+  
+  /* Control Rows */
+  #control-row,
+  .control-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    width: 100%;
+    flex-wrap: wrap;
+    box-sizing: border-box;
+  }
+  
+  /* Button Groups */
+  #btn-group,
+  .btn-group {
     display: flex;
     gap: 6px;
-    flex-wrap: wrap;
     width: 100%;
+    flex-wrap: wrap;
+    box-sizing: border-box;
   }
-  .swatch {
-    width: 24px;
-    height: 24px;
-    border: 1px solid #444;
-    cursor: pointer;
-    flex-shrink: 0;
+  
+  .btn-group .btn {
+    flex: 1;
+    min-width: 0;
   }
-  .swatch.primary { border-color: #888; }
-  .swatch.secondary { border-color: #666; }
-
-  /* ================== Buttons ================== */
-  .btn {
-    background: linear-gradient(135deg, #2a2a2a 0%, #333 100%);
+  
+  /* ============================= */
+  /* BUTTONS - ALL TYPES */
+  /* ============================= */
+  
+  /* Base Button Styles */
+  #btn,
+  .btn,
+  button:not(.tool-btn):not(.mode-btn):not(.header-btn) {
+    background: linear-gradient(135deg, #404040 0%, #333 100%);
+    border: 2px solid #555;
     color: #e8e8e8;
-    border: 1px solid #444;
+    padding: 10px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+    text-align: center;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    display: inline-block;
+    box-sizing: border-box;
+  }
+  
+  #btn:hover,
+  .btn:hover,
+  button:not(.tool-btn):not(.mode-btn):not(.header-btn):hover {
+    background: linear-gradient(135deg, #4a4a4a 0%, #3a3a3a 100%);
+    border-color: #666;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+  }
+  
+  #btn:active,
+  .btn:active,
+  button:not(.tool-btn):not(.mode-btn):not(.header-btn):active {
+    transform: translateY(0);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  }
+  
+  /* Primary Buttons */
+  #btn.primary,
+  .btn.primary,
+  #exportJSON,
+  #saveCustomPalette,
+  #addLayer {
+    background: linear-gradient(135deg, #4CAF50 0%, #66BB6A 100%);
+    border-color: #66BB6A;
+    color: #000;
+    font-weight: 600;
+  }
+  
+  #btn.primary:hover,
+  .btn.primary:hover,
+  #exportJSON:hover,
+  #saveCustomPalette:hover,
+  #addLayer:hover {
+    background: linear-gradient(135deg, #66BB6A 0%, #81C784 100%);
+    border-color: #81C784;
+  }
+  
+  /* Danger Buttons */
+  #btn.danger,
+  .btn.danger,
+  #clear,
+  #deleteSprite {
+    background: linear-gradient(135deg, #f44336 0%, #e57373 100%);
+    border-color: #e57373;
+    color: #fff;
+    font-weight: 600;
+  }
+  
+  #btn.danger:hover,
+  .btn.danger:hover,
+  #clear:hover,
+  #deleteSprite:hover {
+    background: linear-gradient(135deg, #e57373 0%, #ef5350 100%);
+    border-color: #ef5350;
+  }
+  
+  /* Small Buttons */
+  #btn.btn-sm,
+  .btn.btn-sm {
     padding: 6px 12px;
     font-size: 12px;
+  }
+  
+  /* ============================= */
+  /* FORM INPUTS */
+  /* ============================= */
+  
+  /* All Input Types */
+  select,
+  input[type="number"],
+  input[type="range"],
+  input[type="color"],
+  input[type="file"],
+  textarea {
+    background: linear-gradient(135deg, #333 0%, #2a2a2a 100%);
+    border: 2px solid #555;
+    color: #e8e8e8;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 13px;
+    width: 100%;
+    transition: all 0.2s ease;
+    box-sizing: border-box;
+  }
+  
+  select:hover,
+  input[type="number"]:hover,
+  input[type="range"]:hover,
+  input[type="color"]:hover,
+  input[type="file"]:hover,
+  textarea:hover {
+    border-color: #666;
+    background: linear-gradient(135deg, #404040 0%, #333 100%);
+  }
+  
+  select:focus,
+  input[type="number"]:focus,
+  input[type="range"]:focus,
+  input[type="color"]:focus,
+  input[type="file"]:focus,
+  textarea:focus {
+    outline: none;
+    border-color: #4CAF50;
+    box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.2);
+  }
+  
+  /* Color Inputs */
+  input[type="color"] {
+    height: 40px;
+    padding: 4px;
+    cursor: pointer;
+    border-radius: 8px;
+  }
+  
+  /* Range Sliders */
+  input[type="range"] {
+    padding: 6px 0;
+    background: #2a2a2a;
+    border: 2px solid #444;
+  }
+  
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #4CAF50 0%, #66BB6A 100%);
+    cursor: pointer;
+    border: 2px solid #333;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  }
+  
+  input[type="range"]::-webkit-slider-track {
+    -webkit-appearance: none;
+    height: 6px;
+    border-radius: 3px;
+    background: linear-gradient(90deg, #333 0%, #555 100%);
+  }
+  
+  /* Checkboxes */
+  input[type="checkbox"] {
+    width: auto;
+    margin-right: 8px;
+    accent-color: #4CAF50;
+    transform: scale(1.2);
+  }
+  
+  /* ============================= */
+  /* COLOR SWATCHES & PALETTE */
+  /* ============================= */
+  
+  /* Swatch Container */
+  #swatches,
+  .swatches {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 6px;
+    width: 100%;
+    margin-top: 12px;
+  }
+  
+  /* Primary/Secondary Color Swatches */
+  #primaryColor,
+  #secondaryColor,
+  .swatch {
+    width: 32px;
+    height: 32px;
+    border: 3px solid #555;
+    border-radius: 6px;
     cursor: pointer;
     transition: all 0.2s ease;
-    border-radius: 4px;
-    flex: 1; /* Buttons grow to fill available space */
-    min-width: 0; /* Allow buttons to shrink */
-    text-align: center;
+    position: relative;
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.3);
+    flex-shrink: 0;
   }
-  .btn:hover {
-    background: linear-gradient(135deg, #333 0%, #404040 100%);
-    color: #fff;
-    transform: translateY(-1px);
+  
+  #primaryColor:hover,
+  #secondaryColor:hover,
+  .swatch:hover {
+    transform: scale(1.05);
+    border-color: #777;
   }
-  .btn.primary {
-    background: linear-gradient(135deg, #1a5f8a 0%, #0f3e5a 100%);
-    border-color: #0c2c3c;
+  
+  .swatch.primary,
+  #primaryColor {
+    border-color: #4CAF50;
+    box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.3), 0 3px 6px rgba(0, 0, 0, 0.3);
+    transform: scale(1.05);
   }
-
-  /* ================== Inputs / Sliders ================== */
-  input[type="range"] {
-    width: 100%;
-    cursor: pointer;
+  
+  .swatch.secondary,
+  #secondaryColor {
+    border-color: #ffff00;
+    border-style: dashed;
+    box-shadow: 0 0 0 2px rgba(255, 255, 0, 0.3), 0 3px 6px rgba(0, 0, 0, 0.3);
   }
-  input[type="color"], input[type="number"], select {
-    width: 100%;
-    padding: 6px 8px;
-    background: #1e1e1e;
-    color: #e8e8e8;
-    border: 1px solid #444;
-    font-size: 12px;
-    border-radius: 4px;
-    box-sizing: border-box;
-  }
-
-  /* ================== Brush Preview ================== */
-  .brush-preview {
-    margin-top: 8px;
-    width: 100%;
-    height: 40px;
-    background: #2a2a2a;
-    border: 1px solid #444;
-    border-radius: 4px;
-  }
-
-  /* ================== Layers List ================== */
-  .layer-list {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    max-height: 120px;
-    overflow-y: auto;
-    border: 1px solid #444;
-    padding: 4px;
-    background: #1e1e1e;
-    border-radius: 4px;
-    width: 100%;
-    box-sizing: border-box;
-  }
-
-  /* ================== Palette Grid ================== */
+  
+  /* Palette Grid */
   .palette-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(24px, 1fr));
     gap: 4px;
     width: 100%;
   }
-
-  /* ================== Info Text ================== */
-  .symmetry-info, .transform-info {
-    margin-top: 6px;
-    font-size: 10px;
-    color: #888;
+  
+  /* Color Pickers Grid */
+  #colorPickers {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    margin-bottom: 12px;
     width: 100%;
   }
-
-  /* Canvas overlays remain fixed */
-  #canvasInfo, #zoomIndicator {
-    position: absolute;
-    background: linear-gradient(135deg, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.9) 100%);
-    color: #e8e8e8;
-    padding: 6px 10px;
-    border-radius: 6px;
-    font-size: 11px;
-    font-family: 'Consolas','Monaco',monospace;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.4);
-    border: 1px solid rgba(255,255,255,0.1);
-    backdrop-filter: blur(4px);
+  
+  .color-picker {
+    width: 100% !important;
+    height: 28px;
+    padding: 0 !important;
+    border: 2px solid #555 !important;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s ease;
   }
-  #canvasInfo { bottom: 8px; left: 8px; }
-  #zoomIndicator { top: 8px; right: 8px; font-weight: 600; }
-
-  /* ================== Export Area ================== */
+  
+  .color-picker:hover {
+    border-color: #777 !important;
+    transform: scale(1.05);
+  }
+  
+  /* ============================= */
+  /* SYMMETRY CONTROLS */
+  /* ============================= */
+  
+  .symmetry-controls {
+    display: flex;
+    gap: 6px;
+    width: 100%;
+    margin-bottom: 8px;
+  }
+  
+  .symmetry-btn {
+    flex: 1;
+    min-width: 0;
+    background: linear-gradient(135deg, #333 0%, #2a2a2a 100%);
+    border: 2px solid #555;
+    color: #e0e0e0;
+    padding: 8px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    text-align: center;
+  }
+  
+  .symmetry-btn:hover {
+    background: linear-gradient(135deg, #4A90E2 0%, #6BB6FF 100%);
+    border-color: #6BB6FF;
+    color: #fff;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(74, 144, 226, 0.3);
+  }
+  
+  .symmetry-btn.active {
+    background: linear-gradient(135deg, #4A90E2 0%, #6BB6FF 100%);
+    border-color: #6BB6FF;
+    color: #fff;
+    box-shadow: 0 3px 12px rgba(74, 144, 226, 0.4);
+    font-weight: 600;
+  }
+  
+  /* ============================= */
+  /* BRUSH PREVIEW */
+  /* ============================= */
+  
+  #brushPreview,
+  .brush-preview {
+    width: 100%;
+    height: 60px;
+    border: 2px solid #555;
+    border-radius: 8px;
+    margin: 12px 0;
+    background: linear-gradient(135deg, #333 0%, #2a2a2a 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3);
+  }
+  
+  /* ============================= */
+  /* LAYER LIST */
+  /* ============================= */
+  
+  #layerList,
+  .layer-list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    max-height: 140px;
+    overflow-y: auto;
+    border: 2px solid #444;
+    padding: 8px;
+    background: linear-gradient(135deg, #2a2a2a 0%, #252525 100%);
+    border-radius: 6px;
+    width: 100%;
+    box-sizing: border-box;
+  }
+  
+  #layerList::-webkit-scrollbar,
+  .layer-list::-webkit-scrollbar {
+    width: 6px;
+  }
+  
+  #layerList::-webkit-scrollbar-track,
+  .layer-list::-webkit-scrollbar-track {
+    background: #2a2a2a;
+  }
+  
+  #layerList::-webkit-scrollbar-thumb,
+  .layer-list::-webkit-scrollbar-thumb {
+    background: #444;
+    border-radius: 3px;
+  }
+  
+  .layer-item {
+    display: flex;
+    align-items: center;
+    padding: 8px;
+    cursor: pointer;
+    border-bottom: 1px solid #333;
+    transition: all 0.2s ease;
+    font-size: 13px;
+    border-radius: 4px;
+  }
+  
+  .layer-item:last-child {
+    border-bottom: none;
+  }
+  
+  .layer-item:hover {
+    background: linear-gradient(135deg, #333 0%, #404040 100%);
+  }
+  
+  .layer-item.active {
+    background: linear-gradient(135deg, #4CAF50 0%, #66BB6A 100%);
+    color: #000;
+    font-weight: 600;
+  }
+  
+  /* ============================= */
+  /* INFO SECTIONS */
+  /* ============================= */
+  
+  .symmetry-info,
+  .transform-info {
+    margin-top: 12px;
+    padding: 12px;
+    border-radius: 6px;
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.2);
+    width: 100%;
+    box-sizing: border-box;
+  }
+  
+  .symmetry-info {
+    background: linear-gradient(135deg, rgba(74, 144, 226, 0.1) 0%, rgba(74, 144, 226, 0.05) 100%);
+    border: 2px solid rgba(74, 144, 226, 0.3);
+  }
+  
+  .transform-info {
+    background: linear-gradient(135deg, rgba(76, 175, 80, 0.1) 0%, rgba(76, 175, 80, 0.05) 100%);
+    border: 2px solid rgba(76, 175, 80, 0.3);
+  }
+  
+  .symmetry-info small,
+  .transform-info small {
+    color: #bbb;
+    font-size: 11px;
+    line-height: 1.5;
+    font-style: italic;
+  }
+  
+  /* ============================= */
+  /* EXPORT AREA */
+  /* ============================= */
+  
   .export-area {
     width: 100%;
+    margin-top: 16px;
   }
-
+  
   .export-area textarea {
     width: 100%;
-    min-height: 60px;
-    background: #1e1e1e;
+    min-height: 80px;
+    background: linear-gradient(135deg, #333 0%, #2a2a2a 100%);
+    border: 2px solid #555;
     color: #e8e8e8;
-    border: 1px solid #444;
-    border-radius: 4px;
-    padding: 8px;
-    font-family: monospace;
+    padding: 12px;
+    border-radius: 6px;
+    font-family: 'Consolas', 'Monaco', monospace;
     font-size: 11px;
     resize: vertical;
+    line-height: 1.4;
     box-sizing: border-box;
   }
-
+  
   .export-area input[type="file"] {
-    width: 100%;
-    background: #1e1e1e;
+    background: linear-gradient(135deg, #333 0%, #2a2a2a 100%);
     color: #e8e8e8;
-    border: 1px solid #444;
-    border-radius: 4px;
-    padding: 6px;
+    padding: 8px;
+    border: 2px solid #555;
+    border-radius: 6px;
+    width: 100%;
+    font-size: 12px;
+    cursor: pointer;
     box-sizing: border-box;
   }
-
-  /* ================== Responsive Adjustments ================== */
-  @media (min-width: 768px) and (max-width: 1024px) {
-    #editor-container, .editor-container { 
-      grid-template-columns: 60px 1fr 280px; 
-    }
+  
+  /* ============================= */
+  /* MODE-SPECIFIC VISIBILITY */
+  /* ============================= */
+  
+  /* Default state - hide mode-specific panels */
+  .panel.pixel-controls,
+  .panel.sketch-controls {
+    display: none;
+  }
+  
+  /* Show panels when mode is active via JavaScript */
+  .panel.pixel-controls[style*="display: flex"],
+  .panel.sketch-controls[style*="display: flex"] {
+    display: flex !important;
+  }
+  
+  /* Nested controls inside panels */
+  .panel .pixel-controls,
+  .panel .sketch-controls {
+    display: none;
+  }
+  
+  .panel .pixel-controls[style*="display: flex"],
+  .panel .sketch-controls[style*="display: flex"] {
+    display: flex !important;
+    flex-direction: column;
+    width: 100%;
+  }
+  
+  /* ============================= */
+  /* MOBILE PORTRAIT OVERRIDES */
+  /* ============================= */
+  
+  @media (orientation: portrait) {
+    #panels,
     .panels {
-      width: 280px;
+      max-height: 45vh;
+      min-height: 250px;
+      border-left: none;
+      border-top: 2px solid #333;
+      width: 100%;
     }
-    #tool-btn, .tool-btn { 
-      width: 46px; 
-      height: 46px; 
-      font-size: 16px; 
-    }
-    #tool-btn.symmetric-tool, .tool-btn.symmetric-tool { 
-      font-size: 14px; 
+  
+    #panel-content,
+    .panel-content {
+      padding: 14px;
     }
   }
-
-  @media (orientation: landscape) and (max-width: 667px) {
-    #editor-container, .editor-container { 
-      grid-template-columns: 50px 1fr 250px !important; 
-    }
-    #sidebar, .sidebar { 
-      width: 50px !important; 
-    }
+  
+  /* ============================= */
+  /* MOBILE LANDSCAPE OVERRIDES */
+  /* ============================= */
+  
+  @media (orientation: landscape) {
+    /* Panels maintain full height in landscape */
+    #panels,
     .panels {
-      width: 250px !important;
+      height: 100vh;
+      width: 300px;
     }
-    #tool-btn, .tool-btn { 
-      width: 42px !important; 
-      height: 42px !important; 
-      font-size: 14px !important; 
+  
+    /* Responsive width adjustments */
+    @media (max-width: 1024px) {
+      #panels,
+      .panels {
+        width: 280px;
+      }
     }
-    #tool-btn.symmetric-tool, .tool-btn.symmetric-tool { 
-      font-size: 12px !important; 
+  
+    @media (max-width: 667px) {
+      #panels,
+      .panels {
+        width: 250px;
+      }
+      
+      #panel-content,
+      .panel-content {
+        padding: 10px 12px;
+      }
+      
+      #panel-header,
+      .panel-header {
+        padding: 8px 12px;
+        font-size: 12px;
+      }
     }
-    .panel-content { 
-      padding: 10px 12px !important; 
-    }
-    .panel-header { 
-      padding: 8px 12px !important; 
-      font-size: 12px !important; 
+  
+    @media (max-width: 568px) {
+      #panels,
+      .panels {
+        width: 200px;
+      }
     }
   }
-
-  @media (orientation: landscape) and (max-width: 568px) {
-    #editor-container, .editor-container { 
-      grid-template-columns: 45px 1fr 200px !important; 
-    }
-    #sidebar, .sidebar { 
-      width: 45px !important; 
-      padding: 4px 0 !important; 
-    }
-    .panels {
-      width: 200px !important;
-    }
-    #tool-btn, .tool-btn { 
-      width: 38px !important; 
-      height: 38px !important; 
-      font-size: 12px !important; 
-    }
-  }
-}
 
 /* Tablet specific adjustments */
 @media (min-width: 768px) and (max-width: 1024px) {
