@@ -1644,7 +1644,6 @@ input[type="checkbox"],
   /* Tool buttons */
   #tool-btn,
   .tool-btn {
-    .tool-btn {
     width: 48px;
     height: 40px;
     flex-shrink: 0;
