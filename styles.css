@@ -1609,8 +1609,12 @@ input[type="checkbox"],
     align-items: center;
     padding: 0;
     gap: 6px;
+    width: 70px;
     height: 100vh;       /* full viewport height */
     min-height: 100vh;   /* ensure it fills vertically */
+    max-height: 100vh;
+    min-width: 70px;
+    max-width: 70px;
     overflow-y: auto;    /* scroll if needed */
     flex-shrink: 0;
     grid-area: sidebar;  /* only for landscape */
