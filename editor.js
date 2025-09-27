@@ -44,13 +44,6 @@ class JerryEditor {
         // Movement
         this.movingSelection = false;
         this.moveStartPos = null;
-
-        // Call it once to set initial value
-        this.setVh();
-
-        // Update on resize or orientation change
-        window.addEventListener('resize', () => this.setVh());
-        window.addEventListener('orientationchange', () => this.setVh());
         
         this.init();
     }
@@ -286,12 +279,6 @@ class JerryEditor {
         
         // Auto-save
         setInterval(() => this.autoSave(), 30000);
-    }
-
-    // Dynamic viewport height for iOS PWAs
-    function setVh() {
-        const vh = window.innerHeight * 0.01;
-        document.documentElement.style.setProperty('--vh', `${vh}px`);
     }
 
     initializePanels() {
