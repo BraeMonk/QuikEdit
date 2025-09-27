@@ -1578,7 +1578,7 @@ input[type="checkbox"],
   html, body {
     height: 100dvh; /* ensures grid container height works correctly */
     margin: 0;    /* prevent unexpected collapsing due to default margins */
-    overflow: hidden;
+    overflow: visible;
   }
   
   /* Hide header completely in landscape */
@@ -1614,7 +1614,7 @@ input[type="checkbox"],
     height: calc(var(--vh, 1vh) * 100);
     padding: 8px 0;
     gap: 0;
-    overflow: hidden;
+    overflow: visible;
     grid-area: sidebar;
     background: linear-gradient(180deg, #1e1e1e 0%, #1a1a1a 100%);
     border-right: 2px solid #333;
