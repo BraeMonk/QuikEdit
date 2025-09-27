@@ -62,11 +62,11 @@ class JerryEditor {
         const pixelTools = document.querySelector('.pixel-tools');
         const sketchTools = document.querySelector('.sketch-tools');
         if (pixelTools) {
-            pixelTools.style.display = 'flex';
             pixelTools.classList.add('active');
+            // Remove any conflicting inline styles
+            pixelTools.style.display = '';
         }
         if (sketchTools) {
-            sketchTools.style.display = 'none';
             sketchTools.classList.remove('active');
         }
 
@@ -467,10 +467,20 @@ class JerryEditor {
         const sketchTools = document.querySelector('.sketch-tools');
 
         if (pixelTools) {
-            pixelTools.classList.toggle('active', mode === 'pixel');
+            if (mode === 'pixel') {
+                pixelTools.classList.add('active');
+                pixelTools.style.display = ''; // Remove inline style to let CSS handle it
+            } else {
+                pixelTools.classList.remove('active');
+            }
         }
         if (sketchTools) {
-            sketchTools.classList.toggle('active', mode === 'sketch'); 
+            if (mode === 'sketch') {
+                sketchTools.classList.add('active');
+                sketchTools.style.display = ''; // Remove inline style to let CSS handle it
+            } else {
+                sketchTools.classList.remove('active');
+            }
         }
 
         // ----- CONTROLS -----
