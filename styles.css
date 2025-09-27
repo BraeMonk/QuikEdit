@@ -1717,9 +1717,8 @@ input[type="checkbox"],
   .panels {
     display: flex;
     flex-direction: column;
-    height: 100%;
-    overflow-y: auto;
-    overflow-x: hidden;
+    height: 100vh;
+    overflow-y: hidden;
     background: linear-gradient(180deg, #1e1e1e 0%, #1a1a1a 100%);
     border-left: 2px solid #333;
     box-shadow: -2px 0 8px rgba(0,0,0,0.2);
@@ -1767,7 +1766,7 @@ input[type="checkbox"],
     padding: 14px;
     display: flex;
     flex-direction: column;
-    flex: 1;
+    flex: 1 1 auto;
     transition: max-height 0.3s ease, padding 0.3s ease;
     overflow: hidden;
     background: linear-gradient(180deg, #1e1e1e 0%, #1a1a1a 100%);
@@ -1780,7 +1779,7 @@ input[type="checkbox"],
   .panel-content.expandable {
     display: flex;
     flex-direction: column;
-    flex: 1;
+    flex: 1 1 auto;
   }
   /* ================== Controls ================== */
   .control-group {
@@ -1830,12 +1829,14 @@ input[type="checkbox"],
   .sketch-controls,
   .pixel-controls {
     display: none; /* hidden by default, JS toggles .active */
+    flex-direction: column;
+    height: 100%;
+    overflow-y: auto;
   }
   .sketch-controls.active,
   .pixel-controls.active {
     display: flex;
-    flex-direction: column;
-    flex: 1;
+    flex: 1 1 auto;
   }
 
   /* ================== Inputs / Sliders ================== */
