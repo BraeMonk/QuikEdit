@@ -488,7 +488,6 @@ class JerryEditor {
         document.querySelectorAll('.pixel-controls').forEach(el => {
             if (mode === 'pixel') {
                 el.classList.add('active');
-                el.style.display = '';
             } else {
                 el.classList.remove('active');
             }
@@ -497,7 +496,6 @@ class JerryEditor {
         document.querySelectorAll('.sketch-controls').forEach(el => {
             if (mode === 'sketch') {
                 el.classList.add('active');
-                el.style.display = '';
             } else {
                 el.classList.remove('active');
             }
