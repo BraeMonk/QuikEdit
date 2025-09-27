@@ -1713,37 +1713,34 @@ input[type="checkbox"],
     background-position: 0 0, 0 var(--halfCell, 10px), var(--halfCell,10px) -var(--halfCell,10px), -var(--halfCell,10px) 0;
   }
 
+  /* Panel Container */
   .panels {
     position: fixed;
     right: 10px;
-    top: 60px; /* Adjust based on your header height */
+    top: 10px;
     bottom: 10px;
-    width: 200px; /* Adjust width as needed */
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
+    width: 280px;
     overflow-y: auto;
-    overflow-x: hidden;
+    overflow-x: visible;
+    display: block;
     z-index: 100;
-    padding: 8px;
-    height: calc(100vh - 70px); /* Ensures full height spanning minus header */
-    max-height: calc(100vh - 70px); /* Prevents overflow beyond viewport */
   }
 
+  /* Panel Structure */
   .panel {
-    background: rgba(40, 40, 40, 0.95);
+    margin-bottom: 10px;
+    background: rgba(45, 45, 45, 0.95);
     border: 1px solid #555;
-    border-radius: 8px;
-    margin: 0;
-    flex-shrink: 0;
+    border-radius: 6px;
+    width: 100%;
   }
 
   .panel-header {
     background: #333;
     color: #fff;
-    padding: 8px 12px;
+    padding: 10px 12px;
     cursor: pointer;
-    font-size: 12px;
+    font-size: 13px;
     font-weight: bold;
     border-bottom: 1px solid #555;
     user-select: none;
@@ -1757,197 +1754,254 @@ input[type="checkbox"],
   }
 
   .panel-content {
-    padding: 8px;
-    font-size: 11px;
-    max-height: 0;
-    overflow: hidden;
-    transition: max-height 0.3s ease;
+    padding: 12px;
+    display: block;
   }
 
-  .panel.expanded .panel-content {
-    max-height: 300px; /* Fixed max height to prevent excessive expansion */
-    overflow-y: auto; /* Individual panel content is scrollable */
+  /* Panel Toggle */
+  .panel.collapsed .panel-content {
+    display: none;
   }
 
-  .panel.expanded .panel-header span {
-    transform: rotate(180deg);
+  .panel-header span {
+    transition: transform 0.2s ease;
   }
 
-  /* Compact control styling for mobile */
+  .panel.collapsed .panel-header span {
+    transform: rotate(-90deg);
+  }
+
+  /* Control Groups */
   .control-group {
-    margin-bottom: 8px;
+    margin-bottom: 12px;
   }
 
   .control-group label {
     display: block;
-    margin-bottom: 4px;
-    font-size: 10px;
+    margin-bottom: 6px;
+    font-size: 12px;
     color: #ccc;
+    font-weight: bold;
   }
 
+  /* Buttons */
   .btn {
-    padding: 4px 8px;
-    font-size: 10px;
+    background: #555;
+    color: #fff;
+    border: 1px solid #666;
+    padding: 6px 12px;
+    font-size: 12px;
+    border-radius: 4px;
+    cursor: pointer;
     margin: 2px;
+  }
+
+  .btn:hover {
+    background: #666;
+  }
+
+  .btn.primary {
+    background: #4a9eff;
+  }
+
+  .btn.active {
+    background: #4a9eff;
+    border-color: #6bb6ff;
   }
 
   .btn-group {
     display: flex;
-    gap: 2px;
+    gap: 4px;
     flex-wrap: wrap;
   }
 
+  /* Control Rows */
   .control-row {
     display: flex;
-    gap: 4px;
+    gap: 6px;
     align-items: center;
   }
 
   .control-row input[type="number"] {
-    width: 50px;
-    padding: 2px 4px;
-    font-size: 10px;
-  }
-
-  /* Palette grid adjustments */
-  .palette-grid {
-    display: grid;
-    grid-template-columns: repeat(6, 1fr);
-    gap: 2px;
-    margin: 4px 0;
-  }
-
-  .swatch {
-    width: 20px;
-    height: 20px;
+    width: 60px;
+    padding: 4px 6px;
+    font-size: 12px;
+    background: #444;
+    color: #fff;
     border: 1px solid #666;
-    cursor: pointer;
+    border-radius: 3px;
   }
 
-  /* Primary/Secondary color swatches */
-  .swatch.primary,
-  .swatch.secondary {
-    width: 24px;
-    height: 24px;
-    border: 2px solid #666;
-  }
-
-  /* Layer list styling */
-  .layer-list {
-    max-height: 100px;
-    overflow-y: auto;
-    border: 1px solid #555;
-    background: #2a2a2a;
-  }
-
-  /* Range inputs */
-  input[type="range"] {
-    width: 100%;
-    margin: 4px 0;
-  }
-
-  /* Select dropdowns */
-  select {
-    width: 100%;
-    padding: 4px;
-    font-size: 10px;
-    background: #333;
-    color: #fff;
-    border: 1px solid #555;
-  }
-
-  /* Textarea for export */
-  textarea {
-    width: 100%;
-    height: 60px;
-    font-size: 10px;
-    background: #222;
-    color: #fff;
-    border: 1px solid #555;
-    padding: 4px;
-  }
-
-  /* File input */
-  input[type="file"] {
-    width: 100%;
-    font-size: 10px;
+  .control-row span {
     color: #ccc;
   }
 
-  /* Symmetry controls */
+  /* Color Swatches */
+  .swatch {
+    width: 24px;
+    height: 24px;
+    border: 2px solid #666;
+    cursor: pointer;
+    border-radius: 3px;
+    margin: 2px;
+  }
+
+  .swatch.primary {
+    border-color: #4a9eff;
+  }
+
+  .swatch.secondary {
+    border-color: #ffaa4a;
+  }
+
+  /* Palette Grid */
+  .palette-grid {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 3px;
+    margin: 6px 0;
+  }
+
+  /* Range Inputs */
+  input[type="range"] {
+    width: 100%;
+    margin: 6px 0;
+    background: #444;
+  }
+
+  /* Select Dropdowns */
+  select {
+    width: 100%;
+    padding: 6px;
+    font-size: 12px;
+    background: #444;
+    color: #fff;
+    border: 1px solid #666;
+    border-radius: 3px;
+  }
+
+  /* Color Inputs */
+  input[type="color"] {
+    width: 40px;
+    height: 30px;
+    padding: 0;
+    border: 1px solid #666;
+    border-radius: 3px;
+    cursor: pointer;
+  }
+
+  /* Checkboxes */
+  input[type="checkbox"] {
+    margin-right: 6px;
+  }
+
+  /* Symmetry Controls */
   .symmetry-controls {
     display: flex;
-    gap: 2px;
-    margin: 2px 0;
+    gap: 4px;
+    margin: 4px 0;
   }
 
   .symmetry-btn {
-    min-width: 40px;
-    padding: 4px 6px;
+    min-width: 50px;
+    padding: 6px 8px;
+    font-family: monospace;
   }
 
-  /* Transform controls */
+  /* Layer List */
+  .layer-list {
+    max-height: 120px;
+    overflow-y: auto;
+    border: 1px solid #666;
+    background: #333;
+    border-radius: 3px;
+  }
+
+  /* Text Areas */
+  textarea {
+    width: 100%;
+    height: 80px;
+    font-size: 11px;
+    background: #333;
+    color: #fff;
+    border: 1px solid #666;
+    border-radius: 3px;
+    padding: 6px;
+    font-family: monospace;
+    resize: vertical;
+  }
+
+  /* File Inputs */
+  input[type="file"] {
+    width: 100%;
+    font-size: 11px;
+    color: #ccc;
+    background: #444;
+    border: 1px solid #666;
+    border-radius: 3px;
+    padding: 4px;
+  }
+
+  /* Brush Preview */
+  .brush-preview {
+    width: 50px;
+    height: 50px;
+    border: 1px solid #666;
+    background: #222;
+    margin: 6px auto;
+    border-radius: 50%;
+  }
+
+  /* Info Text */
   .transform-info,
   .symmetry-info {
-    margin-top: 6px;
+    margin-top: 8px;
   }
 
   .transform-info small,
   .symmetry-info small {
-    font-size: 9px;
-    color: #888;
+    font-size: 10px;
+    color: #999;
+    font-style: italic;
   }
 
-  /* Export area */
+  /* Export Area */
   .export-area {
-    margin-top: 8px;
+    margin-top: 10px;
   }
 
-  /* Brush preview */
-  .brush-preview {
-    width: 40px;
-    height: 40px;
-    border: 1px solid #666;
-    background: #222;
-    margin: 4px auto;
-    border-radius: 50%;
-  }
-
-  /* Hide panels that shouldn't be visible in certain modes */
-  .pixel-controls {
-    display: block;
-  }
-
-  .sketch-controls {
-    display: none;
-  }
-
-  /* Show sketch controls when in sketch mode */
-  body.sketch-mode .sketch-controls {
-    display: block;
-  }
-
-  body.sketch-mode .pixel-controls {
-    display: none;
-  }
-
-  /* Scrollbar styling for panels container */
+  /* Scrollbar Styling */
   .panels::-webkit-scrollbar {
-    width: 4px;
+    width: 8px;
   }
 
   .panels::-webkit-scrollbar-track {
     background: #222;
+    border-radius: 4px;
   }
 
   .panels::-webkit-scrollbar-thumb {
     background: #666;
-    border-radius: 2px;
+    border-radius: 4px;
   }
 
   .panels::-webkit-scrollbar-thumb:hover {
     background: #888;
   }
+
+  .layer-list::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .layer-list::-webkit-scrollbar-track {
+    background: #2a2a2a;
+  }
+
+  .layer-list::-webkit-scrollbar-thumb {
+    background: #555;
+    border-radius: 3px;
+  }
+
 }
 
 /* Toggle functionality - panels start collapsed by default in mobile landscape */
