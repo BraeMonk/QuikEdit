@@ -1915,17 +1915,68 @@ input[type="checkbox"],
   }
 }
 
-/* Landscape small height adjustments for very short screens */
-  @media (max-height: 360px) {
-    #tool-btn, .tool-btn {
-      width: 40px;
-      height: 28px;
-      font-size: 10px;
-    }
+/* Very small landscape screens (iPhone SE, etc.) */
+@media (orientation: landscape) and (max-width: 667px) {
+  #editor-container,
+  .editor-container {
+    grid-template-columns: 50px 1fr 250px !important;
+  }
+  
+  #sidebar,
+  .sidebar {
+    width: 50px !important;
+  }
+  
+  #tool-btn, .tool-btn {
+    width: 42px !important;
+    height: 42px !important;
+    font-size: 14px !important;
+  }
+  
+  #tool-btn.symmetric-tool,
+  .tool-btn.symmetric-tool {
+    font-size: 12px !important;
+  }
+  
+  #panels,
+  .panels {
+    width: 250px !important;
+  }
+  
+  #panel-content,
+  .panel-content {
+    padding: 10px !important;
+  }
+  
+  #panel-header,
+  .panel-header {
+    padding: 8px 12px !important;
+    font-size: 12px !important;
+  }
+}
 
-    #tool-separator, .tool-separator {
-      margin: 2px 0;
-    }
+/* Extra small landscape screens */
+@media (orientation: landscape) and (max-width: 568px) {
+  #editor-container,
+  .editor-container {
+    grid-template-columns: 45px 1fr 200px !important;
+  }
+  
+  #sidebar,
+  .sidebar {
+    width: 45px !important;
+    padding: 4px 0 !important;
+  }
+  
+  #tool-btn, .tool-btn {
+    width: 38px !important;
+    height: 38px !important;
+    font-size: 12px !important;
+  }
+  
+  #panels,
+  .panels {
+    width: 200px !important;
   }
 }
 
