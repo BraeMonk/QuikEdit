@@ -460,80 +460,80 @@ class JerryEditor {
     }
     
     switchMode(mode) {
-    this.mode = mode;
-
-    // ----- TOOLS -----
-    const pixelTools = document.querySelector('.pixel-tools');
-    const sketchTools = document.querySelector('.sketch-tools');
-
-    if (pixelTools) {
+        this.mode = mode;
+    
+        // ----- TOOLS -----
+        const pixelTools = document.querySelector('.pixel-tools');
+        const sketchTools = document.querySelector('.sketch-tools');
+    
+        if (pixelTools) {
+            if (mode === 'pixel') {
+                pixelTools.classList.add('active');
+                pixelTools.style.display = ''; // let CSS handle
+            } else {
+                pixelTools.classList.remove('active');
+            }
+        }
+    
+        if (sketchTools) {
+            if (mode === 'sketch') {
+                sketchTools.classList.add('active');
+                sketchTools.style.display = '';
+            } else {
+                sketchTools.classList.remove('active');
+            }
+        }
+    
+        // ----- CONTROLS -----
+        const pixelControls = document.querySelector('.pixel-controls');
+        const sketchControls = document.querySelector('.sketch-controls');
+    
+        if (pixelControls) {
+            if (mode === 'pixel') {
+                pixelControls.classList.add('active');
+                pixelControls.style.display = '';
+            } else {
+                pixelControls.classList.remove('active');
+            }
+        }
+    
+        if (sketchControls) {
+            if (mode === 'sketch') {
+                sketchControls.classList.add('active');
+                sketchControls.style.display = '';
+            } else {
+                sketchControls.classList.remove('active');
+            }
+        }
+    
+        // ----- CANVASES -----
+        this.pixelCanvas.style.display = mode === 'pixel' ? 'grid' : 'none';
+        this.sketchCanvas.style.display = mode === 'sketch' ? 'block' : 'none';
+    
         if (mode === 'pixel') {
-            pixelTools.classList.add('active');
-            pixelTools.style.display = ''; // let CSS handle
-        } else {
-            pixelTools.classList.remove('active');
+            this.canvasGrid.style.display = this.showGrid ? 'grid' : 'none';
         }
-    }
-
-    if (sketchTools) {
-        if (mode === 'sketch') {
-            sketchTools.classList.add('active');
-            sketchTools.style.display = '';
-        } else {
-            sketchTools.classList.remove('active');
-        }
-    }
-
-    // ----- CONTROLS -----
-    const pixelControls = document.querySelector('.pixel-controls');
-    const sketchControls = document.querySelector('.sketch-controls');
-
-    if (pixelControls) {
+        this.selectionOverlay.style.display = mode === 'sketch' ? 'block' : 'none';
+    
+        // ----- INITIALIZE MODE -----
         if (mode === 'pixel') {
-            pixelControls.classList.add('active');
-            pixelControls.style.display = '';
+            this.currentTool = 'pencil';
+            this.pixelCanvas.style.gridTemplateColumns = `repeat(${this.canvasWidth}, ${this.pixelSize}px)`;
+            this.pixelCanvas.style.gridTemplateRows = `repeat(${this.canvasHeight}, ${this.pixelSize}px)`;
+            this.updatePixelCanvas();
+            this.updateGrid();
+            this.lastPos = null;
+            this.strokePath = [];
         } else {
-            pixelControls.classList.remove('active');
+            this.currentTool = 'brush';
+            this.initializeSketchMode();
+            this.lastPos = null;
+            this.strokePath = [];
         }
+    
+        // ----- UPDATE UI -----
+        this.updateUI();
     }
-
-    if (sketchControls) {
-        if (mode === 'sketch') {
-            sketchControls.classList.add('active');
-            sketchControls.style.display = '';
-        } else {
-            sketchControls.classList.remove('active');
-        }
-    }
-
-    // ----- CANVASES -----
-    this.pixelCanvas.style.display = mode === 'pixel' ? 'grid' : 'none';
-    this.sketchCanvas.style.display = mode === 'sketch' ? 'block' : 'none';
-
-    if (mode === 'pixel') {
-        this.canvasGrid.style.display = this.showGrid ? 'grid' : 'none';
-    }
-    this.selectionOverlay.style.display = mode === 'sketch' ? 'block' : 'none';
-
-    // ----- INITIALIZE MODE -----
-    if (mode === 'pixel') {
-        this.currentTool = 'pencil';
-        this.pixelCanvas.style.gridTemplateColumns = `repeat(${this.canvasWidth}, ${this.pixelSize}px)`;
-        this.pixelCanvas.style.gridTemplateRows = `repeat(${this.canvasHeight}, ${this.pixelSize}px)`;
-        this.updatePixelCanvas();
-        this.updateGrid();
-        this.lastPos = null;
-        this.strokePath = [];
-    } else {
-        this.currentTool = 'brush';
-        this.initializeSketchMode();
-        this.lastPos = null;
-        this.strokePath = [];
-    }
-
-    // ----- UPDATE UI -----
-    this.updateUI();
-}
 
 
     
