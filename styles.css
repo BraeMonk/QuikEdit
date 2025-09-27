@@ -1615,11 +1615,12 @@ input[type="checkbox"],
     height: 100dvh;
     padding: 8px 0;
     gap: 0; /* No gap at sidebar level */
-    overflow-y: hidden;
+    overflow: hidden;
     grid-area: sidebar;
     background: linear-gradient(180deg, #1e1e1e 0%, #1a1a1a 100%);
     border-right: 2px solid #333;
     box-shadow: 2px 0 8px rgba(0, 0, 0, 0.2);
+    min-height: 0;
   }
 
   /* Tool groups (pixel/sketch tools) */
@@ -1632,7 +1633,9 @@ input[type="checkbox"],
     flex-direction: column;
     align-items: center;
     width: 100%;
-    flex: 1; /* This makes it fill the sidebar height */
+    flex-grow: 1; /* This makes it fill the sidebar height */
+    flex-shrink: 1;
+    flex-basis: auto;
     gap: 4px;
     padding: 4px 0;
     overflow-y: auto;
