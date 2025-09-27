@@ -1614,12 +1614,14 @@ input[type="checkbox"],
     width: 70px;
     height: 100%;            /* full viewport height */
     min-height: 0;
-    max-height: 50vh;
-    padding: 0;
+    padding: 6px 0;
     gap: 6px;
     overflow-y: auto;         /* vertical scroll if needed */
     overflow-x: hidden;
     grid-area: sidebar;
+    background: linear-gradient(180deg, #1e1e1e 0%, #1a1a1a 100%); /* ADD THIS */
+    border-right: 2px solid #333;  /* ADD THIS */
+    box-shadow: 2px 0 8px rgba(0, 0, 0, 0.2);  /* ADD THIS */
   }
 
   /* Tool groups (pixel/sketch tools) */
@@ -1636,7 +1638,8 @@ input[type="checkbox"],
     min-height: 0;            /* allow flex scrolling */
     width: 100%;
     gap: 6px;
-    padding: 6px 0;
+    padding: 0;
+    overflow-y: visible;
   }
 
   /* Tool buttons */
