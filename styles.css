@@ -1713,34 +1713,39 @@ input[type="checkbox"],
     background-position: 0 0, 0 var(--halfCell, 10px), var(--halfCell,10px) -var(--halfCell,10px), -var(--halfCell,10px) 0;
   }
 
-  /* ================== Panels ================== */
+  /* ================== FIXED PANELS ================== */
   .panels {
+    grid-area: panels;
     display: flex;
     flex-direction: column;
-    height: 100%;
-    overflow-y: hidden;
+    height: 100vh; /* Full viewport height */
+    overflow-y: auto; /* Enable scrolling for the entire panel container */
+    overflow-x: hidden;
     background: linear-gradient(180deg, #1e1e1e 0%, #1a1a1a 100%);
     border-left: 2px solid #333;
     box-shadow: -2px 0 8px rgba(0,0,0,0.2);
     z-index: 40;
+    width: 300px; /* Fixed width to match grid */
   }
 
-  /* Scrollbar */
+  /* Scrollbar for panels container */
   .panels::-webkit-scrollbar { width: 6px; }
   .panels::-webkit-scrollbar-track { background: #1a1a1a; }
   .panels::-webkit-scrollbar-thumb { background: #444; border-radius: 3px; }
   .panels::-webkit-scrollbar-thumb:hover { background: #555; }
 
- /* Individual Panel */
+  /* Individual Panel - FIXED */
   .panel {
     background: #1e1e1e;
     border-bottom: 1px solid #333;
-    flex-shrink: 0;
+    flex-shrink: 0; /* Prevent panels from shrinking */
     display: flex;
     flex-direction: column;
+    min-height: 0; /* Allow content to shrink */
+    width: 100%; /* Full width of panels container */
   }
 
-  /* Panel Header */
+  /* Panel Header - FIXED */
   .panel-header {
     background: linear-gradient(135deg, #2a2a2a 0%, #333 100%);
     padding: 12px 16px;
@@ -1751,9 +1756,11 @@ input[type="checkbox"],
     display: flex;
     justify-content: space-between;
     align-items: center;
-    width: 100%;
+    width: 100%; /* Full width */
+    box-sizing: border-box; /* Include padding in width calculation */
     transition: all 0.2s ease; 
     color: #e8e8e8;
+    flex-shrink: 0; /* Never shrink the header */
   }
   
   .panel-header:hover {
@@ -1761,27 +1768,74 @@ input[type="checkbox"],
     color: #fff;
   }
 
-  /* Panel Content */
+  /* Panel Content - FIXED */
   .panel-content {
-    padding: 14px;
+    padding: 14px 16px;
     display: flex;
     flex-direction: column;
-    transition: max-height 0.3s ease, padding 0.3s ease;
+    transition: all 0.3s ease;
     overflow: hidden;
     background: linear-gradient(180deg, #1e1e1e 0%, #1a1a1a 100%);
-  }
-  .panel.collapsed .panel-content {
-    max-height: 0;
-    padding: 0 14px;
+    width: 100%;
+    box-sizing: border-box;
+    flex: 1; /* Allow content to expand */
+    min-height: 0; /* Allow shrinking */
   }
 
-  .panel.expanded .panel-content {
-    max-height: 1000px; /* large enough for tallest panel */
-    padding: 14px 16px;
+  /* Collapsed state */
+  .panel.collapsed .panel-content {
+    max-height: 0;
+    padding: 0 16px;
+    opacity: 0;
   }
+
+  /* Expanded state */
+  .panel.expanded .panel-content,
+  .panel:not(.collapsed) .panel-content {
+    max-height: none; /* No limit on expanded height */
+    padding: 14px 16px;
+    opacity: 1;
+  }
+
+  /* Mode-specific panel visibility - FIXED */
+  .panel.pixel-controls {
+    display: none; /* Hidden by default */
+  }
+  
+  .panel.sketch-controls {
+    display: none; /* Hidden by default */
+  }
+
+  /* When modes are active, show as flex to maintain proper layout */
+  .panel.pixel-controls[style*="display: flex"],
+  .panel.pixel-controls.active {
+    display: flex !important;
+    flex-direction: column;
+  }
+
+  .panel.sketch-controls[style*="display: flex"],
+  .panel.sketch-controls.active {
+    display: flex !important;
+    flex-direction: column;
+  }
+
+  /* Nested controls inside panels - FIXED */
+  .panel .pixel-controls,
+  .panel .sketch-controls {
+    display: none; /* Hidden by default */
+  }
+
+  .panel .pixel-controls[style*="display: flex"],
+  .panel .sketch-controls[style*="display: flex"] {
+    display: flex !important;
+    flex-direction: column;
+    width: 100%;
+  }
+
   /* ================== Controls ================== */
   .control-group {
     margin-bottom: 12px;
+    width: 100%;
   }
   .control-group label {
     display: block;
@@ -1794,12 +1848,14 @@ input[type="checkbox"],
     display: flex;
     gap: 6px;
     flex-wrap: wrap;
+    width: 100%;
   }
   .swatch {
     width: 24px;
     height: 24px;
     border: 1px solid #444;
     cursor: pointer;
+    flex-shrink: 0;
   }
   .swatch.primary { border-color: #888; }
   .swatch.secondary { border-color: #666; }
@@ -1809,32 +1865,23 @@ input[type="checkbox"],
     background: linear-gradient(135deg, #2a2a2a 0%, #333 100%);
     color: #e8e8e8;
     border: 1px solid #444;
-    padding: 4px 8px;
+    padding: 6px 12px;
     font-size: 12px;
     cursor: pointer;
     transition: all 0.2s ease;
+    border-radius: 4px;
+    flex: 1; /* Buttons grow to fill available space */
+    min-width: 0; /* Allow buttons to shrink */
+    text-align: center;
   }
   .btn:hover {
     background: linear-gradient(135deg, #333 0%, #404040 100%);
     color: #fff;
+    transform: translateY(-1px);
   }
   .btn.primary {
     background: linear-gradient(135deg, #1a5f8a 0%, #0f3e5a 100%);
     border-color: #0c2c3c;
-  }
-
-  /* ================== Sketch Controls / Pixel Controls ================== */
-  .sketch-controls,
-  .pixel-controls {
-    display: none; /* hidden by default, JS toggles .active */
-    flex-direction: column;
-    height: 100%;
-    overflow-y: auto;
-  }
-  .sketch-controls.active,
-  .pixel-controls.active {
-    display: flex;
-    flex: 1 1 auto;
   }
 
   /* ================== Inputs / Sliders ================== */
@@ -1844,11 +1891,13 @@ input[type="checkbox"],
   }
   input[type="color"], input[type="number"], select {
     width: 100%;
-    padding: 4px 6px;
+    padding: 6px 8px;
     background: #1e1e1e;
     color: #e8e8e8;
     border: 1px solid #444;
     font-size: 12px;
+    border-radius: 4px;
+    box-sizing: border-box;
   }
 
   /* ================== Brush Preview ================== */
@@ -1871,13 +1920,17 @@ input[type="checkbox"],
     border: 1px solid #444;
     padding: 4px;
     background: #1e1e1e;
+    border-radius: 4px;
+    width: 100%;
+    box-sizing: border-box;
   }
 
   /* ================== Palette Grid ================== */
   .palette-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, 24px);
+    grid-template-columns: repeat(auto-fill, minmax(24px, 1fr));
     gap: 4px;
+    width: 100%;
   }
 
   /* ================== Info Text ================== */
@@ -1885,6 +1938,7 @@ input[type="checkbox"],
     margin-top: 6px;
     font-size: 10px;
     color: #888;
+    width: 100%;
   }
 
   /* Canvas overlays remain fixed */
@@ -1903,29 +1957,96 @@ input[type="checkbox"],
   #canvasInfo { bottom: 8px; left: 8px; }
   #zoomIndicator { top: 8px; right: 8px; font-weight: 600; }
 
+  /* ================== Export Area ================== */
+  .export-area {
+    width: 100%;
+  }
+
+  .export-area textarea {
+    width: 100%;
+    min-height: 60px;
+    background: #1e1e1e;
+    color: #e8e8e8;
+    border: 1px solid #444;
+    border-radius: 4px;
+    padding: 8px;
+    font-family: monospace;
+    font-size: 11px;
+    resize: vertical;
+    box-sizing: border-box;
+  }
+
+  .export-area input[type="file"] {
+    width: 100%;
+    background: #1e1e1e;
+    color: #e8e8e8;
+    border: 1px solid #444;
+    border-radius: 4px;
+    padding: 6px;
+    box-sizing: border-box;
+  }
+
   /* ================== Responsive Adjustments ================== */
   @media (min-width: 768px) and (max-width: 1024px) {
-    #editor-container, .editor-container { grid-template-columns: 60px 1fr 280px; }
-    #tool-btn, .tool-btn { width: 46px; height: 46px; font-size: 16px; }
-    #tool-btn.symmetric-tool, .tool-btn.symmetric-tool { font-size: 14px; }
-    #panel-content, .panel-content { padding: 16px; }
+    #editor-container, .editor-container { 
+      grid-template-columns: 60px 1fr 280px; 
+    }
+    .panels {
+      width: 280px;
+    }
+    #tool-btn, .tool-btn { 
+      width: 46px; 
+      height: 46px; 
+      font-size: 16px; 
+    }
+    #tool-btn.symmetric-tool, .tool-btn.symmetric-tool { 
+      font-size: 14px; 
+    }
   }
 
   @media (orientation: landscape) and (max-width: 667px) {
-    #editor-container, .editor-container { grid-template-columns: 50px 1fr 250px !important; }
-    #sidebar, .sidebar { width: 50px !important; }
-    #tool-btn, .tool-btn { width: 42px !important; height: 42px !important; font-size: 14px !important; }
-    #tool-btn.symmetric-tool, .tool-btn.symmetric-tool { font-size: 12px !important; }
-    #panels, .panels { width: 250px !important; }
-    #panel-content, .panel-content { padding: 10px !important; }
-    #panel-header, .panel-header { padding: 8px 12px !important; font-size: 12px !important; }
+    #editor-container, .editor-container { 
+      grid-template-columns: 50px 1fr 250px !important; 
+    }
+    #sidebar, .sidebar { 
+      width: 50px !important; 
+    }
+    .panels {
+      width: 250px !important;
+    }
+    #tool-btn, .tool-btn { 
+      width: 42px !important; 
+      height: 42px !important; 
+      font-size: 14px !important; 
+    }
+    #tool-btn.symmetric-tool, .tool-btn.symmetric-tool { 
+      font-size: 12px !important; 
+    }
+    .panel-content { 
+      padding: 10px 12px !important; 
+    }
+    .panel-header { 
+      padding: 8px 12px !important; 
+      font-size: 12px !important; 
+    }
   }
 
   @media (orientation: landscape) and (max-width: 568px) {
-    #editor-container, .editor-container { grid-template-columns: 45px 1fr 200px !important; }
-    #sidebar, .sidebar { width: 45px !important; padding: 4px 0 !important; }
-    #tool-btn, .tool-btn { width: 38px !important; height: 38px !important; font-size: 12px !important; }
-    #panels, .panels { width: 200px !important; }
+    #editor-container, .editor-container { 
+      grid-template-columns: 45px 1fr 200px !important; 
+    }
+    #sidebar, .sidebar { 
+      width: 45px !important; 
+      padding: 4px 0 !important; 
+    }
+    .panels {
+      width: 200px !important;
+    }
+    #tool-btn, .tool-btn { 
+      width: 38px !important; 
+      height: 38px !important; 
+      font-size: 12px !important; 
+    }
   }
 }
 
