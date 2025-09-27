@@ -1614,8 +1614,9 @@ input[type="checkbox"],
   .sidebar {
     display: flex;
     flex-direction: column;
-    align-items: center;
-    padding: 12px 0;
+    justify-content: flex-start;
+    align-items: stretch;
+    padding: 10px 0;
     gap: 6px;
     height: 100vh;           /* full viewport height */
     overflow-y: auto;        /* scroll if needed */
