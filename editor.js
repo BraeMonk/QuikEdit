@@ -485,26 +485,23 @@ class JerryEditor {
         }
     
         // ----- CONTROLS -----
-        const pixelControls = document.querySelector('.pixel-controls');
-        const sketchControls = document.querySelector('.sketch-controls');
-    
-        if (pixelControls) {
+        document.querySelectorAll('.pixel-controls').forEach(el => {
             if (mode === 'pixel') {
-                pixelControls.classList.add('active');
-                pixelControls.style.display = '';
+                el.classList.add('active');
+                el.style.display = '';
             } else {
-                pixelControls.classList.remove('active');
+                el.classList.remove('active');
             }
-        }
-    
-        if (sketchControls) {
+        });
+
+        document.querySelectorAll('.sketch-controls').forEach(el => {
             if (mode === 'sketch') {
-                sketchControls.classList.add('active');
-                sketchControls.style.display = '';
+                el.classList.add('active');
+                el.style.display = '';
             } else {
-                sketchControls.classList.remove('active');
+                el.classList.remove('active');
             }
-        }
+        });
     
         // ----- CANVASES -----
         this.pixelCanvas.style.display = mode === 'pixel' ? 'grid' : 'none';
