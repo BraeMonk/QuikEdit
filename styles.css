@@ -1574,7 +1574,7 @@ input[type="checkbox"],
 }
 
 /* Mobile Landscape - Full Height Three Column Layout */
-@media (max-width: 1024px) and (orientation: landscape) and (max-height: 768px) {
+@media (max-width: 1024px) and (orientation: landscape) {
   /* Hide header completely in landscape */
   #header,
   .header {
