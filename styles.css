@@ -1606,7 +1606,7 @@ input[type="checkbox"],
     flex-direction: column;
     justify-content: flex-start;
     align-items: center;
-    padding: 10px 0;
+    padding: 0;
     gap: 6px;
     height: 100vh;       /* full viewport height */
     min-height: 100vh;   /* ensure it fills vertically */
