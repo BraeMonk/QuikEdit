@@ -1576,311 +1576,311 @@ input[type="checkbox"],
 /* Mobile Landscape - Custom Editor Layout */
 @media (max-width: 1024px) and (orientation: landscape) and (max-height: 768px) {
 
-html, body {
-width: 100%;
-height: 100%;
-margin: 0;
-padding: 0;
-overflow: hidden;
-}
-
-/* Main container - three column layout: tools | canvas | controls */
-#editor-container,
-.editor-container {
-display: grid;
-grid-template-areas: “sidebar canvas panels”;
-grid-template-columns: 70px 1fr 260px;
-grid-template-rows: 1fr;
-width: 100vw;
-height: 100vh;
-gap: 1px;
-}
-
-/* Hide header completely in landscape */
-#header,
-.header {
-display: none;
-}
-
-/* Left sidebar - vertical tools with scrolling */
-#sidebar,
-.sidebar {
-grid-area: sidebar;
-display: flex;
-flex-direction: column;
-align-items: center;
-padding: 10px 0;
-gap: 6px;
-height: 100vh;
-overflow-y: auto;
-overflow-x: hidden;
-border-right: 2px solid #333;
-background: linear-gradient(180deg, #1e1e1e 0%, #1a1a1a 100%);
-box-shadow: 2px 0 8px rgba(0, 0, 0, 0.2);
-z-index: 50;
-}
-
-/* Tool groups - natural vertical layout */
-#tool-group,
-.tool-group {
-display: flex;
-flex-direction: column;
-align-items: center;
-gap: 6px;
-width: 100%;
-padding: 0;
-}
-
-#pixel-tools,
-.pixel-tools,
-#sketch-tools,
-.sketch-tools {
-display: none;
-flex-direction: column;
-align-items: center;
-gap: 6px;
-width: 100%;
-}
-
-#pixel-tools.active,
-.pixel-tools.active,
-#sketch-tools.active,
-.sketch-tools.active {
-display: flex;
-flex-direction: column;
-align-items: center;
-gap: 6px;
-width: 100%;
-}
-
-/* Tool buttons - keep portrait-like size but slightly smaller */
-#tool-btn,
-.tool-btn {
-width: 44px;
-height: 44px;
-font-size: 16px;
-flex-shrink: 0;
-margin: 0;
-}
-
-#tool-btn.symmetric-tool,
-.tool-btn.symmetric-tool {
-font-size: 14px;
-}
-
-/* Tool separator - horizontal line */
-#tool-separator,
-.tool-separator {
-width: 70%;
-height: 1px;
-margin: 6px 0;
-background: linear-gradient(90deg, transparent 0%, #444 50%, transparent 100%);
-flex-shrink: 0;
-}
-
-/* Canvas area - center column */
-#canvas-area,
-.canvas-area {
-grid-area: canvas;
-display: flex;
-justify-content: center;
-align-items: center;
-overflow: hidden;
-width: 100%;
-height: 100vh;
-padding: 10px;
-}
-
-#canvas-wrapper,
-.canvas-wrapper {
-max-width: calc(100% - 20px);
-max-height: calc(100vh - 20px);
-display: flex;
-justify-content: center;
-align-items: center;
-width: auto;
-height: auto;
-}
-
-/* Right panels - vertical controls with scrolling */
-#panels,
-.panels {
-grid-area: panels;
-display: flex;
-flex-direction: column;
-height: 100vh;
-overflow-y: auto;
-overflow-x: hidden;
-border-left: 2px solid #333;
-background: linear-gradient(180deg, #1e1e1e 0%, #1a1a1a 100%);
-box-shadow: -2px 0 8px rgba(0, 0, 0, 0.2);
-z-index: 40;
-}
-
-#panel,
-.panel {
-background: #1e1e1e;
-border-bottom: 1px solid #333;
-flex-shrink: 0;
-}
-
-#panel-content,
-.panel-content {
-padding: 12px;
-display: block;
-transition: max-height 0.3s ease, padding 0.3s ease;
-overflow: hidden;
-background: linear-gradient(180deg, #1e1e1e 0%, #1a1a1a 100%);
-}
-
-/* Control groups - slightly more compact */
-#control-group,
-.control-group {
-margin-bottom: 15px;
-}
-
-#control-group label,
-.control-group label {
-font-size: 12px;
-margin-bottom: 6px;
-}
-
-/* Button groups - more compact */
-#btn-group,
-.btn-group {
-display: flex;
-gap: 4px;
-margin-bottom: 6px;
-flex-wrap: wrap;
-}
-
-#btn-group .btn,
-.btn-group .btn,
-#btn-group button,
-.btn-group button {
-flex: 1 1 auto;
-min-width: 55px;
-font-size: 11px;
-padding: 6px 8px;
-}
-
-/* Form elements - slightly smaller */
-select,
-input[type=“number”],
-input[type=“range”],
-input[type=“color”],
-input[type=“file”],
-textarea,
-#canvasWidth,
-#canvasHeight,
-#brushSize,
-#brushOpacity,
-#brushHardness,
-#brushFlow,
-#sketchColor,
-#layerOpacity,
-#blendMode,
-#output,
-#importFile {
-padding: 6px 10px;
-font-size: 12px;
-}
-
-/* Color swatches - slightly smaller */
-#swatch,
-.swatch {
-width: 28px;
-height: 28px;
-}
-
-#color-swatch,
-.color-swatch {
-width: 24px;
-height: 24px;
-}
-
-/* Swatches grid - adjust for smaller swatches */
-.swatches,
-#swatches {
-grid-template-columns: repeat(6, 1fr);
-gap: 4px;
-margin-top: 8px;
-}
-
-/* Layer list - more compact */
-#layerList,
-.layer-list {
-max-height: 120px;
-min-height: 80px;
-margin-bottom: 10px;
-}
-
-#layer-item,
-.layer-item {
-padding: 8px 10px;
-font-size: 12px;
-}
-
-/* Brush preview - slightly smaller */
-#brushPreview {
-width: 50px;
-height: 50px;
-margin: 8px auto;
-}
-
-/* Export area - more compact */
-#export-area textarea,
-.export-area textarea,
-#output {
-height: 80px;
-font-size: 11px;
-padding: 10px;
-}
-
-/* Canvas info overlays - smaller */
-#canvasInfo {
-bottom: 8px;
-left: 8px;
-padding: 6px 10px;
-font-size: 11px;
-}
-
-#zoomIndicator {
-top: 8px;
-right: 8px;
-padding: 6px 10px;
-font-size: 11px;
-}
-
-/* Scrollbar styling for landscape */
-#sidebar::-webkit-scrollbar,
-.sidebar::-webkit-scrollbar,
-#panels::-webkit-scrollbar,
-.panels::-webkit-scrollbar {
-width: 6px;
-}
-
-#sidebar::-webkit-scrollbar-track,
-.sidebar::-webkit-scrollbar-track,
-#panels::-webkit-scrollbar-track,
-.panels::-webkit-scrollbar-track {
-background: #1a1a1a;
-}
-
-#sidebar::-webkit-scrollbar-thumb,
-.sidebar::-webkit-scrollbar-thumb,
-#panels::-webkit-scrollbar-thumb,
-.panels::-webkit-scrollbar-thumb {
-background: #444;
-border-radius: 3px;
-}
-
-#sidebar::-webkit-scrollbar-thumb:hover,
-.sidebar::-webkit-scrollbar-thumb:hover,
-#panels::-webkit-scrollbar-thumb:hover,
-.panels::-webkit-scrollbar-thumb:hover {
-background: #555;
-}
+  html, body {
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+  }
+  
+  /* Main container - three column layout: tools | canvas | controls */
+  #editor-container,
+  .editor-container {
+    display: grid;
+    grid-template-areas: “sidebar canvas panels”;
+    grid-template-columns: 70px 1fr 260px;
+    grid-template-rows: 1fr;
+    width: 100vw;
+    height: 100vh;
+    gap: 1px;
+  }
+  
+  /* Hide header completely in landscape */
+  #header,
+  .header {
+    display: none;
+  }
+  
+  /* Left sidebar - vertical tools with scrolling */
+  #sidebar,
+  .sidebar {
+    grid-area: sidebar;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 10px 0;
+    gap: 6px;
+    height: 100vh;
+    overflow-y: auto;
+    overflow-x: hidden;
+    border-right: 2px solid #333;
+    background: linear-gradient(180deg, #1e1e1e 0%, #1a1a1a 100%);
+    box-shadow: 2px 0 8px rgba(0, 0, 0, 0.2);
+    z-index: 50;
+  }
+  
+  /* Tool groups - natural vertical layout */
+  #tool-group,
+  .tool-group {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    width: 100%;
+    padding: 0;
+  }
+  
+  #pixel-tools,
+  .pixel-tools,
+  #sketch-tools,
+  .sketch-tools {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    width: 100%;
+  }
+  
+  #pixel-tools.active,
+  .pixel-tools.active,
+  #sketch-tools.active,
+  .sketch-tools.active {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    width: 100%;
+  }
+  
+  /* Tool buttons - keep portrait-like size but slightly smaller */
+  #tool-btn,
+  .tool-btn {
+    width: 44px;
+    height: 44px;
+    font-size: 16px;
+    flex-shrink: 0;
+    margin: 0;
+  }
+  
+  #tool-btn.symmetric-tool,
+  .tool-btn.symmetric-tool {
+    font-size: 14px;
+  }
+  
+  /* Tool separator - horizontal line */
+  #tool-separator,
+  .tool-separator {
+    width: 70%;
+    height: 1px;
+    margin: 6px 0;
+    background: linear-gradient(90deg, transparent 0%, #444 50%, transparent 100%);
+    flex-shrink: 0;
+  }
+  
+  /* Canvas area - center column */
+  #canvas-area,
+  .canvas-area {
+    grid-area: canvas;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+    width: 100%;
+    height: 100vh;
+    padding: 10px;
+  }
+  
+  #canvas-wrapper,
+  .canvas-wrapper {
+    max-width: calc(100% - 20px);
+    max-height: calc(100vh - 20px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: auto;
+    height: auto;
+  }
+  
+  /* Right panels - vertical controls with scrolling */
+  #panels,
+  .panels {
+    grid-area: panels;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    overflow-y: auto;
+    overflow-x: hidden;
+    border-left: 2px solid #333;
+    background: linear-gradient(180deg, #1e1e1e 0%, #1a1a1a 100%);
+    box-shadow: -2px 0 8px rgba(0, 0, 0, 0.2);
+    z-index: 40;
+  }
+  
+  #panel,
+  .panel {
+    background: #1e1e1e;
+    border-bottom: 1px solid #333;
+    flex-shrink: 0;
+  }
+  
+  #panel-content,
+  .panel-content {
+    padding: 12px;
+    display: block;
+    transition: max-height 0.3s ease, padding 0.3s ease;
+    overflow: hidden;
+    background: linear-gradient(180deg, #1e1e1e 0%, #1a1a1a 100%);
+  }
+  
+  /* Control groups - slightly more compact */
+  #control-group,
+  .control-group {
+    margin-bottom: 15px;
+  }
+  
+  #control-group label,
+  .control-group label {
+    font-size: 12px;
+    margin-bottom: 6px;
+  }
+  
+  /* Button groups - more compact */
+  #btn-group,
+  .btn-group {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 6px;
+    flex-wrap: wrap;
+  }
+  
+  #btn-group .btn,
+  .btn-group .btn,
+  #btn-group button,
+  .btn-group button {
+    flex: 1 1 auto;
+    min-width: 55px;
+    font-size: 11px;
+    padding: 6px 8px;
+  }
+  
+  /* Form elements - slightly smaller */
+  select,
+  input[type=“number”],
+  input[type=“range”],
+  input[type=“color”],
+  input[type=“file”],
+  textarea,
+  #canvasWidth,
+  #canvasHeight,
+  #brushSize,
+  #brushOpacity,
+  #brushHardness,
+  #brushFlow,
+  #sketchColor,
+  #layerOpacity,
+  #blendMode,
+  #output,
+  #importFile {
+    padding: 6px 10px;
+    font-size: 12px;
+  }
+  
+  /* Color swatches - slightly smaller */
+  #swatch,
+  .swatch {
+    width: 28px;
+    height: 28px;
+  }
+  
+  #color-swatch,
+  .color-swatch {
+    width: 24px;
+    height: 24px;
+  }
+  
+  /* Swatches grid - adjust for smaller swatches */
+  .swatches,
+  #swatches {
+    grid-template-columns: repeat(6, 1fr);
+    gap: 4px;
+    margin-top: 8px;
+  }
+  
+  /* Layer list - more compact */
+  #layerList,
+  .layer-list {
+    max-height: 120px;
+    min-height: 80px;
+    margin-bottom: 10px;
+  }
+  
+  #layer-item,
+  .layer-item {
+    padding: 8px 10px;
+    font-size: 12px;
+  }
+  
+  /* Brush preview - slightly smaller */
+  #brushPreview {
+    width: 50px;
+    height: 50px;
+    margin: 8px auto;
+  }
+  
+  /* Export area - more compact */
+  #export-area textarea,
+  .export-area textarea,
+  #output {
+    height: 80px;
+    font-size: 11px;
+    padding: 10px;
+  }
+  
+  /* Canvas info overlays - smaller */
+  #canvasInfo {
+    bottom: 8px;
+    left: 8px;
+    padding: 6px 10px;
+    font-size: 11px;
+  }
+  
+  #zoomIndicator {
+    top: 8px;
+    right: 8px;
+    padding: 6px 10px;
+    font-size: 11px;
+  }
+  
+  /* Scrollbar styling for landscape */
+  #sidebar::-webkit-scrollbar,
+  .sidebar::-webkit-scrollbar,
+  #panels::-webkit-scrollbar,
+  .panels::-webkit-scrollbar {
+    width: 6px;
+  }
+  
+  #sidebar::-webkit-scrollbar-track,
+  .sidebar::-webkit-scrollbar-track,
+  #panels::-webkit-scrollbar-track,
+  .panels::-webkit-scrollbar-track {
+    background: #1a1a1a;
+  }
+  
+  #sidebar::-webkit-scrollbar-thumb,
+  .sidebar::-webkit-scrollbar-thumb,
+  #panels::-webkit-scrollbar-thumb,
+  .panels::-webkit-scrollbar-thumb {
+    background: #444;
+    border-radius: 3px;
+  }
+  
+  #sidebar::-webkit-scrollbar-thumb:hover,
+  .sidebar::-webkit-scrollbar-thumb:hover,
+  #panels::-webkit-scrollbar-thumb:hover,
+  .panels::-webkit-scrollbar-thumb:hover {
+    background: #555;
+  }
 }
 
 /* Tablet specific adjustments */
