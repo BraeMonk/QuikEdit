@@ -1461,7 +1461,7 @@ input[type="checkbox"],
   /* Sidebar becomes horizontal */
   #sidebar,
   .sidebar {
-    flex-direction: row;
+    flex-direction: row !important;
     justify-content: flex-start;
     padding: 10px;
     gap: 8px;
