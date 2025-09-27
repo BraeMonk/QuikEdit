@@ -1826,7 +1826,9 @@ input[type="checkbox"],
   }
   .sketch-controls.active,
   .pixel-controls.active {
-    display: block;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
   }
 
   /* ================== Inputs / Sliders ================== */
