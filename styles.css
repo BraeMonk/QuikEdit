@@ -1649,6 +1649,16 @@ input[type="checkbox"],
   #pixel-tools.active, .pixel-tools.active,
   #sketch-tools.active, .sketch-tools.active { display: flex; }
 
+  .pixel-controls,
+  .sketch-controls {
+    display: none;
+  }
+
+  .pixel-controls.active,
+  .sketch-controls.active {
+    display: flex;
+  }
+  
   /* Tool buttons */
   #tool-btn, .tool-btn {
     width: 50px;
