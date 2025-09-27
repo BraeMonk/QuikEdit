@@ -2067,6 +2067,18 @@ input[type="checkbox"],
   }
 }
 
+@media (orientation: landscape) and (max-height: 360px) {
+  #tool-btn, .tool-btn {
+    width: 40px;
+    height: 28px;
+    font-size: 10px;
+  }
+  
+  #tool-separator, .tool-separator {
+    margin: 2px 0;
+  }
+}
+
 /* ============================= */
 /* Touch & Interaction           */
 /* ============================= */
