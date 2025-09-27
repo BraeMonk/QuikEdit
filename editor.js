@@ -468,11 +468,9 @@ class JerryEditor {
 
         if (pixelTools) {
             pixelTools.classList.toggle('active', mode === 'pixel');
-            pixelTools.style.display = mode === 'pixel' ? 'flex' : 'none';
         }
         if (sketchTools) {
-            sketchTools.classList.toggle('active', mode === 'sketch');
-            sketchTools.style.display = mode === 'sketch' ? 'flex' : 'none';
+            sketchTools.classList.toggle('active', mode === 'sketch'); 
         }
 
         // ----- CONTROLS -----
