@@ -1608,21 +1608,19 @@ input[type="checkbox"],
   #sidebar,
   .sidebar {
     display: flex;
-    flex-direction: column !important;   /* vertical stacking */
+    flex-direction: column;
     justify-content: flex-start;
-    align-items: stretch;     /* fill sidebar width */
+    align-items: center;
     width: 65px;
     height: 100vh;
-    max-height: 100vh;            /* full viewport height */
-    min-height: 100vh;
-    padding: 12px 0;
-    gap: 6px;
-    overflow-y: auto;         /* vertical scroll if needed */
+    padding: 8px 0; /* Reduce padding */
+    gap: 4px; /* Reduce gap */
+    overflow-y: auto;
     overflow-x: hidden;
     grid-area: sidebar;
-    background: linear-gradient(180deg, #1e1e1e 0%, #1a1a1a 100%); /* ADD THIS */
-    border-right: 2px solid #333;  /* ADD THIS */
-    box-shadow: 2px 0 8px rgba(0, 0, 0, 0.2);  /* ADD THIS */
+    background: linear-gradient(180deg, #1e1e1e 0%, #1a1a1a 100%);
+    border-right: 2px solid #333;
+    box-shadow: 2px 0 8px rgba(0, 0, 0, 0.2);
   }
 
   /* Tool groups (pixel/sketch tools) */
@@ -1650,13 +1648,13 @@ input[type="checkbox"],
   .pixel-tools.active,
   #sketch-tools.active,
   .sketch-tools.active {
-    display: flex;
-    align-items: center;
+    display: flex !important;
     flex-direction: column;
-    flex: 1 1 auto;
-    min-height: 0;       /* Allows shrinking if needed */
+    align-items: center;
     width: 100%;
-    gap: 6px;
+    height: 100%; /* Force full height */
+    flex: 1; /* Take all available space */
+    gap: 4px;
     padding: 0;
     overflow-y: auto;
   }
@@ -1664,8 +1662,8 @@ input[type="checkbox"],
   /* Tool buttons */
   #tool-btn,
   .tool-btn {
-    width: 50px;
-    height: 48px;
+    width: 48px;
+    height: 42px;
     flex-shrink: 0;
     background: linear-gradient(135deg, #333 0%, #2a2a2a 100%);
     border: 2px solid #444;
@@ -1686,9 +1684,9 @@ input[type="checkbox"],
   #tool-separator,
   .tool-separator {
     flex-shrink: 0;
-    width: 80%;
-    height: 2px;
-    margin: 4px 0;
+    width: 70%;
+    height: 1px;
+    margin: 2px 0;
     background: linear-gradient(180deg, transparent 0%, #444 50%, transparent 100%);
   }
   
