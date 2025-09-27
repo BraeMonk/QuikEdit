@@ -1671,9 +1671,9 @@ input[type="checkbox"],
     flex-direction: column;
     gap: 6px;
     width: 100%;
-    flex: 1 1 auto;            /* fill remaining sidebar height */
+    flex: 0 0 auto;            /* fill remaining sidebar height */
     min-height: 0;              /* critical for Chrome/Safari flex scrolling */
-    overflow-y: auto;           /* scroll when tools exceed sidebar height */
+    overflow-y: visible;           /* scroll when tools exceed sidebar height */
   }
 
   /* Tool buttons - never shrink */
