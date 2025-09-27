@@ -1635,10 +1635,11 @@ input[type="checkbox"],
     flex-direction: column;   /* vertical stacking */
     align-items: stretch;     /* buttons fill width */
     flex: 1 1 0;           /* fill available height */
-    min-height: 0;            /* allow flex scrolling */
+    min-height: 0;   /* allow flex scrolling */
     width: 100%;
+    height: 100%;
     gap: 6px;
-    padding: 6px 0;
+    padding: 0;
     overflow-y: auto;
     overflow-x: hidden;
   }
