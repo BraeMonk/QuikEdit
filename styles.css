@@ -1613,8 +1613,8 @@ input[type="checkbox"],
     align-items: center;
     width: 65px;
     height: 100vh;
-    padding: 8px 0; /* Reduce padding */
-    gap: 4px; /* Reduce gap */
+    padding: 8px 0;
+    gap: 0; /* No gap at sidebar level */
     overflow-y: auto;
     overflow-x: hidden;
     grid-area: sidebar;
@@ -1626,54 +1626,37 @@ input[type="checkbox"],
   /* Tool groups (pixel/sketch tools) */
   .tool-group,
   #tool-group {
-    display: flex;
-    flex-direction: column;   /* vertical stacking */
-    align-items: stretch;     /* buttons fill width */
-    flex: 1 1 auto;           /* fill available height */
-    min-height: 0;   /* allow flex scrolling */
-    width: 100%;
-    gap: 6px;
-    padding: 0;
-  }
-
-  .pixel-tools,
-  #pixel-tools,
-  #sketch-tools,
-  .sketch-tools {
     display: none;
   }
 
-  /* Show active tool groups */
-  #pixel-tools.active,
-  .pixel-tools.active,
-  #sketch-tools.active,
-  .sketch-tools.active {
+  .tool-group.active {
     display: flex !important;
     flex-direction: column;
     align-items: center;
     width: 100%;
-    height: 100%; /* Force full height */
-    flex: 1; /* Take all available space */
+    flex: 1; /* This makes it fill the sidebar height */
     gap: 4px;
     padding: 0;
     overflow-y: auto;
   }
 
+
   /* Tool buttons */
   #tool-btn,
   .tool-btn {
+    .tool-btn {
     width: 48px;
-    height: 42px;
+    height: 40px;
     flex-shrink: 0;
     background: linear-gradient(135deg, #333 0%, #2a2a2a 100%);
     border: 2px solid #444;
-    border-radius: 8px;
+    border-radius: 6px;
     color: #e8e8e8;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 16px;
+    font-size: 14px;
     transition: all 0.2s ease;
     position: relative;
     line-height: 1;
@@ -1683,15 +1666,14 @@ input[type="checkbox"],
   /* Separators */
   #tool-separator,
   .tool-separator {
-    flex-shrink: 0;
     width: 70%;
     height: 1px;
-    margin: 2px 0;
-    background: linear-gradient(180deg, transparent 0%, #444 50%, transparent 100%);
+    margin: 3px 0;
+    flex-shrink: 0;
+    background: linear-gradient(90deg, transparent 0%, #444 50%, transparent 100%);
   }
   
-
-  #tool-btn:hover,
+  /* Tool button states */
   .tool-btn:hover {
     background: linear-gradient(135deg, #444 0%, #3a3a3a 100%);
     border-color: #555;
@@ -1699,13 +1681,6 @@ input[type="checkbox"],
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
   }
 
-  #tool-btn:active,
-  .tool-btn:active {
-    transform: translateY(0);
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
-  }
-
-  #tool-btn.active,
   .tool-btn.active {
     background: linear-gradient(135deg, #4CAF50 0%, #66BB6A 100%);
     border-color: #66BB6A;
@@ -1714,22 +1689,13 @@ input[type="checkbox"],
     box-shadow: 0 3px 6px rgba(76, 175, 80, 0.4);
   }
 
-  #tool-btn.symmetric-tool,
   .tool-btn.symmetric-tool {
     background: linear-gradient(135deg, #333 0%, #444 50%, #4A90E2 100%);
     border: 2px solid #4A90E2;
-    font-size: 14px;
+    font-size: 12px;
     box-shadow: 0 2px 6px rgba(74, 144, 226, 0.3);
   }
 
-  #tool-btn.symmetric-tool:hover,
-  .tool-btn.symmetric-tool:hover {
-    background: linear-gradient(135deg, #444 0%, #4A90E2 50%, #6BB6FF 100%);
-    border-color: #6BB6FF;
-    box-shadow: 0 4px 10px rgba(74, 144, 226, 0.4);
-  }
-
-  #tool-btn.symmetric-tool.active,
   .tool-btn.symmetric-tool.active {
     background: linear-gradient(135deg, #4A90E2 0%, #6BB6FF 100%);
     border-color: #6BB6FF;
