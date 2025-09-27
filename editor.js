@@ -461,53 +461,36 @@ class JerryEditor {
     
     switchMode(mode) {
         this.mode = mode;
-    
+
         // ----- TOOLS -----
         const pixelTools = document.querySelector('.pixel-tools');
         const sketchTools = document.querySelector('.sketch-tools');
-    
-        if (pixelTools) {
-            if (mode === 'pixel') {
-                pixelTools.classList.add('active');
-            } else {
-                pixelTools.classList.remove('active');
-            }
-        }
-    
-        if (sketchTools) {
-            if (mode === 'sketch') {
-                sketchTools.classList.add('active');
-            } else {
-                sketchTools.classList.remove('active');
-            }
-        }
-    
-        // ----- CONTROLS -----
-        document.querySelectorAll('.pixel-controls').forEach(el => {
-            if (mode === 'pixel') {
-                el.classList.add('active');
-            } else {
-                el.classList.remove('active');
-            }
+
+        if (pixelTools) pixelTools.classList.toggle('active', mode === 'pixel');
+        if (sketchTools) sketchTools.classList.toggle('active', mode === 'sketch');
+
+        // ----- PANELS -----
+        document.querySelectorAll('.panel.pixel-controls').forEach(el => {
+            el.style.display = mode === 'pixel' ? 'flex' : 'none';
+        });
+        document.querySelectorAll('.panel.sketch-controls').forEach(el => {
+            el.style.display = mode === 'sketch' ? 'flex' : 'none';
         });
 
-        document.querySelectorAll('.sketch-controls').forEach(el => {
-            if (mode === 'sketch') {
-                el.classList.add('active');
-            } else {
-                el.classList.remove('active');
-            }
+        // ----- NESTED CONTROLS INSIDE PANELS -----
+        document.querySelectorAll('.panel .pixel-controls').forEach(el => {
+            el.style.display = mode === 'pixel' ? 'flex' : 'none';
         });
-    
+        document.querySelectorAll('.panel .sketch-controls').forEach(el => {
+            el.style.display = mode === 'sketch' ? 'flex' : 'none';
+        });
+
         // ----- CANVASES -----
         this.pixelCanvas.style.display = mode === 'pixel' ? 'grid' : 'none';
         this.sketchCanvas.style.display = mode === 'sketch' ? 'block' : 'none';
-    
-        if (mode === 'pixel') {
-            this.canvasGrid.style.display = this.showGrid ? 'grid' : 'none';
-        }
         this.selectionOverlay.style.display = mode === 'sketch' ? 'block' : 'none';
-    
+        this.canvasGrid.style.display = mode === 'pixel' && this.showGrid ? 'grid' : 'none';
+
         // ----- INITIALIZE MODE -----
         if (mode === 'pixel') {
             this.currentTool = 'pencil';
@@ -523,7 +506,7 @@ class JerryEditor {
             this.lastPos = null;
             this.strokePath = [];
         }
-    
+
         // ----- UPDATE UI -----
         this.updateUI();
     }
