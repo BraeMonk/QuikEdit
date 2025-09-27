@@ -1592,59 +1592,68 @@ input[type="checkbox"],
     height: 100vh;
     gap: 1px;
     position: fixed;
-    top: 0;
     left: 0;
     right: 0;
-    bottom: 0;
     background: #2a2a2a;
     z-index: 1;
     align-items: stretch;
   }
 
+  /* Sidebar container */
   #sidebar,
   .sidebar {
     display: flex;
-    flex-direction: column;
+    flex-direction: column;   /* vertical stacking */
     justify-content: flex-start;
-    align-items: center;
+    align-items: stretch;     /* fill sidebar width */
+    width: 70px;
+    height: 100vh;            /* full viewport height */
+    min-height: 0;
     padding: 0;
     gap: 6px;
-    width: 70px;
-    height: 100vh;       /* full viewport height */
-    min-height: 0;   /* ensure it fills vertically */
-    overflow-y: auto;    /* scroll if needed */
-    grid-area: sidebar;  /* only for landscape */
+    overflow-y: auto;         /* vertical scroll if needed */
+    overflow-x: hidden;
+    grid-area: sidebar;
+    background: #2a2a2a;
+    -webkit-overflow-scrolling: touch;   /* smooth scroll on iOS */
   }
 
+  /* Tool groups (pixel/sketch tools) */
   .tool-group,
   #tool-group,
-  .pixel-tools.active,
-  .sketch-tools.active,
   .pixel-tools,
-  .sketch-tools {
-    display: flex !important; /* ensure JS inline toggles can’t hide flex layout */
-    flex-direction: column;
-    flex: 1 1 auto;           /* critical: let this element take the available vertical space */
-    min-height: 0;            /* critical for allowing the element to become scrollable */
-    overflow-y: auto;         /* enable vertical scrolling */
-    overflow-x: hidden;
+  .sketch-tools,
+  .pixel-tools.active,
+  .sketch-tools.active {
+    display: flex;
+    flex-direction: column;   /* vertical stacking */
+    align-items: stretch;     /* buttons fill width */
+    flex: 1 1 auto;           /* fill available height */
+    min-height: 0;            /* allow flex scrolling */
     width: 100%;
-    align-items: center;
     gap: 6px;
     padding: 6px 0;
-    -webkit-overflow-scrolling: touch; /* smoother scrolling on iOS */
+    overflow-y: auto;
+    overflow-x: hidden;
   }
 
-  /* keep tool buttons from shrinking (you already had this) */
+  /* Tool buttons */
   #tool-btn,
   .tool-btn {
-    flex-shrink: 0;
+    flex-shrink: 0;           /* prevent collapse */
+    width: 100%;              /* fill sidebar width */
+    height: 48px;             /* consistent button height */
+    box-sizing: border-box;
   }
 
   /* Separators */
   #tool-separator,
   .tool-separator {
     flex-shrink: 0;
+    width: 100%;
+    height: 2px;
+    margin: 4px 0;
+    background: linear-gradient(180deg, transparent 0%, #444 50%, transparent 100%);
   }
   
 
