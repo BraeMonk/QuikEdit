@@ -1614,6 +1614,7 @@ input[type="checkbox"],
     width: 70px;
     height: 100%;            /* full viewport height */
     min-height: 0;
+    max-height: 50vh;
     padding: 0;
     gap: 6px;
     overflow-y: auto;         /* vertical scroll if needed */
@@ -1631,13 +1632,11 @@ input[type="checkbox"],
     display: flex;
     flex-direction: column;   /* vertical stacking */
     align-items: stretch;     /* buttons fill width */
-    flex: 1 1 auto;           /* fill available height */
+    flex: 0 0 auto;           /* fill available height */
     min-height: 0;            /* allow flex scrolling */
     width: 100%;
     gap: 6px;
     padding: 6px 0;
-    overflow-y: auto;
-    overflow-x: hidden;
   }
 
   /* Tool buttons */
