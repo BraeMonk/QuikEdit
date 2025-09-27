@@ -1610,7 +1610,7 @@ input[type="checkbox"],
     display: flex;
     flex-direction: column;
     justify-content: flex-start;
-    align-items: center;
+    align-items: stretch;
     width: 65px;
     height: 100dvh;
     padding: 8px 0;
@@ -1631,16 +1631,13 @@ input[type="checkbox"],
   .tool-group.active {
     display: flex !important;
     flex-direction: column;
-    align-items: center;
+    align-items: stretch;
     width: 100%;
-    flex-grow: 1; /* This makes it fill the sidebar height */
-    flex-shrink: 1;
-    flex-basis: auto;
+    flex: 1 1 auto;
     gap: 4px;
     padding: 4px 0;
     overflow-y: auto;
     min-height: 0;
-    max-height: 100%;
   }
 
 
