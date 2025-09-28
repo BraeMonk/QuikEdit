@@ -1037,6 +1037,7 @@ body[data-mode="sketch"] .pixel-controls {
     padding: var(--spacing-sm);
     background-size: 15px 15px;
     background-position: 0 0, 0 7px, 7px -7px, -7px 0px;
+    overflow: hidden;
   }
 
   .panels {
