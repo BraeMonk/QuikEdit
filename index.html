@@ -111,14 +111,12 @@
           </div>
         </div>
       </div>
-
+    
       <div class="panel sketch-controls">
         <div class="panel-header">
           Brush <span>▼</span>
         </div>
-        
         <div class="panel-content">
-
           <div class="control-group">
             <label>Color</label>
             <input type="color" id="sketchColor" value="#000000">
@@ -146,7 +144,7 @@
           <div class="brush-preview" id="brushPreview"></div>
         </div>
       </div>
-
+    
       <div class="panel pixel-controls">
         <div class="panel-header">
           Symmetry <span>▼</span>
@@ -168,7 +166,7 @@
           </div>
         </div>
       </div>
-
+    
       <div class="panel pixel-controls">
         <div class="panel-header">
           Transform <span>▼</span>
@@ -196,7 +194,7 @@
           </div>
         </div>
       </div>
-
+    
       <div class="panel">
         <div class="panel-header">
           Canvas <span>▼</span>
@@ -229,7 +227,7 @@
               <button class="btn" id="zoomIn">+</button>
             </div>
           </div>
-
+    
           <div class="control-group">
             <label>Actions</label>
             <div class="btn-group">
@@ -238,13 +236,14 @@
             </div>
             <button class="btn" id="clear" style="margin-top: 8px; width: 100%;">Clear Canvas</button>
           </div>
+          
           <label style="margin-left: 10px; user-select: none;" class="pixel-controls">
             <input type="checkbox" id="gridToggle" checked>
             Grid
           </label>
         </div>
       </div>
-
+    
       <div class="panel pixel-controls">
         <div class="panel-header">
           Sprites <span>▼</span>
@@ -262,7 +261,7 @@
           </div>
         </div>
       </div>
-
+    
       <div class="panel sketch-controls">
         <div class="panel-header">
           Layers <span>▼</span>
@@ -271,7 +270,7 @@
           <div class="control-group">
             <label>Layers</label>
             <div id="layerList" class="layer-list">
-              </div>
+            </div>
           </div>
           <div class="control-group">
             <label>Layer Opacity: <span id="layerOpacityLabel">100</span>%</label>
@@ -299,27 +298,30 @@
           <button class="btn" id="addLayer" style="width: 100%; margin-top: 8px;">Add Layer</button>
         </div>
       </div>
-
+    
       <div class="panel">
         <div class="panel-header">
           Export/Import <span>▼</span>
         </div>
         <div class="panel-content">
-          <label>Export Project</label>
-          <div class="btn-group">
-            <button class="btn primary" id="exportJSON">JSON (Project)</button>
-            <button class="btn" id="exportPNG2">PNG (Image)</button>
+          <div class="control-group">
+            <label>Export Project</label>
+            <div class="btn-group">
+              <button class="btn primary" id="exportJSON">JSON (Project)</button>
+              <button class="btn" id="exportPNG2">PNG (Image)</button>
+            </div>
           </div>
           
           <div class="export-area">
             <textarea id="output" placeholder="Export data appears here..." style="display: none;"></textarea>
-            <label for="importFile" style="margin-top: 15px; display: block;">Import Project (.json)</label>
-            <input type="file" id="importFile" accept=".json" style="margin-top: 8px;">
+            <div class="control-group">
+              <label for="importFile" style="margin-top: 15px;">Import Project (.json)</label>
+              <input type="file" id="importFile" accept=".json" style="margin-top: 8px;">
+            </div>
           </div>
         </div>
       </div>
     </div>
-  </div>
 
   <script src="./editor.js"></script>
 
