@@ -1384,6 +1384,394 @@ input[type="checkbox"],
 }
 
 /* ============================= */
+/* MOBILE LANDSCAPE (HORIZONTAL LAYOUT) */
+/* ============================= */
+@media screen and (max-width: 1024px) and (orientation: landscape) and (max-height: 768px) {
+  html, body {
+    height: 100dvh;
+    width: 100vw;
+    overflow: hidden;
+    position: fixed;
+    font-size: 12px;
+  }
+  
+  #editor-container,
+  .editor-container {
+    display: grid;
+    grid-template-areas:
+      "header header header"
+      "sidebar canvas panels";
+    grid-template-columns: 70px 1fr 280px;
+    grid-template-rows: 45px 1fr;
+    height: 100dvh;
+    gap: 0;
+    background: #2a2a2a;
+  }
+  
+  /* ============================= */
+  /* LANDSCAPE HEADER               */
+  /* ============================= */
+  #header,
+  .header {
+    grid-area: header;
+    height: 45px;
+    padding: 0 12px;
+    border-bottom: 1px solid #333;
+    z-index: 200;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: linear-gradient(180deg, #1e1e1e 0%, #1a1a1a 100%);
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+  }
+  
+  #logo,
+  .logo {
+    font-size: 15px;
+    font-weight: 700;
+    color: #4CAF50;
+    display: flex;
+    align-items: center;
+  }
+  
+  #mode-toggle,
+  .mode-toggle {
+    margin-left: 8px;
+    display: flex;
+    gap: 1px;
+    background: #333;
+    border-radius: 4px;
+    padding: 2px;
+  }
+  
+  #mode-btn,
+  .mode-btn {
+    padding: 6px 10px;
+    font-size: 10px;
+    min-width: 40px;
+    background: transparent;
+    border: none;
+    color: #e0e0e0;
+    font-weight: 600;
+    cursor: pointer;
+    border-radius: 3px;
+    transition: all 0.2s ease;
+  }
+  
+  #mode-btn.active,
+  .mode-btn.active {
+    background: linear-gradient(135deg, #4CAF50 0%, #66BB6A 100%);
+    color: #000;
+    box-shadow: 0 1px 3px rgba(76, 175, 80, 0.4);
+  }
+  
+  #header-controls,
+  .header-controls {
+    gap: 4px;
+    display: flex;
+  }
+  
+  #header-btn,
+  .header-btn,
+  #newProject,
+  #saveProject,
+  #exportPNG {
+    padding: 6px 8px;
+    font-size: 9px;
+    background: linear-gradient(135deg, #404040 0%, #333 100%);
+    border: 1px solid #555;
+    border-radius: 3px;
+    color: #e8e8e8;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+  }
+  
+  #header-btn:active,
+  .header-btn:active,
+  #newProject:active,
+  #saveProject:active,
+  #exportPNG:active {
+    transform: scale(0.95);
+  }
+  
+  /* ============================= */
+  /* LANDSCAPE FULL-HEIGHT SIDEBAR */
+  /* ============================= */
+  #sidebar,
+  .sidebar {
+    grid-area: sidebar;
+    width: 70px;
+    background: linear-gradient(180deg, #1e1e1e 0%, #1a1a1a 100%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 8px 0;
+    gap: 6px;
+    border-right: 1px solid #333;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    box-shadow: 1px 0 4px rgba(0, 0, 0, 0.3);
+    z-index: 150;
+    height: calc(100dvh - 45px);
+  }
+  
+  #sidebar::-webkit-scrollbar {
+    width: 3px;
+  }
+  
+  #sidebar::-webkit-scrollbar-track {
+    background: #1a1a1a;
+  }
+  
+  #sidebar::-webkit-scrollbar-thumb {
+    background: #444;
+    border-radius: 2px;
+  }
+  
+  #tool-group,
+  .tool-group {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    width: 100%;
+  }
+  
+  #pixel-tools,
+  .pixel-tools,
+  #sketch-tools,
+  .sketch-tools {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    width: 100%;
+  }
+  
+  #pixel-tools.active,
+  .pixel-tools.active,
+  #sketch-tools.active,
+  .sketch-tools.active {
+    display: flex;
+  }
+  
+  #tool-btn,
+  .tool-btn {
+    width: 50px;
+    height: 50px;
+    background: linear-gradient(135deg, #333 0%, #2a2a2a 100%);
+    border: 2px solid #444;
+    border-radius: 8px;
+    color: #e8e8e8;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    touch-action: manipulation;
+  }
+  
+  #tool-btn:active,
+  .tool-btn:active {
+    transform: scale(0.95);
+  }
+  
+  #tool-btn.active,
+  .tool-btn.active {
+    background: linear-gradient(135deg, #4CAF50 0%, #66BB6A 100%);
+    border-color: #66BB6A;
+    color: #000;
+    font-weight: 600;
+    box-shadow: 0 3px 8px rgba(76, 175, 80, 0.5);
+    transform: scale(1.05);
+  }
+  
+  #tool-btn.symmetric-tool,
+  .tool-btn.symmetric-tool {
+    background: linear-gradient(135deg, #4A90E2 0%, #6BB6FF 100%);
+    border-color: #6BB6FF;
+    font-size: 14px;
+    box-shadow: 0 2px 4px rgba(74, 144, 226, 0.4);
+  }
+  
+  #tool-btn.symmetric-tool.active,
+  .tool-btn.symmetric-tool.active {
+    background: linear-gradient(135deg, #6BB6FF 0%, #4A90E2 100%);
+    color: #000;
+    box-shadow: 0 3px 8px rgba(74, 144, 226, 0.6);
+  }
+  
+  #tool-separator,
+  .tool-separator {
+    width: 70%;
+    height: 1px;
+    background: linear-gradient(90deg, transparent 0%, #444 50%, transparent 100%);
+    margin: 4px 0;
+    flex-shrink: 0;
+  }
+  
+  /* ============================= */
+  /* LANDSCAPE CANVAS AREA         */
+  /* ============================= */
+  #canvas-area,
+  .canvas-area {
+    grid-area: canvas;
+    background: radial-gradient(circle at center, #1e1e1e 0%, #1a1a1a 100%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: visible;
+    padding: 8px;
+    min-height: 0;
+    height: calc(100dvh - 45px);
+  }
+  
+  #canvas-wrapper,
+  .canvas-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+    overflow: visible;
+    transform-origin: center center;
+  }
+  
+  #canvas {
+    /* Maintain original structure - don't constrain */
+  }
+  
+  #sketchCanvas {
+    /* Maintain original structure - don't constrain */
+    border: 2px solid #555;
+    border-radius: 4px;
+  }
+  
+  #canvasInfo {
+    position: absolute;
+    bottom: 6px;
+    left: 6px;
+    background: rgba(0, 0, 0, 0.85);
+    padding: 4px 8px;
+    border-radius: 3px;
+    font-size: 9px;
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+  
+  #zoomIndicator {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    background: rgba(0, 0, 0, 0.85);
+    padding: 4px 8px;
+    border-radius: 3px;
+    font-size: 9px;
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+  
+  /* ============================= */
+  /* LANDSCAPE FULL-HEIGHT PANELS  */
+  /* ============================= */
+  #panels,
+  .panels {
+    grid-area: panels;
+    width: 280px;
+    background: linear-gradient(180deg, #1e1e1e 0%, #1a1a1a 100%);
+    display: flex;
+    flex-direction: column;
+    border-left: 1px solid #333;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    box-shadow: -1px 0 4px rgba(0, 0, 0, 0.3);
+    z-index: 100;
+    height: calc(100dvh - 45px);
+  }
+  
+  #panels::-webkit-scrollbar {
+    width: 4px;
+  }
+  
+  #panels::-webkit-scrollbar-track {
+    background: #1a1a1a;
+  }
+  
+  #panels::-webkit-scrollbar-thumb {
+    background: #444;
+    border-radius: 2px;
+  }
+  
+  #panel,
+  .panel {
+    background: #1e1e1e;
+    border-bottom: 1px solid #333;
+    width: 100%;
+  }
+  
+  #panel-header,
+  .panel-header {
+    background: linear-gradient(135deg, #2a2a2a 0%, #333 100%);
+    padding: 10px 12px;
+    font-size: 12px;
+    font-weight: 600;
+    border-bottom: 1px solid #333;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: all 0.2s ease;
+    color: #e8e8e8;
+    min-height: 40px;
+    touch-action: manipulation;
+    width: 100%;
+    box-sizing: border-box;
+  }
+  
+  #panel-header:active,
+  .panel-header:active {
+    background: linear-gradient(135deg, #333 0%, #404040 100%);
+    transform: scale(0.98);
+  }
+  
+  #panel-header span,
+  .panel-header span {
+    font-size: 14px;
+    transition: transform 0.3s ease;
+  }
+  
+  #panel.collapsed .panel-header span,
+  .panel.collapsed .panel-header span {
+    transform: rotate(-90deg);
+  }
+  
+  #panel-content,
+  .panel-content {
+    padding: 10px 12px;
+    display: block;
+    transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+                padding 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+                opacity 0.3s ease;
+    overflow: hidden;
+    background: linear-gradient(180deg, #1e1e1e 0%, #1a1a1a 100%);
+    max-height: 400px;
+    opacity: 1;
+  }
+  
+  #panel.collapsed .panel-content,
+  .panel.collapsed .panel-content {
+    max-height: 0;
+    padding: 0 12px;
+    opacity: 0;
+  }/* ============================= */
 /* MOBILE PORTRAIT (STACKED VERTICALLY) */
 /* ============================= */
 @media screen and (max-width: 768px) and (orientation: portrait) {
@@ -1405,7 +1793,7 @@ input[type="checkbox"],
       "toolbar"
       "panels";
     grid-template-columns: 1fr;
-    grid-template-rows: 60px 1fr 80px minmax(200px, 50vh);
+    grid-template-rows: 50px 1fr 60px minmax(120px, 30vh);
     height: 100dvh;
     gap: 0;
     background: #2a2a2a;
@@ -1418,22 +1806,20 @@ input[type="checkbox"],
   #header,
   .header {
     grid-area: header;
-    height: 60px;
-    padding: 0 16px;
+    height: 50px;
+    padding: 0 12px;
     display: flex;
     align-items: center;
     justify-content: space-between;
     background: linear-gradient(180deg, #1e1e1e 0%, #1a1a1a 100%);
-    border-bottom: 2px solid #333;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+    border-bottom: 1px solid #333;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
     z-index: 200;
-    position: sticky;
-    top: 0;
   }
   
   #logo,
   .logo {
-    font-size: 18px;
+    font-size: 16px;
     font-weight: 700;
     color: #4CAF50;
     letter-spacing: -0.5px;
@@ -1444,25 +1830,25 @@ input[type="checkbox"],
   #mode-toggle,
   .mode-toggle {
     display: flex;
-    gap: 2px;
+    gap: 1px;
     background: #333;
-    border-radius: 8px;
-    padding: 3px;
-    margin-left: 12px;
+    border-radius: 6px;
+    padding: 2px;
+    margin-left: 8px;
   }
   
   #mode-btn,
   .mode-btn {
-    padding: 8px 14px;
+    padding: 6px 10px;
     background: transparent;
     border: none;
     color: #e0e0e0;
-    font-size: 12px;
+    font-size: 11px;
     font-weight: 600;
     cursor: pointer;
-    border-radius: 6px;
+    border-radius: 4px;
     transition: all 0.2s ease;
-    min-width: 50px;
+    min-width: 45px;
     white-space: nowrap;
   }
   
@@ -1470,13 +1856,13 @@ input[type="checkbox"],
   .mode-btn.active {
     background: linear-gradient(135deg, #4CAF50 0%, #66BB6A 100%);
     color: #000;
-    box-shadow: 0 2px 6px rgba(76, 175, 80, 0.4);
+    box-shadow: 0 1px 3px rgba(76, 175, 80, 0.4);
   }
   
   #header-controls,
   .header-controls {
     display: flex;
-    gap: 6px;
+    gap: 4px;
   }
   
   #header-btn,
@@ -1484,12 +1870,12 @@ input[type="checkbox"],
   #newProject,
   #saveProject,
   #exportPNG {
-    padding: 8px 12px;
+    padding: 6px 10px;
     background: linear-gradient(135deg, #404040 0%, #333 100%);
     border: 1px solid #555;
-    border-radius: 6px;
+    border-radius: 4px;
     color: #e8e8e8;
-    font-size: 11px;
+    font-size: 10px;
     font-weight: 500;
     cursor: pointer;
     transition: all 0.2s ease;
@@ -1517,9 +1903,8 @@ input[type="checkbox"],
     align-items: center;
     justify-content: center;
     position: relative;
-    overflow: auto;
-    -webkit-overflow-scrolling: touch;
-    padding: 12px;
+    overflow: visible;
+    padding: 8px;
     min-height: 0;
   }
   
@@ -1529,36 +1914,31 @@ input[type="checkbox"],
     display: flex;
     align-items: center;
     justify-content: center;
-    max-width: calc(100vw - 24px);
-    max-height: calc(100% - 24px);
-    border-radius: 8px;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+    border-radius: 6px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
     overflow: visible;
+    transform-origin: center center;
   }
   
   #canvas {
-    max-width: 100%;
-    max-height: 100%;
-    min-width: 200px;
-    min-height: 200px;
+    /* Maintain original structure - don't constrain */
   }
   
   #sketchCanvas {
-    max-width: calc(100vw - 48px);
-    max-height: calc(100vh - 320px);
+    /* Maintain original structure - don't constrain */
     border: 2px solid #555;
-    border-radius: 6px;
+    border-radius: 4px;
   }
   
   #canvasInfo {
     position: absolute;
-    bottom: 8px;
-    left: 8px;
+    bottom: 6px;
+    left: 6px;
     background: rgba(0, 0, 0, 0.85);
     color: #e8e8e8;
-    padding: 6px 10px;
-    border-radius: 6px;
-    font-size: 11px;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 10px;
     font-family: 'Consolas', 'Monaco', monospace;
     backdrop-filter: blur(8px);
     border: 1px solid rgba(255, 255, 255, 0.1);
@@ -1567,13 +1947,13 @@ input[type="checkbox"],
   
   #zoomIndicator {
     position: absolute;
-    top: 8px;
-    right: 8px;
+    top: 6px;
+    right: 6px;
     background: rgba(0, 0, 0, 0.85);
     color: #e8e8e8;
-    padding: 6px 10px;
-    border-radius: 6px;
-    font-size: 11px;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 10px;
     font-family: 'Consolas', 'Monaco', monospace;
     font-weight: 600;
     backdrop-filter: blur(8px);
@@ -1582,22 +1962,22 @@ input[type="checkbox"],
   }
   
   /* ============================= */
-  /* PORTRAIT HORIZONTAL TOOLBAR   */
+  /* PORTRAIT COMPACT TOOLBAR      */
   /* ============================= */
   #sidebar,
   .sidebar {
     grid-area: toolbar;
-    height: 80px;
+    height: 60px;
     background: linear-gradient(180deg, #1e1e1e 0%, #1a1a1a 100%);
     display: flex;
     flex-direction: row;
     align-items: center;
     justify-content: flex-start;
-    padding: 10px 16px;
-    gap: 10px;
-    border-top: 2px solid #333;
+    padding: 6px 12px;
+    gap: 6px;
+    border-top: 1px solid #333;
     border-bottom: 1px solid #333;
-    box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.3), 0 2px 4px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 -1px 4px rgba(0, 0, 0, 0.3);
     overflow-x: auto;
     overflow-y: hidden;
     -webkit-overflow-scrolling: touch;
@@ -1605,7 +1985,7 @@ input[type="checkbox"],
   }
   
   #sidebar::-webkit-scrollbar {
-    height: 4px;
+    height: 3px;
   }
   
   #sidebar::-webkit-scrollbar-track {
@@ -1622,7 +2002,7 @@ input[type="checkbox"],
     display: flex;
     flex-direction: row;
     align-items: center;
-    gap: 10px;
+    gap: 6px;
     min-width: max-content;
   }
   
@@ -1633,7 +2013,7 @@ input[type="checkbox"],
     display: none;
     flex-direction: row;
     align-items: center;
-    gap: 10px;
+    gap: 6px;
     min-width: max-content;
   }
   
@@ -1646,28 +2026,28 @@ input[type="checkbox"],
   
   #tool-btn,
   .tool-btn {
-    width: 60px;
-    height: 60px;
+    width: 48px;
+    height: 48px;
     background: linear-gradient(135deg, #333 0%, #2a2a2a 100%);
     border: 2px solid #444;
-    border-radius: 12px;
+    border-radius: 8px;
     color: #e8e8e8;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 22px;
+    font-size: 18px;
     transition: all 0.2s ease;
     position: relative;
     flex-shrink: 0;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
     touch-action: manipulation;
   }
   
   #tool-btn:active,
   .tool-btn:active {
     transform: scale(0.95);
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
   }
   
   #tool-btn.active,
@@ -1676,7 +2056,7 @@ input[type="checkbox"],
     border-color: #66BB6A;
     color: #000;
     font-weight: 600;
-    box-shadow: 0 4px 12px rgba(76, 175, 80, 0.5);
+    box-shadow: 0 3px 8px rgba(76, 175, 80, 0.5);
     transform: scale(1.05);
   }
   
@@ -1684,28 +2064,28 @@ input[type="checkbox"],
   .tool-btn.symmetric-tool {
     background: linear-gradient(135deg, #4A90E2 0%, #6BB6FF 100%);
     border-color: #6BB6FF;
-    font-size: 18px;
-    box-shadow: 0 4px 8px rgba(74, 144, 226, 0.4);
+    font-size: 16px;
+    box-shadow: 0 2px 6px rgba(74, 144, 226, 0.4);
   }
   
   #tool-btn.symmetric-tool.active,
   .tool-btn.symmetric-tool.active {
     background: linear-gradient(135deg, #6BB6FF 0%, #4A90E2 100%);
     color: #000;
-    box-shadow: 0 4px 12px rgba(74, 144, 226, 0.6);
+    box-shadow: 0 3px 8px rgba(74, 144, 226, 0.6);
   }
   
   #tool-separator,
   .tool-separator {
-    width: 2px;
-    height: 50px;
+    width: 1px;
+    height: 32px;
     background: linear-gradient(180deg, transparent 0%, #444 50%, transparent 100%);
-    margin: 0 5px;
+    margin: 0 2px;
     flex-shrink: 0;
   }
   
   /* ============================= */
-  /* PORTRAIT ACCORDION PANELS     */
+  /* PORTRAIT UNIFORM PANELS       */
   /* ============================= */
   #panels,
   .panels {
@@ -1713,16 +2093,16 @@ input[type="checkbox"],
     background: linear-gradient(180deg, #1e1e1e 0%, #1a1a1a 100%);
     display: flex;
     flex-direction: column;
-    border-top: 2px solid #333;
-    max-height: 50vh;
+    border-top: 1px solid #333;
+    max-height: 30vh;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
-    box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.3);
     z-index: 100;
   }
   
   #panels::-webkit-scrollbar {
-    width: 6px;
+    width: 4px;
   }
   
   #panels::-webkit-scrollbar-track {
@@ -1731,7 +2111,7 @@ input[type="checkbox"],
   
   #panels::-webkit-scrollbar-thumb {
     background: #444;
-    border-radius: 3px;
+    border-radius: 2px;
   }
   
   #panel,
@@ -1744,8 +2124,8 @@ input[type="checkbox"],
   #panel-header,
   .panel-header {
     background: linear-gradient(135deg, #2a2a2a 0%, #333 100%);
-    padding: 18px 20px;
-    font-size: 15px;
+    padding: 12px 16px;
+    font-size: 13px;
     font-weight: 600;
     border-bottom: 1px solid #333;
     cursor: pointer;
@@ -1754,8 +2134,10 @@ input[type="checkbox"],
     align-items: center;
     transition: all 0.2s ease;
     color: #e8e8e8;
-    min-height: 60px;
+    min-height: 44px;
     touch-action: manipulation;
+    width: 100%;
+    box-sizing: border-box;
   }
   
   #panel-header:active,
@@ -1766,7 +2148,7 @@ input[type="checkbox"],
   
   #panel-header span,
   .panel-header span {
-    font-size: 20px;
+    font-size: 16px;
     transition: transform 0.3s ease;
   }
   
@@ -1777,26 +2159,234 @@ input[type="checkbox"],
   
   #panel-content,
   .panel-content {
-    padding: 20px;
+    padding: 12px 16px;
     display: block;
     transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1),
                 padding 0.3s cubic-bezier(0.4, 0, 0.2, 1),
                 opacity 0.3s ease;
     overflow: hidden;
     background: linear-gradient(180deg, #1e1e1e 0%, #1a1a1a 100%);
-    max-height: 800px;
+    max-height: 500px;
     opacity: 1;
   }
   
   #panel.collapsed .panel-content,
   .panel.collapsed .panel-content {
     max-height: 0;
-    padding: 0 20px;
+    padding: 0 16px;
     opacity: 0;
   }
   
   /* ============================= */
-  /* PORTRAIT COLOR CONTROLS       */
+  /* MOBILE FORM OPTIMIZATIONS     */
+  /* ============================= */
+  
+  /* Portrait Form Controls */
+  @media screen and (max-width: 768px) and (orientation: portrait) {
+    #control-group,
+    .control-group {
+      margin-bottom: 16px;
+    }
+    
+    #control-group label,
+    .control-group label {
+      display: block;
+      font-size: 12px;
+      font-weight: 600;
+      margin-bottom: 8px;
+      color: #ccc;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    
+    select,
+    input[type="number"],
+    input[type="range"],
+    input[type="color"],
+    textarea,
+    #brushSize,
+    #brushOpacity,
+    #layerOpacity {
+      background: linear-gradient(135deg, #333 0%, #2a2a2a 100%);
+      border: 1px solid #555;
+      color: #e8e8e8;
+      padding: 10px 12px;
+      border-radius: 6px;
+      font-size: 14px;
+      width: 100%;
+      min-height: 42px;
+    }
+    
+    input[type="range"] {
+      padding: 8px 0;
+      height: 42px;
+    }
+    
+    input[type="range"]::-webkit-slider-thumb {
+      width: 20px;
+      height: 20px;
+      background: linear-gradient(135deg, #4CAF50 0%, #66BB6A 100%);
+      border: 2px solid #333;
+    }
+    
+    #btn,
+    .btn {
+      background: linear-gradient(135deg, #404040 0%, #333 100%);
+      border: 1px solid #555;
+      color: #e8e8e8;
+      padding: 12px 16px;
+      border-radius: 6px;
+      font-size: 13px;
+      min-height: 44px;
+    }
+    
+    #btn-group,
+    .btn-group {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+    
+    .swatches,
+    #swatches {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 8px;
+      margin-top: 12px;
+    }
+    
+    #swatch,
+    .swatch {
+      width: 38px;
+      height: 38px;
+      border: 2px solid #555;
+      border-radius: 6px;
+    }
+  }
+  
+  /* Landscape Form Controls */
+  @media screen and (max-width: 1024px) and (orientation: landscape) and (max-height: 768px) {
+    #control-group,
+    .control-group {
+      margin-bottom: 12px;
+    }
+    
+    #control-group label,
+    .control-group label {
+      display: block;
+      font-size: 10px;
+      font-weight: 600;
+      margin-bottom: 6px;
+      color: #ccc;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+    
+    select,
+    input[type="number"],
+    input[type="range"],
+    input[type="color"],
+    textarea,
+    #brushSize,
+    #brushOpacity,
+    #layerOpacity {
+      background: linear-gradient(135deg, #333 0%, #2a2a2a 100%);
+      border: 1px solid #555;
+      color: #e8e8e8;
+      padding: 6px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      width: 100%;
+      min-height: 30px;
+    }
+    
+    input[type="range"] {
+      padding: 4px 0;
+      height: 30px;
+    }
+    
+    input[type="range"]::-webkit-slider-thumb {
+      width: 16px;
+      height: 16px;
+      background: linear-gradient(135deg, #4CAF50 0%, #66BB6A 100%);
+      border: 2px solid #333;
+    }
+    
+    input[type="color"] {
+      height: 36px;
+      padding: 4px;
+    }
+    
+    #btn,
+    .btn {
+      background: linear-gradient(135deg, #404040 0%, #333 100%);
+      border: 1px solid #555;
+      color: #e8e8e8;
+      padding: 8px 12px;
+      border-radius: 4px;
+      font-size: 10px;
+      min-height: 32px;
+    }
+    
+    #btn-group,
+    .btn-group {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+      margin-bottom: 8px;
+    }
+    
+    #btn-group.triple,
+    .btn-group.triple {
+      grid-template-columns: 1fr 1fr 1fr;
+    }
+    
+    .swatches,
+    #swatches {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 6px;
+      margin-top: 8px;
+    }
+    
+    #swatch,
+    .swatch {
+      width: 28px;
+      height: 28px;
+      border: 2px solid #555;
+      border-radius: 4px;
+    }
+    
+    #layerList,
+    .layer-list {
+      max-height: 120px;
+      border: 1px solid #444;
+      margin-bottom: 8px;
+      border-radius: 4px;
+    }
+    
+    #layer-item,
+    .layer-item {
+      padding: 8px 10px;
+      font-size: 10px;
+      min-height: 32px;
+    }
+    
+    #brushPreview {
+      width: 50px;
+      height: 50px;
+      border: 2px solid #555;
+      margin: 8px auto 12px;
+    }
+    
+    #export-area textarea,
+    #output {
+      height: 80px;
+      padding: 8px;
+      font-size: 10px;
+    }
+  }
   /* ============================= */
   #paletteSelector {
     width: 100%;
