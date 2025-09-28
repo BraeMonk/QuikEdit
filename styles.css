@@ -597,6 +597,11 @@ body {
   overflow-x: hidden;
 }
 
+.panel-content * {
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
 #panel.collapsed .panel-content,
 .panel.collapsed .panel-content {
   max-height: 0;
