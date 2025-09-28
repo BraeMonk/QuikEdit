@@ -497,6 +497,7 @@ body {
   flex-direction: column;
   border-left: 2px solid #333;
   overflow-y: auto;
+  overflow-x: hidden;
   box-shadow: -2px 0 8px rgba(0, 0, 0, 0.2);
   z-index: 40;
 }
@@ -643,6 +644,7 @@ textarea {
   max-width: 100%;
   min-width: 0;
   box-sizing: border-box;
+  overflow-x: hidden;
 }
 
 /* Flexible child layouts wrap cleanly */
@@ -990,6 +992,7 @@ textarea,
   min-width: 0;
   box-sizing: border-box;
   transition: all 0.2s ease;
+  overflow-x: hidden;
 }
 
 select:hover,
@@ -1927,6 +1930,7 @@ input[type="checkbox"],
     max-width: 100%;
     min-width: 0;
     box-sizing: border-box;
+    overflow-x: hidden;
   }
   
   /* Flexible groups wrap cleanly */
@@ -2548,6 +2552,7 @@ input[type="checkbox"],
     max-width: 100%;
     min-width: 0;
     box-sizing: border-box;
+    overflow-x: hidden;
   }
   
   /* Flexible groups wrap cleanly */
