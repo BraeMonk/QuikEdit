@@ -594,6 +594,7 @@ body {
   max-height: 1000px;
   opacity: 1;
   box-sizing: border-box;
+  overflow-x: hidden;
 }
 
 #panel.collapsed .panel-content,
