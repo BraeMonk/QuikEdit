@@ -120,6 +120,17 @@ class JerryEditor {
     }
     
     setupEventListeners() {
+
+        // Add this at the beginning of your setupEventListeners() method, right after the opening brace:
+
+        // Panel collapsing
+        document.querySelectorAll('.panel-header').forEach(header => {
+            header.addEventListener('click', (e) => {
+                const panel = header.closest('.panel');
+                panel.classList.toggle('collapsed');
+            });
+        });
+        
         // Mode switching
         document.querySelectorAll('.mode-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
