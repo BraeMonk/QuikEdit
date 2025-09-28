@@ -710,6 +710,7 @@ class JerryEditor {
         this.isDrawing = false;
         this.lastPos = null;
         this.strokePath = null;
+        this.saveStateImmediate();
     }
 
     
@@ -1168,6 +1169,8 @@ class JerryEditor {
             // Allow 'transparent' to be shown as empty
             el.style.backgroundColor = (color === 'transparent') ? 'transparent' : color;
         }
+
+        this.saveStateImmediate();
     }
 
     
@@ -2124,6 +2127,8 @@ class JerryEditor {
         // --- 5. Center canvas inside wrapper ---
         this.pixelCanvas.style.margin = '0 auto';
         this.canvasGrid.style.transform = 'none';
+
+        this.saveStateImmediate();
     }
 
 
@@ -2181,6 +2186,12 @@ class JerryEditor {
         
         this.zoomIndicator.textContent = `${Math.round(this.zoom * 100)}%`;
         this.updateGrid();
+    }
+
+    saveStateImmediate() {
+        if (this.persistence) {
+            this.persistence.saveCurrentState();
+        }
     }
     
     // Undo/Redo system
@@ -2550,6 +2561,7 @@ class JerryEditor {
                 this.secondaryColor = e.target.value;
                 this.secondaryColorEl.style.background = e.target.value;
             }
+            this.saveStateImmediate();
         });
         input.click();
     }
@@ -3022,36 +3034,26 @@ class JerryEditorPersistence {
     }
     
     setupAutoSave() {
-        // More frequent auto-save
+        // Save on page unload
+        window.addEventListener('beforeunload', () => {
+            this.saveCurrentState();
+        });
+    
+        // Save on visibility change (tab switching, minimizing)  
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) {
+                this.saveCurrentState();
+            } 
+        });
+    
+        // Backup auto-save every 10 seconds as fallback
         setInterval(() => {
             this.saveCurrentState();
-        }, this.autoSaveInterval);
-        
-        // Save after each drawing action
-        const originalStopDrawing = this.editor.stopDrawing.bind(this.editor);
-        this.editor.stopDrawing = (...args) => {
-            originalStopDrawing(...args);
+        }, 10000);
+    
+        // Save on focus loss
+        window.addEventListener('blur', () => {
             this.saveCurrentState();
-        };
-        
-        // Save after tool changes
-        const originalCurrentToolSetter = this.editor.currentTool;
-        Object.defineProperty(this.editor, 'currentTool', {
-            get: () => originalCurrentToolSetter,
-            set: (value) => {
-                originalCurrentToolSetter = value;
-                this.saveCurrentState();
-            }
-        });
-        
-        // Save after color changes
-        const originalPrimaryColorSetter = this.editor.primaryColor;
-        Object.defineProperty(this.editor, 'primaryColor', {
-            get: () => originalPrimaryColorSetter,
-            set: (value) => {
-                originalPrimaryColorSetter = value;
-                this.saveCurrentState();
-            }
         });
     }
     
