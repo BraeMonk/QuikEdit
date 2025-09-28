@@ -377,6 +377,7 @@ input, textarea, select {
   background: var(--secondary-bg);
   border-left: 1px solid var(--border-color);
   overflow-y: auto;
+  overflow-x: hidden;
   padding: var(--spacing-md);
   display: flex;
   flex-direction: column;
@@ -387,8 +388,9 @@ input, textarea, select {
   background: var(--tertiary-bg);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-md);
-  overflow: hidden;
+  overflow: visible;
   box-shadow: var(--shadow-sm);
+  flex-shrink: 0;
 }
 
 .panel-header {
@@ -427,6 +429,7 @@ input, textarea, select {
 .panel.collapsed .panel-content {
   max-height: 0;
   padding: 0 var(--spacing-md);
+  overflow: hidden;
 }
 
 .control-group {
@@ -822,6 +825,7 @@ body[data-mode="sketch"] .pixel-controls {
 
   .panels {
     overflow-x: auto;
+    overflow-y: hidden;
     flex-direction: row;
     gap: var(--spacing-md);
     padding: var(--spacing-sm);
@@ -830,6 +834,13 @@ body[data-mode="sketch"] .pixel-controls {
   .panel {
     min-width: 280px;
     flex-shrink: 0;
+    max-height: 180px;
+    overflow-y: auto;
+  }
+
+  .panel-content {
+    max-height: none;
+    overflow: visible;
   }
 
   .canvas-wrapper {
