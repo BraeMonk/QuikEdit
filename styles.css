@@ -3021,64 +3021,109 @@ body[data-mode="sketch"] .panel .panel-content > * {
 }
 
 /* ============================= */
-/* SKETCH PANELS SCROLL BEHAVIOR */
+/* UNIFIED PANEL SCROLLING       */
 /* ============================= */
 
-/* Ensure sketch panels behave exactly like pixel panels */
+/* Remove individual panel content scrolling - let panels container handle all scrolling */
+#panel-content,
+.panel-content {
+  overflow-y: visible !important; /* Don't let individual panels scroll */
+  overflow-x: hidden !important;
+  max-height: none !important; /* Remove height restrictions when expanded */
+}
+
+/* Collapsed panels still need height restriction */
+#panel.collapsed .panel-content,
+.panel.collapsed .panel-content {
+  max-height: 0 !important;
+  overflow: hidden !important;
+}
+
+/* Ensure the main panels container handles ALL scrolling */
+#panels,
+.panels {
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  scroll-behavior: smooth !important;
+}
+
+/* Same fix for sketch mode specifically */
 body[data-mode="sketch"] .panel .panel-content {
-  max-height: none;
-  opacity: 1;
-  transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1),
-              padding 0.4s cubic-bezier(0.4, 0, 0.2, 1),
-              opacity 0.3s ease;
+  overflow-y: visible !important;
+  overflow-x: hidden !important;
+  max-height: none !important;
 }
 
 body[data-mode="sketch"] .panel.collapsed .panel-content {
   max-height: 0 !important;
-  padding: 0 18px !important;
-  opacity: 0;
   overflow: hidden !important;
 }
 
-/* Ensure sketch panels scroll as one unit like pixel panels */
 body[data-mode="sketch"] #panels,
 body[data-mode="sketch"] .panels {
-  scroll-behavior: smooth;
   overflow-y: auto !important;
   overflow-x: hidden !important;
+  scroll-behavior: smooth !important;
 }
 
-/* Force sketch panels to use same animation timing */
-body[data-mode="sketch"] .panel .panel-content {
-  transition-duration: 0.4s !important;
-  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1) !important;
-}
-
-/* Mobile specific sketch panel scrolling */
+/* Mobile Portrait - Unified scrolling */
 @media screen and (max-width: 768px) and (orientation: portrait) {
-  body[data-mode="sketch"] .panel .panel-content {
-    transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-                padding 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-                opacity 0.3s ease;
+  .panel-content {
+    overflow-y: visible !important;
+    max-height: none !important;
   }
-
+  
+  .panel.collapsed .panel-content {
+    max-height: 0 !important;
+    overflow: hidden !important;
+  }
+  
+  #panels,
+  .panels {
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    scroll-behavior: smooth !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+  
+  body[data-mode="sketch"] .panel-content {
+    overflow-y: visible !important;
+    max-height: none !important;
+  }
+  
   body[data-mode="sketch"] .panel.collapsed .panel-content {
     max-height: 0 !important;
-    padding: 0 16px !important;
-    opacity: 0;
+    overflow: hidden !important;
   }
 }
 
+/* Mobile Landscape - Unified scrolling */
 @media screen and (max-width: 1024px) and (orientation: landscape) and (max-height: 768px) {
-  body[data-mode="sketch"] .panel .panel-content {
-    transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-                padding 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-                opacity 0.3s ease;
+  .panel-content {
+    overflow-y: visible !important;
+    max-height: none !important;
   }
-
+  
+  .panel.collapsed .panel-content {
+    max-height: 0 !important;
+    overflow: hidden !important;
+  }
+  
+  #panels,
+  .panels {
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    scroll-behavior: smooth !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+  
+  body[data-mode="sketch"] .panel-content {
+    overflow-y: visible !important;
+    max-height: none !important;
+  }
+  
   body[data-mode="sketch"] .panel.collapsed .panel-content {
     max-height: 0 !important;
-    padding: 0 12px !important;
-    opacity: 0;
+    overflow: hidden !important;
   }
 }
