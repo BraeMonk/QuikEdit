@@ -678,17 +678,6 @@ body[data-mode="sketch"] .sketch-controls {
   display: block;
 }
 
-body[data-mode="sketch"] .panel-content {
-  width: 100%;
-  max-width: 100%;
-  overflow: hidden;
-}
-
-body[data-mode="sketch"] .panel-content > * {
-  width: calc(100% - 4px);
-  max-width: calc(100% - 4px);
-}
-
 /* ============================= */
 /* Color Palette                 */
 /* ============================= */
