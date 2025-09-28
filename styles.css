@@ -2343,14 +2343,16 @@ input[type="checkbox"],
     opacity: 1;
   }
 
-  .pixel-controls {
-    display: block;
-  }
-  
+  /* Default state */
   .sketch-controls {
     display: none;
   }
   
+  .pixel-controls {
+    display: block;
+  }
+  
+  /* Sketch mode overrides */
   body[data-mode="sketch"] .pixel-controls {
     display: none !important;
   }
