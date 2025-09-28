@@ -603,7 +603,7 @@ body {
   max-width: 100%;
   box-sizing: border-box;
   overflow-x: hidden;      /* no sideways overflow */
-  overflow-y: auto;        /* scroll only vertically if needed */
+  overflow-y: visible;        /* scroll only vertically if needed */
   background: linear-gradient(180deg, #1e1e1e 0%, #1a1a1a 100%);
   transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1),
               padding 0.4s cubic-bezier(0.4, 0, 0.2, 1),
