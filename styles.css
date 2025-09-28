@@ -545,7 +545,8 @@ body {
   color: #e8e8e8;
   user-select: none;
   box-sizing: border-box;
-  min-height: 44px;
+  height: 44px;
+  flex-shrink: 0;
 }
 
 #panel-header:hover,
@@ -1757,7 +1758,8 @@ input[type="checkbox"],
     align-items: center;
     transition: all 0.2s ease;
     color: #e8e8e8;
-    min-height: 48px;
+    height: 48px;
+    flex-shrink: 0;
     touch-action: manipulation;
     width: 100%;
     box-sizing: border-box;
@@ -2305,7 +2307,8 @@ input[type="checkbox"],
     align-items: center;
     transition: all 0.2s ease;
     color: #e8e8e8;
-    min-height: 36px;
+    height: 36px;
+    flex-shrink: 0;
     touch-action: manipulation;
     width: 100%;
     box-sizing: border-box;
