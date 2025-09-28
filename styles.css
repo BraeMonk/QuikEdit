@@ -675,8 +675,18 @@ body[data-mode="sketch"] .pixel-controls {
 }
 
 body[data-mode="sketch"] .sketch-controls {
-  display: flex;
-  flex-direction: column;
+  display: block;
+}
+
+body[data-mode="sketch"] .panel-content {
+  width: 100%;
+  max-width: 100%;
+  overflow: hidden;
+}
+
+body[data-mode="sketch"] .panel-content > * {
+  width: calc(100% - 4px);
+  max-width: calc(100% - 4px);
 }
 
 /* ============================= */
@@ -986,8 +996,8 @@ textarea,
   padding: 8px 12px;
   border-radius: 6px;
   font-size: 13px;
-  width: 100%;
-  max-width: 100%;
+  width: calc(100% - 4px);
+  max-width: calc(100% - 4px);
   flex: 1;
   min-width: 0;
   box-sizing: border-box;
@@ -1055,6 +1065,8 @@ input[type="range"],
   padding: 6px 0;
   background: #2a2a2a;
   border: 2px solid #444;
+  width: calc(100% - 4px);
+  max-width: calc(100% - 4px);
 }
 
 input[type="range"]::-webkit-slider-thumb,
@@ -1230,7 +1242,7 @@ input[type="checkbox"],
 .btn-group .btn,
 #btn-group button,
 .btn-group button {
-  flex: 1 1 auto;
+  flex: 1 1 0;
   min-width: 0;
   white-space: nowrap;
 }
@@ -2583,8 +2595,7 @@ input[type="checkbox"],
   }
   
   body[data-mode="sketch"] .sketch-controls {
-    display: flex;
-    flex-direction: column;
+    display: block;
   }
   
   /* Landscape Form Controls */
