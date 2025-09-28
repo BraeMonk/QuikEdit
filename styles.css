@@ -2827,3 +2827,197 @@ input:focus {
 ::-webkit-scrollbar-corner {
   background: #1a1a1a;
 }
+
+/* ============================= */
+/* SKETCH TOOLS SCROLLING FIX    */
+/* ============================= */
+
+/* Mobile Portrait - Fix sketch tools scrolling */
+@media screen and (max-width: 768px) and (orientation: portrait) {
+  #sketch-tools.active,
+  .sketch-tools.active {
+    display: flex !important;
+    flex-direction: row;
+    align-items: center;
+    gap: 6px;
+    min-width: max-content;
+    width: max-content; /* Allow tools to extend beyond container */
+  }
+
+  /* Ensure sidebar scrolls horizontally for sketch tools */
+  body[data-mode="sketch"] #sidebar,
+  body[data-mode="sketch"] .sidebar {
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+/* Mobile Landscape - Fix sketch tools scrolling */
+@media screen and (max-width: 1024px) and (orientation: landscape) and (max-height: 768px) {
+  #sketch-tools.active,
+  .sketch-tools.active {
+    display: flex !important;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    width: 100%;
+  }
+
+  /* Ensure sidebar scrolls vertically for sketch tools */
+  body[data-mode="sketch"] #sidebar,
+  body[data-mode="sketch"] .sidebar {
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+/* ============================= */
+/* SKETCH CONTROLS OVERFLOW FIX  */
+/* ============================= */
+
+/* Fix sketch control panels from overflowing horizontally */
+.panel.sketch-controls,
+body[data-mode="sketch"] .panel {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  overflow-x: hidden !important;
+  box-sizing: border-box;
+}
+
+.panel.sketch-controls .panel-content,
+body[data-mode="sketch"] .panel .panel-content {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  overflow-x: hidden !important;
+  box-sizing: border-box;
+  padding-left: 12px !important;
+  padding-right: 12px !important;
+}
+
+/* Ensure all sketch control children respect container width */
+.panel.sketch-controls .panel-content > *,
+body[data-mode="sketch"] .panel .panel-content > * {
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  box-sizing: border-box !important;
+  overflow-x: hidden !important;
+}
+
+/* Fix specific sketch controls that might overflow */
+#brushSize,
+#brushOpacity, 
+#brushHardness,
+#brushFlow,
+#layerOpacity,
+#sketchColor,
+#blendMode,
+#layerList {
+  width: 100% !important;
+  max-width: calc(100% - 4px) !important;
+  min-width: 0 !important;
+  box-sizing: border-box !important;
+}
+
+/* Fix brush preview container */
+#brushPreview {
+  width: 60px !important;
+  height: 60px !important;
+  margin: 8px auto !important;
+  flex-shrink: 0 !important;
+  align-self: center !important;
+}
+
+/* Fix layer list specifically */
+#layerList,
+.layer-list {
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  box-sizing: border-box !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+}
+
+/* Fix layer items */
+#layer-item,
+.layer-item {
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  box-sizing: border-box !important;
+  overflow-x: hidden !important;
+}
+
+/* ============================= */
+/* MOBILE SPECIFIC SKETCH FIXES  */
+/* ============================= */
+
+@media screen and (max-width: 768px) and (orientation: portrait) {
+  /* Ensure sketch controls don't overflow in mobile portrait */
+  .panel.sketch-controls .control-group,
+  body[data-mode="sketch"] .panel .control-group {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 8px !important;
+    overflow-x: hidden !important;
+  }
+
+  /* Fix sketch input controls */
+  .panel.sketch-controls input,
+  .panel.sketch-controls select,
+  .panel.sketch-controls button,
+  body[data-mode="sketch"] .panel input,
+  body[data-mode="sketch"] .panel select, 
+  body[data-mode="sketch"] .panel button {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    box-sizing: border-box !important;
+  }
+
+  /* Fix brush sliders specifically */
+  input[type="range"]#brushSize,
+  input[type="range"]#brushOpacity,
+  input[type="range"]#brushHardness,
+  input[type="range"]#brushFlow,
+  input[type="range"]#layerOpacity {
+    width: 100% !important;
+    max-width: 100% !important;
+    padding: 10px 0 !important;
+  }
+}
+
+@media screen and (max-width: 1024px) and (orientation: landscape) and (max-height: 768px) {
+  /* Landscape mobile sketch fixes */
+  .panel.sketch-controls .control-group,
+  body[data-mode="sketch"] .panel .control-group {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 6px !important;
+    overflow-x: hidden !important;
+  }
+
+  /* Fix landscape sketch inputs */
+  .panel.sketch-controls input,
+  .panel.sketch-controls select,
+  .panel.sketch-controls button,
+  body[data-mode="sketch"] .panel input,
+  body[data-mode="sketch"] .panel select,
+  body[data-mode="sketch"] .panel button {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    box-sizing: border-box !important;
+  }
+}
