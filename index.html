@@ -79,14 +79,15 @@
         <canvas id="selectionOverlay" width="800" height="600" style="position: absolute; top: 0; left: 0; pointer-events: none; display: none;"></canvas>
         <div class="canvas-grid" id="canvasGrid"></div>
       </div>
-      <div class="canvas-info" id="canvasInfo">16×16 | Pencil | #000000</div>
-      <div class="zoom-indicator" id="zoomIndicator">100%</div>
+      <div id="canvasInfo">16×16 | Pencil | #000000</div>
+      <div id="zoomIndicator">100%</div>
     </div>
 
     <div class="panels">
       <div class="panel">
         <div class="panel-header">
-          Colors <span>▼</span>
+          <div class="panel-title">Colors</div>
+          <span>▼</span>
         </div>
         <div class="panel-content">
           <div class="control-group">
@@ -102,19 +103,20 @@
             <select id="paletteSelector"></select>
           </div>
           
-          <div class="palette-grid" id="swatches"></div>
+          <div class="swatches" id="swatches"></div>
           
           <div class="control-group">
             <label>Custom Colors</label>
-            <div id="colorPickers" class="palette-grid"></div>
-            <button class="btn btn-sm" id="saveCustomPalette">Save Custom Palette</button>
+            <div id="colorPickers" class="swatches"></div>
+            <button class="btn primary" id="saveCustomPalette">Save Custom Palette</button>
           </div>
         </div>
       </div>
     
       <div class="panel sketch-controls">
         <div class="panel-header">
-          Brush <span>▼</span>
+          <div class="panel-title">Brush</div>
+          <span>▼</span>
         </div>
         <div class="panel-content">
           <div class="control-group">
@@ -141,13 +143,14 @@
             <input type="range" id="brushFlow" min="1" max="100" value="100">
           </div>
           
-          <div class="brush-preview" id="brushPreview"></div>
+          <div id="brushPreview"></div>
         </div>
       </div>
     
       <div class="panel pixel-controls">
         <div class="panel-header">
-          Symmetry <span>▼</span>
+          <div class="panel-title">Symmetry</div>
+          <span>▼</span>
         </div>
         <div class="panel-content">
           <div class="control-group">
@@ -169,7 +172,8 @@
     
       <div class="panel pixel-controls">
         <div class="panel-header">
-          Transform <span>▼</span>
+          <div class="panel-title">Transform</div>
+          <span>▼</span>
         </div>
         <div class="panel-content">
           <div class="control-group">
@@ -197,7 +201,8 @@
     
       <div class="panel">
         <div class="panel-header">
-          Canvas <span>▼</span>
+          <div class="panel-title">Canvas</div>
+          <span>▼</span>
         </div>
         <div class="panel-content">
           <div class="control-group pixel-controls">
@@ -234,19 +239,21 @@
               <button class="btn" id="undo" title="Undo (Ctrl+Z)">Undo</button>
               <button class="btn" id="redo" title="Redo (Ctrl+Y/Ctrl+Shift+Z)">Redo</button>
             </div>
-            <button class="btn" id="clear" style="margin-top: 8px; width: 100%;">Clear Canvas</button>
+            <button class="btn danger" id="clear" style="margin-top: 8px; width: 100%;">Clear Canvas</button>
           </div>
           
-          <label style="margin-left: 10px; user-select: none;" class="pixel-controls">
-            <input type="checkbox" id="gridToggle" checked>
-            Grid
-          </label>
+          <div class="control-group pixel-controls">
+            <label>
+              <input type="checkbox" id="gridToggle" checked> Grid
+            </label>
+          </div>
         </div>
       </div>
     
       <div class="panel pixel-controls">
         <div class="panel-header">
-          Sprites <span>▼</span>
+          <div class="panel-title">Sprites</div>
+          <span>▼</span>
         </div>
         <div class="panel-content">
           <div class="control-group">
@@ -257,20 +264,20 @@
           <div class="btn-group">
             <button class="btn" id="newSprite">New</button>
             <button class="btn" id="duplicateSprite">Duplicate</button>
-            <button class="btn" id="deleteSprite">Delete</button>
+            <button class="btn danger" id="deleteSprite">Delete</button>
           </div>
         </div>
       </div>
     
       <div class="panel sketch-controls">
         <div class="panel-header">
-          Layers <span>▼</span>
+          <div class="panel-title">Layers</div>
+          <span>▼</span>
         </div>
         <div class="panel-content">
           <div class="control-group">
             <label>Layers</label>
-            <div id="layerList" class="layer-list">
-            </div>
+            <div id="layerList" class="layer-list"></div>
           </div>
           <div class="control-group">
             <label>Layer Opacity: <span id="layerOpacityLabel">100</span>%</label>
@@ -295,35 +302,37 @@
             </select>
           </div>
           
-          <button class="btn" id="addLayer" style="width: 100%; margin-top: 8px;">Add Layer</button>
+          <button class="btn primary" id="addLayer" style="width: 100%; margin-top: 8px;">Add Layer</button>
         </div>
       </div>
     
       <div class="panel">
         <div class="panel-header">
-          Export/Import <span>▼</span>
+          <div class="panel-title">Export/Import</div>
+          <span>▼</span>
         </div>
         <div class="panel-content">
           <div class="control-group">
             <label>Export Project</label>
             <div class="btn-group">
-              <button class="btn primary" id="exportJSON">JSON (Project)</button>
-              <button class="btn" id="exportPNG2">PNG (Image)</button>
+              <button class="btn primary" id="exportJSON">JSON</button>
+              <button class="btn" id="exportPNG2">PNG</button>
             </div>
           </div>
           
-          <div class="export-area">
+          <div class="control-group">
             <textarea id="output" placeholder="Export data appears here..." style="display: none;"></textarea>
-            <div class="control-group">
-              <label for="importFile" style="margin-top: 15px;">Import Project (.json)</label>
-              <input type="file" id="importFile" accept=".json" style="margin-top: 8px;">
-            </div>
+          </div>
+          
+          <div class="control-group">
+            <label for="importFile">Import Project (.json)</label>
+            <input type="file" id="importFile" accept=".json">
           </div>
         </div>
       </div>
     </div>
+  </div>
 
   <script src="./editor.js"></script>
-
 </body>
 </html>
