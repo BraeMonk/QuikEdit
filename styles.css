@@ -1384,343 +1384,188 @@ input[type="checkbox"],
 }
 
 /* ============================= */
-/* MOBILE LAYOUT                 */
+/* Mobile Portrait Layout        */
 /* ============================= */
+@media (max-width: 900px) and (orientation: portrait) {
 
-/* Mobile Portrait - Stack everything vertically */
-@media (orientation: portrait) {
+  html, body {
+    height: 100dvh;
+    width: 100vw;
+    overflow: hidden;
+  }
+
   #editor-container,
   .editor-container {
-    grid-template-areas: 
+    display: grid;
+    grid-template-areas:
       "header"
       "canvas"
-      "sidebar"
-      "panels";
+      "tools"
+      "controls";
+    grid-template-rows: auto 1fr auto auto;
     grid-template-columns: 1fr;
-    grid-template-rows: 55px 1fr auto auto;
-    height: 100vh;
-    overflow: hidden;
-  }
-
-  #canvas-wrapper,
-  .canvas-wrapper {
-    min-height: 250px;
-    max-height: 70vh;
-    max-width: 100%;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    padding: 0;
-    border-radius: 12px;
-    box-shadow: 0 8px 24px rgba(0,0,0,0.3);
-    border: none;
-    background: transparent;
-    overflow: hidden;
-    position: relative;
-  }
-
-  /* Checkerboard background scaled with pixel size */
-  #canvas-wrapper.checkerboard {
-    background-image:
-      linear-gradient(45deg, #2a2a2a 25%, transparent 25%),
-      linear-gradient(-45deg, #2a2a2a 25%, transparent 25%),
-      linear-gradient(45deg, transparent 75%, #2a2a2a 75%),
-      linear-gradient(-45deg, transparent 75%, #2a2a2a 75%);
-    background-size: var(--cellSize, 20px) var(--cellSize, 20px);
-    background-position: 0 0, 0 var(--halfCell, 10px), var(--halfCell, 10px) -var(--halfCell, 10px), -var(--halfCell, 10px) 0px;
-  }
-
-  /* Ensure the grid overlay is visible by default in portrait mode */
-  #canvasGrid,
-  .canvas-grid {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
     height: 100%;
-    pointer-events: none;
-    opacity: 0.4;
-    z-index: 10;
-  }
-
-  #canvasGrid.hidden,
-  .canvas-grid.hidden {
-    display: none;   /* allow toggle to hide */
-  }
-
-  #canvas-area,
-  .canvas-area {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    width: 100%;
-    height: 100%;
+    gap: 4px;
     padding: 0;
   }
 
-  /* Sidebar becomes horizontal */
-  #sidebar,
-  .sidebar {
-    flex-direction: row !important;
-    justify-content: flex-start;
-    padding: 10px;
-    gap: 8px;
-    border-right: none;
-    border-top: 2px solid #333;
-    border-bottom: 2px solid #333;
-    overflow-x: auto;
-    overflow-y: hidden;
-    min-height: 70px;
-    max-height: 70px;
-  }
-
-  #tool-btn,
-  .tool-btn {
-    width: 48px;
-    height: 48px;
-    flex-shrink: 0;
-    font-size: 16px;
-  }
-
-  #tool-btn.symmetric-tool,
-  .tool-btn.symmetric-tool {
-    font-size: 14px;
-  }
-
-  #tool-separator,
-  .tool-separator {
-    width: 2px;
-    height: 80%;
-    margin: 0 6px;
-    background: linear-gradient(180deg, transparent 0%, #444 50%, transparent 100%);
-  }
-
-  
   #header,
   .header {
-    padding: 0 12px;
+    height: 50px; /* slightly smaller than desktop */
   }
 
-  #logo,
-  .logo {
-    font-size: 18px;
+  /* Canvas area fills available space */
+  #canvas-area,
+  .canvas-area {
+    grid-area: canvas;
+    flex: 1 1 auto;
+    overflow: auto; /* swipe/scroll supported */
+    padding: 4px;
   }
 
-  #mode-toggle,
-  .mode-toggle {
-    margin-left: 10px;
+  /* Tools toolbar horizontal below canvas */
+  #sidebar,
+  .sidebar {
+    grid-area: tools;
+    display: flex;
+    flex-direction: row;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding: 8px 0;
+    gap: 6px;
+    width: 100%;
+    border: none;
+    box-shadow: inset 0 -2px 4px rgba(0,0,0,0.2);
   }
 
-  #header-btn,
-  .header-btn,
-  #newProject,
-  #saveProject,
-  #exportPNG {
-    padding: 6px 10px;
-    font-size: 12px;
+  #tool-group,
+  .tool-group {
+    flex-direction: row;
+    gap: 6px;
+    width: auto;
   }
 
-  /* Tools inherit sidebar layout */
   #pixel-tools,
   .pixel-tools,
   #sketch-tools,
   .sketch-tools {
-    display: none;
-  }
-
-  #pixel-tools.active,
-  .pixel-tools.active,
-  #sketch-tools.active,
-  .sketch-tools.active {
-    display: flex;
     flex-direction: row;
-    flex-wrap: nowrap;
-    overflow-x: auto;
-    overflow-y: hidden;
+  }
+
+  /* Panels / controls as vertical accordion */
+  #panels,
+  .panels {
+    grid-area: controls;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    overflow-x: hidden;
+    height: auto;
     width: 100%;
-    align-items: center;
-    gap: 8px;
-    padding: 6px 0;
+    border-left: none;
+    border-top: 2px solid #333;
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.2);
   }
 
-  #pixel-canvas {
-    position: absolute;
-    top: 0;
-    left: 0;
-    z-index: 5;
-    display: grid; /* default pixel canvas display */
-  }
-
-   #sketch-canvas {
-    position: absolute;
-    top: 0;
-    left: 0;
-    z-index: 4; /* below pixel canvas by default */
-    display: none; /* hidden until sketch mode */
+  #panel,
+  .panel {
+    width: 100%;
   }
 }
 
 /* ============================= */
-/* Mobile & All Landscape Layout */
+/* Mobile Landscape Layout       */
 /* ============================= */
-@media (orientation: landscape) {
+@media (max-width: 900px) and (orientation: landscape) {
+
   html, body {
     height: 100dvh;
-    margin: 0;
-    padding: 0;
-    overflow: hidden;
-  }
-
-  /* Hide header completely in landscape */
-  #header, .header {
-    display: none;
-  }
-
-  /* Editor container fills viewport */
-  #editor-container, .editor-container {
-    display: grid;
-    grid-template-areas: "sidebar canvas panels";
-    grid-template-columns: 65px 1fr 300px;
-    grid-template-rows: 1fr;
     width: 100vw;
-    height: 100dvh;
-    height: 100vh;
-    min-height: -webkit-fill-available;
-    position: fixed;
-    left: 0;
-    top: 0;
     overflow: hidden;
-    background: #2a2a2a;
-    z-index: 1;
   }
 
-  /* ================== Sidebar ================== */
-  #sidebar, .sidebar {
+  #editor-container,
+  .editor-container {
+    display: grid;
+    grid-template-areas:
+      "header header"
+      "tools canvas"
+      "controls canvas";
+    grid-template-columns: auto 1fr;
+    grid-template-rows: 45px 1fr auto; /* smaller header */
+    height: 100%;
+    gap: 4px;
+  }
+
+  #header,
+  .header {
+    grid-area: header;
+    height: 45px; /* smaller header for landscape */
+  }
+
+  /* Vertical toolbar left side, full height of canvas */
+  #sidebar,
+  .sidebar {
+    grid-area: tools;
     display: flex;
     flex-direction: column;
-    justify-content: flex-start;
-    align-items: center;
-    width: 65px;
-    height: 100%; /* fill container */
-    max-height: none !important;
-    min-height: 0 !important;
-    padding: 8px 0;
-    gap: 6px;
     overflow-y: auto;
     overflow-x: hidden;
-    grid-area: sidebar;
-    background: linear-gradient(180deg, #1e1e1e 0%, #1a1a1a 100%);
+    height: 100%;
+    width: 70px; /* adjustable for mobile */
+    padding: 8px 0;
+    gap: 6px;
     border-right: 2px solid #333;
-    box-shadow: 2px 0 8px rgba(0,0,0,0.2);
+    box-shadow: 2px 0 4px rgba(0,0,0,0.2);
   }
 
-  #sidebar::-webkit-scrollbar {
-    width: 4px;
+  #tool-group,
+  .tool-group {
+    flex-direction: column;
   }
-  #sidebar::-webkit-scrollbar-track { background: #1a1a1a; }
-  #sidebar::-webkit-scrollbar-thumb { background: #444; border-radius: 3px; }
 
-  /* Tool groups inside sidebar */
-  #tool-group, .tool-group,
-  #pixel-tools, .pixel-tools,
-  #sketch-tools, .sketch-tools {
+  #pixel-tools,
+  .pixel-tools,
+  #sketch-tools,
+  .sketch-tools {
+    flex-direction: column;
+  }
+
+  /* Canvas fills remaining space */
+  #canvas-area,
+  .canvas-area {
+    grid-area: canvas;
+    flex: 1 1 auto;
+    overflow: auto;
+    padding: 4px;
+  }
+
+  /* Panels / controls vertical accordion right of canvas */
+  #panels,
+  .panels {
+    grid-area: controls;
     display: flex;
     flex-direction: column;
-    align-items: center;
-    gap: 6px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    width: 200px; /* adjustable */
+    border-left: 2px solid #333;
+    box-shadow: -2px 0 4px rgba(0,0,0,0.2);
+  }
+
+  #panel,
+  .panel {
     width: 100%;
   }
+}
 
-  #pixel-tools, .pixel-tools,
-  #sketch-tools, .sketch-tools { display: none; }
-  #pixel-tools.active, .pixel-tools.active,
-  #sketch-tools.active, .sketch-tools.active { display: flex; }
-  
-  /* Tool buttons */
-  #tool-btn, .tool-btn {
-    width: 50px;
-    height: 50px;
-    flex-shrink: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 18px;
-  }
-
-  #tool-btn.symmetric-tool, .tool-btn.symmetric-tool { font-size: 16px; }
-
-  /* Tool separators */
-  #tool-separator, .tool-separator {
-    width: 80%;
-    height: 2px;
-    margin: 6px 0;
-    flex-shrink: 0;
-    background: linear-gradient(90deg, transparent 0%, #444 50%, transparent 100%);
-  }
-
-  /* Button hover & active states */
-  .tool-btn:hover { background: linear-gradient(135deg, #444 0%, #3a3a3a 100%); transform: translateY(-1px); box-shadow: 0 4px 8px rgba(0,0,0,0.3); }
-  .tool-btn.active { background: linear-gradient(135deg, #4CAF50 0%, #66BB6A 100%); border-color: #66BB6A; color: #000; font-weight: 600; box-shadow: 0 3px 6px rgba(76,175,80,0.4); }
-  .tool-btn.symmetric-tool { background: linear-gradient(135deg, #333 0%, #444 50%, #4A90E2 100%); border: 2px solid #4A90E2; box-shadow: 0 2px 6px rgba(74,144,226,0.3); }
-  .tool-btn.symmetric-tool.active { background: linear-gradient(135deg, #4A90E2 0%, #6BB6FF 100%); border-color: #6BB6FF; color: #000; box-shadow: 0 4px 12px rgba(74,144,226,0.6); }
-
-  /* ================== Canvas ================== */
-  #canvas-area, .canvas-area {
-    grid-area: canvas;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    position: relative;
-    overflow: hidden;
-    width: 100%;
-    height: 100%;
-    background: radial-gradient(circle at center, #1e1e1e 0%, #1a1a1a 100%);
-  }
-
-  #canvas-wrapper, .canvas-wrapper {
-    position: relative;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: max-content;
-    height: max-content;
-    border-radius: 12px;
-    box-shadow: 0 8px 24px rgba(0,0,0,0.3);
-    border: none;
-    background: transparent;
-  }
-
-  #canvas-wrapper.checkerboard {
-    background-image:
-      linear-gradient(45deg, #2a2a2a 25%, transparent 25%),
-      linear-gradient(-45deg, #2a2a2a 25%, transparent 25%),
-      linear-gradient(45deg, transparent 75%, #2a2a2a 75%),
-      linear-gradient(-45deg, transparent 75%, #2a2a2a 75%);
-    background-size: var(--cellSize, 20px) var(--cellSize, 20px);
-    background-position: 0 0, 0 var(--halfCell, 10px), var(--halfCell,10px) -var(--halfCell,10px), -var(--halfCell,10px) 0;
-  }
-
-
-  /* Responsive width adjustments */
-  @media (max-width: 1024px) {
-    #panels,
-    .panels {
-      width: 100%; /* Still full width */
-    }
-  }
-
-  @media (max-width: 667px) {
-    #panel-content,
-    .panel-content {
-      padding: 10px 12px;
-    }
-    
-    #panel-header,
-    .panel-header {
-      padding: 8px 12px;
-      font-size: 12px;
-    }
-  }
+/* ============================= */
+/* Mobile Scrollbar Hiding       */
+/* ============================= */
+#sidebar::-webkit-scrollbar,
+#panels::-webkit-scrollbar {
+  width: 0;
+  height: 0;
 }
 
 /* Tablet specific adjustments */
