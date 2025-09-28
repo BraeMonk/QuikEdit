@@ -119,18 +119,7 @@ class JerryEditor {
         this.blendModeSelect = document.getElementById('blendMode');
     }
     
-    setupEventListeners() {
-
-        // Add this at the beginning of your setupEventListeners() method, right after the opening brace:
-
-        // Panel collapsing
-        document.querySelectorAll('.panel-header').forEach(header => {
-            header.addEventListener('click', (e) => {
-                const panel = header.closest('.panel');
-                panel.classList.toggle('collapsed');
-            });
-        });
-        
+    setupEventListeners() {        
         // Mode switching
         document.querySelectorAll('.mode-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
