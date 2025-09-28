@@ -916,6 +916,7 @@ body[data-mode="sketch"] .pixel-controls {
 
   .canvas-wrapper {
     padding: var(--spacing-sm);
+    overflow: hidden;
   }
 
   .btn {
@@ -1012,8 +1013,10 @@ body[data-mode="sketch"] .pixel-controls {
   .tool-group {
     flex-direction: row;
     gap: var(--spacing-xs);
-    justify-content: center;
-    flex-wrap: wrap;
+    justify-content: flex-start;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    padding-bottom: var(--spacing-xs);
   }
 
   .tool-btn {
@@ -1027,6 +1030,7 @@ body[data-mode="sketch"] .pixel-controls {
     width: 1px;
     height: 30px;
     margin: 0 var(--spacing-xs);
+    flex-shrink: 0;
   }
 
   .canvas-wrapper {
@@ -1039,12 +1043,18 @@ body[data-mode="sketch"] .pixel-controls {
     padding: var(--spacing-sm);
     gap: var(--spacing-sm);
     overflow-x: auto;
+    overflow-y: hidden;
     flex-direction: row;
   }
 
   .panel {
     min-width: 280px;
+    max-width: 280px;
     flex-shrink: 0;
+    max-height: 180px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
   }
 
   .panel-header {
@@ -1054,6 +1064,8 @@ body[data-mode="sketch"] .pixel-controls {
   .panel-content {
     padding: var(--spacing-sm);
     gap: var(--spacing-sm);
+    overflow-y: auto;
+    flex: 1;
   }
 
   .btn {
