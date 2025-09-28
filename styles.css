@@ -613,6 +613,57 @@ body {
   opacity: 0;
 }
 
+/* ======================================== */
+/* Panel Content Alignment & Overflow Fixes */
+/* ======================================== */
+
+.panel-content {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow-x: hidden;   /* block sideways overflow */
+  overflow-y: auto;     /* allow vertical scroll only */
+  padding: 18px;        /* consistent spacing under header */
+}
+
+/* All control containers respect panel width */
+.panel-content > *,
+.control-group,
+.control-row,
+.btn-group,
+.layer-list,
+.export-area,
+.swatches,
+.color-pickers {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  min-width: 0;         /* flex/grid children can shrink */
+  overflow-x: hidden;
+}
+
+/* Inputs and buttons never exceed parent */
+button,
+.btn,
+select,
+input,
+textarea {
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+/* Flex/grid children wrap neatly instead of overflowing */
+.swatches,
+.color-pickers,
+.control-row,
+.btn-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-width: 0;
+}
+
 /* Mode-specific panel visibility */
 .pixel-controls {
   display: block;
