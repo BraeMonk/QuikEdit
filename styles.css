@@ -585,6 +585,7 @@ body {
 #panel-content,
 .panel-content {
   padding: 18px;
+  width: 100%;
   display: block;
   transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1),
               padding 0.4s cubic-bezier(0.4, 0, 0.2, 1),
@@ -594,7 +595,10 @@ body {
   max-height: 1000px;
   opacity: 1;
   box-sizing: border-box;
+  overflow: hidden;
   overflow-x: hidden;
+  margin: 0;
+  align-self: stretch;
 }
 
 .panel-content * {
