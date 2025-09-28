@@ -595,9 +595,6 @@ body {
   opacity: 1;
   width: 100%;
   box-sizing: border-box;
-  position: relative; /* Add this */
-  left: 0; /* Add this */
-  right: 0; /* Add this */
 }
 
 #panel.collapsed .panel-content,
@@ -1996,7 +1993,7 @@ input[type="checkbox"],
     grid-template-areas:
       "header header header"
       "sidebar canvas panels";
-    grid-template-columns: 70px 1fr 280px;
+    grid-template-columns: 70px 1fr 240px;
     grid-template-rows: 45px 1fr;
     height: 100dvh;
     gap: 0;
@@ -2265,7 +2262,7 @@ input[type="checkbox"],
   #panels,
   .panels {
     grid-area: panels;
-    width: 280px;
+    width: 240px;
     background: linear-gradient(180deg, #1e1e1e 0%, #1a1a1a 100%);
     display: flex;
     flex-direction: column;
@@ -2347,20 +2344,20 @@ input[type="checkbox"],
     opacity: 1;
   }
 
-  body[data-mode="sketch"] .pixel-controls {
-    display: none !important;
-  }
-
-  body[data-mode="sketch"] .sketch-controls {
-    display: block !important;
+  .pixel-controls {
+    display: block;
   }
   
   .sketch-controls {
     display: none;
   }
   
-  .pixel-controls {
-    display: block;
+  body[data-mode="sketch"] .pixel-controls {
+    display: none !important;
+  }
+  
+  body[data-mode="sketch"] .sketch-controls {
+    display: block !important;
   }
   
   #panel.collapsed .panel-content,
