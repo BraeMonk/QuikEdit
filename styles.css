@@ -527,8 +527,13 @@ body {
   background: #1e1e1e;
   border-bottom: 1px solid #333;
   width: 100%;
+  display: flex;
+  flex-direction: column;
 }
 
+/* ============================= */
+/* Panel Header                  */
+/* ============================= */
 #panel-header,
 .panel-header {
   background: linear-gradient(135deg, #2a2a2a 0%, #333 100%);
@@ -582,30 +587,26 @@ body {
   transform: rotate(-90deg);
 }
 
+/* ============================= */
+/* Panel Content                 */
+/* ============================= */
 #panel-content,
 .panel-content {
-  padding: 16px;
-  width: 100%;
   display: flex;
   flex-direction: column;
+  align-items: center;     /* centers content horizontally */
+  justify-content: flex-start;
+  padding: 18px;
   gap: 12px;
-  transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1),
-              padding 0.4s cubic-bezier(0.4, 0, 0.2, 1),
-              opacity 0.3s ease;
-  overflow: visible;
-  background: linear-gradient(180deg, #1e1e1e 0%, #1a1a1a 100%);
-  max-height: none;
-  height: auto;
-  min-height: 0;
-  opacity: 1;
-  box-sizing: border-box;
-}
-
-.panel-content > * {
-  flex-shrink: 0;
   width: 100%;
   max-width: 100%;
   box-sizing: border-box;
+  overflow-x: hidden;      /* no sideways overflow */
+  overflow-y: auto;        /* scroll only vertically if needed */
+  background: linear-gradient(180deg, #1e1e1e 0%, #1a1a1a 100%);
+  transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+              padding 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+              opacity 0.3s ease;
 }
 
 #panel.collapsed .panel-content,
@@ -615,20 +616,9 @@ body {
   opacity: 0;
 }
 
-/* ======================================== */
-/* Panel Content Alignment & Overflow Fixes */
-/* ======================================== */
-
-.panel-content {
-  width: 100%;
-  max-width: 100%;
-  box-sizing: border-box;
-  overflow-x: hidden;   /* block sideways overflow */
-  overflow-y: auto;     /* allow vertical scroll only */
-  padding: 18px;        /* consistent spacing under header */
-}
-
-/* All control containers respect panel width */
+/* ============================= */
+/* Child Elements Respect Width  */
+/* ============================= */
 .panel-content > *,
 .control-group,
 .control-row,
@@ -639,12 +629,12 @@ body {
 .color-pickers {
   width: 100%;
   max-width: 100%;
+  min-width: 0;
   box-sizing: border-box;
-  min-width: 0;         /* flex/grid children can shrink */
   overflow-x: hidden;
 }
 
-/* Inputs and buttons never exceed parent */
+/* Inputs and buttons stay within bounds */
 button,
 .btn,
 select,
@@ -655,7 +645,7 @@ textarea {
   box-sizing: border-box;
 }
 
-/* Flex/grid children wrap neatly instead of overflowing */
+/* Flexible child layouts wrap cleanly */
 .swatches,
 .color-pickers,
 .control-row,
@@ -663,10 +653,13 @@ textarea {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
+  width: 100%;
   min-width: 0;
 }
 
-/* Mode-specific panel visibility */
+/* ============================= */
+/* Mode-Specific Panel Visibility */
+/* ============================= */
 .pixel-controls {
   display: block;
 }
@@ -675,7 +668,6 @@ textarea {
   display: none;
 }
 
-/* When sketch mode is active, show sketch controls */
 body[data-mode="sketch"] .pixel-controls {
   display: none;
 }
@@ -1792,99 +1784,161 @@ input[type="checkbox"],
     flex-shrink: 0;
   }
   
-  /* Portrait Panels */
-  #panels,
-  .panels {
-    grid-area: panels;
-    background: linear-gradient(180deg, #1e1e1e 0%, #1a1a1a 100%);
-    display: flex;
-    flex-direction: column;
-    border-top: 1px solid #333;
-    max-height: 30vh;
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
-    box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.3);
-    z-index: 100;
-  }
-  
-  #panels::-webkit-scrollbar {
-    width: 4px;
-  }
-  
-  #panels::-webkit-scrollbar-track {
-    background: #1a1a1a;
-  }
-  
-  #panels::-webkit-scrollbar-thumb {
-    background: #444;
-    border-radius: 2px;
-  }
-  
-  #panel,
-  .panel {
-    background: #1e1e1e;
-    border-bottom: 1px solid #333;
-    width: 100%;
-  }
-  
-  #panel-header,
-  .panel-header {
-    background: linear-gradient(135deg, #2a2a2a 0%, #333 100%);
-    padding: 14px 16px;
-    font-size: 14px;
-    font-weight: 600;
-    border-bottom: 1px solid #333;
-    cursor: pointer;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    transition: all 0.2s ease;
-    color: #e8e8e8;
-    height: 48px;
-    flex-shrink: 0;
-    touch-action: manipulation;
-    width: 100%;
-    box-sizing: border-box;
-  }
-  
-  #panel-header:active,
-  .panel-header:active {
-    background: linear-gradient(135deg, #333 0%, #404040 100%);
-    transform: scale(0.98);
-  }
-  
-  #panel-header span,
-  .panel-header span {
-    font-size: 16px;
-    transition: transform 0.3s ease;
-  }
-  
-  #panel.collapsed .panel-header span,
-  .panel.collapsed .panel-header span {
-    transform: rotate(-90deg);
-  }
-  
-  #panel-content,
-  .panel-content {
-    padding: 12px;
-    gap: 16px;
-    display: flex;
-    flex-direction: column;
-    transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-                padding 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-                opacity 0.3s ease;
-    overflow: hidden;
-    background: linear-gradient(180deg, #1e1e1e 0%, #1a1a1a 100%);
-    max-height: 500px;
-    opacity: 1;
-  }
-  
-  #panel.collapsed .panel-content,
-  .panel.collapsed .panel-content {
-    max-height: 0;
-    padding: 0 16px;
-    opacity: 0;
-  }
+  /* ============================= */
+/* Portrait Panels               */
+/* ============================= */
+#panels,
+.panels {
+  grid-area: panels;
+  background: linear-gradient(180deg, #1e1e1e 0%, #1a1a1a 100%);
+  display: flex;
+  flex-direction: column;
+  border-top: 1px solid #333;
+  max-height: 30vh;
+  overflow-y: auto;
+  overflow-x: hidden; /* block sideways overflow */
+  -webkit-overflow-scrolling: touch;
+  box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.3);
+  z-index: 100;
+}
+
+#panels::-webkit-scrollbar {
+  width: 4px;
+}
+
+#panels::-webkit-scrollbar-track {
+  background: #1a1a1a;
+}
+
+#panels::-webkit-scrollbar-thumb {
+  background: #444;
+  border-radius: 2px;
+}
+
+/* ============================= */
+/* Individual Panels             */
+/* ============================= */
+#panel,
+.panel {
+  background: #1e1e1e;
+  border-bottom: 1px solid #333;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ============================= */
+/* Panel Header                  */
+/* ============================= */
+#panel-header,
+.panel-header {
+  background: linear-gradient(135deg, #2a2a2a 0%, #333 100%);
+  padding: 14px 16px;
+  font-size: 14px;
+  font-weight: 600;
+  border-bottom: 1px solid #333;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: all 0.2s ease;
+  color: #e8e8e8;
+  height: 48px;
+  flex-shrink: 0;
+  touch-action: manipulation;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+#panel-header:active,
+.panel-header:active {
+  background: linear-gradient(135deg, #333 0%, #404040 100%);
+  transform: scale(0.98);
+}
+
+#panel-header span,
+.panel-header span {
+  font-size: 16px;
+  transition: transform 0.3s ease;
+}
+
+#panel.collapsed .panel-header span,
+.panel.collapsed .panel-header span {
+  transform: rotate(-90deg);
+}
+
+/* ============================= */
+/* Panel Content                 */
+/* ============================= */
+#panel-content,
+.panel-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;       /* centers controls neatly */
+  justify-content: flex-start;
+  padding: 12px;
+  gap: 16px;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  overflow-x: hidden;
+  overflow-y: auto;
+  background: linear-gradient(180deg, #1e1e1e 0%, #1a1a1a 100%);
+  transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+              padding 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+              opacity 0.3s ease;
+  max-height: 500px;
+  opacity: 1;
+}
+
+#panel.collapsed .panel-content,
+.panel.collapsed .panel-content {
+  max-height: 0;
+  padding: 0 16px;
+  opacity: 0;
+}
+
+/* ============================= */
+/* Child Content Rules           */
+/* ============================= */
+.panel-content > *,
+.control-group,
+.control-row,
+.btn-group,
+.layer-list,
+.export-area,
+.swatches,
+.color-pickers {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  overflow-x: hidden;
+}
+
+/* Inputs/buttons respect container */
+button,
+.btn,
+select,
+input,
+textarea {
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+/* Flexible groups wrap cleanly */
+.swatches,
+.color-pickers,
+.control-row,
+.btn-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  width: 100%;
+  min-width: 0;
+}
   
   /* Portrait Form Controls */
   #paletteSelector {
@@ -2350,118 +2404,181 @@ input[type="checkbox"],
     border: 1px solid rgba(255, 255, 255, 0.1);
   }
   
-  /* Landscape Panels */
-  #panels,
-  .panels {
-    grid-area: panels;
-    width: 240px;
-    background: linear-gradient(180deg, #1e1e1e 0%, #1a1a1a 100%);
-    display: flex;
-    flex-direction: column;
-    border-left: 1px solid #333;
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
-    box-shadow: -1px 0 4px rgba(0, 0, 0, 0.3);
-    z-index: 100;
-    height: calc(100dvh - 45px);
-  }
-  
-  #panels::-webkit-scrollbar {
-    width: 4px;
-  }
-  
-  #panels::-webkit-scrollbar-track {
-    background: #1a1a1a;
-  }
-  
-  #panels::-webkit-scrollbar-thumb {
-    background: #444;
-    border-radius: 2px;
-  }
-  
-  #panel,
-  .panel {
-    background: #1e1e1e;
-    border-bottom: 1px solid #333;
-    width: 100%;
-  }
-  
-  #panel-header,
-  .panel-header {
-    background: linear-gradient(135deg, #2a2a2a 0%, #333 100%);
-    padding: 10px 12px;
-    font-size: 12px;
-    font-weight: 600;
-    border-bottom: 1px solid #333;
-    cursor: pointer;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    transition: all 0.2s ease;
-    color: #e8e8e8;
-    height: 36px;
-    flex-shrink: 0;
-    touch-action: manipulation;
-    width: 100%;
-    box-sizing: border-box;
-  }
-  
-  #panel-header:active,
-  .panel-header:active {
-    background: linear-gradient(135deg, #333 0%, #404040 100%);
-    transform: scale(0.98);
-  }
-  
-  #panel-header span,
-  .panel-header span {
-    font-size: 14px;
-    transition: transform 0.3s ease;
-  }
-  
-  #panel.collapsed .panel-header span,
-  .panel.collapsed .panel-header span {
-    transform: rotate(-90deg);
-  }
-  
-  #panel-content,
-  .panel-content {
-    padding: 8px;
-    gap: 8px;
-    display: flex;
-    flex-direction: column;
-    transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-                padding 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-                opacity 0.3s ease;
-    overflow: hidden;
-    background: linear-gradient(180deg, #1e1e1e 0%, #1a1a1a 100%);
-    max-height: 400px;
-    opacity: 1;
-  }
+  /* ============================= */
+/* Landscape Panels (Mobile)     */
+/* ============================= */
+#panels,
+.panels {
+  grid-area: panels;
+  width: 240px;
+  background: linear-gradient(180deg, #1e1e1e 0%, #1a1a1a 100%);
+  display: flex;
+  flex-direction: column;
+  border-left: 1px solid #333;
+  overflow-y: auto;
+  overflow-x: hidden; /* block sideways overflow */
+  -webkit-overflow-scrolling: touch;
+  box-shadow: -1px 0 4px rgba(0, 0, 0, 0.3);
+  z-index: 100;
+  height: calc(100dvh - 45px); /* fills screen under header */
+}
 
-  /* Default state */
-  .sketch-controls {
-    display: none;
-  }
-  
-  .pixel-controls {
-    display: block;
-  }
-  
-  /* Sketch mode overrides */
-  body[data-mode="sketch"] .pixel-controls {
-    display: none !important;
-  }
-  
-  body[data-mode="sketch"] .sketch-controls {
-    display: block !important;
-  }
-  
-  #panel.collapsed .panel-content,
-  .panel.collapsed .panel-content {
-    max-height: 0;
-    padding: 0 12px;
-    opacity: 0;
-  }
+#panels::-webkit-scrollbar {
+  width: 4px;
+}
+
+#panels::-webkit-scrollbar-track {
+  background: #1a1a1a;
+}
+
+#panels::-webkit-scrollbar-thumb {
+  background: #444;
+  border-radius: 2px;
+}
+
+/* ============================= */
+/* Individual Panels             */
+/* ============================= */
+#panel,
+.panel {
+  background: #1e1e1e;
+  border-bottom: 1px solid #333;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ============================= */
+/* Panel Header                  */
+/* ============================= */
+#panel-header,
+.panel-header {
+  background: linear-gradient(135deg, #2a2a2a 0%, #333 100%);
+  padding: 10px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  border-bottom: 1px solid #333;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: all 0.2s ease;
+  color: #e8e8e8;
+  height: 36px;
+  flex-shrink: 0;
+  touch-action: manipulation;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+#panel-header:active,
+.panel-header:active {
+  background: linear-gradient(135deg, #333 0%, #404040 100%);
+  transform: scale(0.98);
+}
+
+#panel-header span,
+.panel-header span {
+  font-size: 14px;
+  transition: transform 0.3s ease;
+}
+
+#panel.collapsed .panel-header span,
+.panel.collapsed .panel-header span {
+  transform: rotate(-90deg);
+}
+
+/* ============================= */
+/* Panel Content                 */
+/* ============================= */
+#panel-content,
+.panel-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;       /* centers controls neatly */
+  justify-content: flex-start;
+  padding: 8px;
+  gap: 8px;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  overflow-x: hidden;
+  overflow-y: auto;
+  background: linear-gradient(180deg, #1e1e1e 0%, #1a1a1a 100%);
+  transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+              padding 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+              opacity 0.3s ease;
+  max-height: 400px;
+  opacity: 1;
+}
+
+#panel.collapsed .panel-content,
+.panel.collapsed .panel-content {
+  max-height: 0;
+  padding: 0 12px;
+  opacity: 0;
+}
+
+/* ============================= */
+/* Child Content Rules           */
+/* ============================= */
+.panel-content > *,
+.control-group,
+.control-row,
+.btn-group,
+.layer-list,
+.export-area,
+.swatches,
+.color-pickers {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  overflow-x: hidden;
+}
+
+/* Inputs/buttons respect container */
+button,
+.btn,
+select,
+input,
+textarea {
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+/* Flexible groups wrap cleanly */
+.swatches,
+.color-pickers,
+.control-row,
+.btn-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  width: 100%;
+  min-width: 0;
+}
+
+/* ============================= */
+/* Mode-Specific Panel Visibility */
+/* ============================= */
+.pixel-controls {
+  display: block;
+}
+
+.sketch-controls {
+  display: none;
+}
+
+body[data-mode="sketch"] .pixel-controls {
+  display: none !important;
+}
+
+body[data-mode="sketch"] .sketch-controls {
+  display: block !important;
+}
   
   /* Landscape Form Controls */
   #control-group,
