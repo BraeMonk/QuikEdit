@@ -461,6 +461,7 @@ class JerryEditor {
     
     switchMode(mode) {
         this.mode = mode;
+        document.body.setAttribute('data-mode', mode);
 
         // ----- TOOLS -----
         const pixelTools = document.querySelector('.pixel-tools');
