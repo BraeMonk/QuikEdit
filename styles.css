@@ -677,6 +677,78 @@ body[data-mode="sketch"] .sketch-controls {
 }
 
 /* ============================= */
+/* Responsive Sketch Controls     */
+/* ============================= */
+.sketch-controls {
+  display: none;             /* default hidden */
+  flex-direction: column;    /* stack vertically like pixel mode */
+  align-items: center;       /* center everything under header */
+  justify-content: flex-start;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow-x: hidden;        /* no horizontal overflow */
+  overflow-y: auto;          /* vertical scroll if needed */
+  gap: 12px;                 /* space between control groups */
+  padding-bottom: 12px;
+}
+
+/* Show sketch controls in sketch mode */
+body[data-mode="sketch"] .sketch-controls {
+  display: flex;
+}
+
+/* Panel content children fill width but stay centered */
+.sketch-controls .panel-content > *,
+.sketch-controls .control-group,
+.sketch-controls .control-row,
+.sketch-controls .btn-group,
+.sketch-controls input,
+.sketch-controls select,
+.sketch-controls textarea,
+.sketch-controls button,
+.sketch-controls #brushPreview,
+.sketch-controls .layer-list {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  flex-shrink: 0;
+}
+
+/* Control rows and button groups flex & wrap like pixel mode */
+.sketch-controls .control-row,
+.sketch-controls .btn-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: center;   /* center buttons horizontally */
+  width: 100%;
+}
+
+/* Panel header alignment same as pixel mode */
+.sketch-controls .panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  padding: 12px 18px;
+  box-sizing: border-box;
+}
+
+/* Prevent clipping on very small screens */
+html, body {
+  height: 100dvh;           /* ensures full-height panels work */
+  margin: 0;
+  overflow: hidden;         /* parent scroll handled inside panels */
+}
+
+@media (max-width: 600px) {
+  .sketch-controls .panel-content {
+    padding: 12px;          /* more compact on small phones */
+  }
+}
+
+/* ============================= */
 /* Color Palette                 */
 /* ============================= */
 #paletteSelector {
