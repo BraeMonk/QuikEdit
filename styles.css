@@ -2829,47 +2829,45 @@ input:focus {
 }
 
 /* ============================= */
-/* SKETCH TOOLS SCROLLING FIX    */
+/* SKETCH TOOLS HORIZONTAL SCROLL */
 /* ============================= */
 
-/* Mobile Portrait - Fix sketch tools scrolling */
+/* Mobile Portrait - Clean left-to-right horizontal scrolling */
 @media screen and (max-width: 768px) and (orientation: portrait) {
-  #sketch-tools.active,
-  .sketch-tools.active {
-    display: flex !important;
-    flex-direction: row;
-    align-items: center;
-    gap: 6px;
-    min-width: max-content;
-    width: max-content; /* Allow tools to extend beyond container */
-  }
-
-  /* Ensure sidebar scrolls horizontally for sketch tools */
   body[data-mode="sketch"] #sidebar,
   body[data-mode="sketch"] .sidebar {
     overflow-x: auto !important;
     overflow-y: hidden !important;
     -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
   }
-}
 
-/* Mobile Landscape - Fix sketch tools scrolling */
-@media screen and (max-width: 1024px) and (orientation: landscape) and (max-height: 768px) {
-  #sketch-tools.active,
-  .sketch-tools.active {
+  body[data-mode="sketch"] #sketch-tools.active,
+  body[data-mode="sketch"] .sketch-tools.active {
     display: flex !important;
-    flex-direction: column;
+    flex-direction: row;
     align-items: center;
     gap: 6px;
-    width: 100%;
+    min-width: max-content;
+    width: max-content;
   }
 
-  /* Ensure sidebar scrolls vertically for sketch tools */
-  body[data-mode="sketch"] #sidebar,
-  body[data-mode="sketch"] .sidebar {
-    overflow-y: auto !important;
-    overflow-x: hidden !important;
-    -webkit-overflow-scrolling: touch;
+  /* Ensure smooth scrolling with better scroll indicators */
+  body[data-mode="sketch"] #sidebar::-webkit-scrollbar {
+    height: 3px;
+  }
+
+  body[data-mode="sketch"] #sidebar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  body[data-mode="sketch"] #sidebar::-webkit-scrollbar-thumb {
+    background: #4CAF50;
+    border-radius: 2px;
+  }
+
+  body[data-mode="sketch"] #sidebar::-webkit-scrollbar-thumb:hover {
+    background: #66BB6A;
   }
 }
 
@@ -3019,5 +3017,68 @@ body[data-mode="sketch"] .panel .panel-content > * {
     max-width: 100% !important;
     min-width: 0 !important;
     box-sizing: border-box !important;
+  }
+}
+
+/* ============================= */
+/* SKETCH PANELS SCROLL BEHAVIOR */
+/* ============================= */
+
+/* Ensure sketch panels behave exactly like pixel panels */
+body[data-mode="sketch"] .panel .panel-content {
+  max-height: none;
+  opacity: 1;
+  transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+              padding 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+              opacity 0.3s ease;
+}
+
+body[data-mode="sketch"] .panel.collapsed .panel-content {
+  max-height: 0 !important;
+  padding: 0 18px !important;
+  opacity: 0;
+  overflow: hidden !important;
+}
+
+/* Ensure sketch panels scroll as one unit like pixel panels */
+body[data-mode="sketch"] #panels,
+body[data-mode="sketch"] .panels {
+  scroll-behavior: smooth;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+}
+
+/* Force sketch panels to use same animation timing */
+body[data-mode="sketch"] .panel .panel-content {
+  transition-duration: 0.4s !important;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+/* Mobile specific sketch panel scrolling */
+@media screen and (max-width: 768px) and (orientation: portrait) {
+  body[data-mode="sketch"] .panel .panel-content {
+    transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+                padding 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+                opacity 0.3s ease;
+  }
+
+  body[data-mode="sketch"] .panel.collapsed .panel-content {
+    max-height: 0 !important;
+    padding: 0 16px !important;
+    opacity: 0;
+  }
+}
+
+@media screen and (max-width: 1024px) and (orientation: landscape) and (max-height: 768px) {
+  body[data-mode="sketch"] .panel .panel-content {
+    transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+                padding 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+                opacity 0.3s ease;
+  }
+
+  body[data-mode="sketch"] .panel.collapsed .panel-content {
+    max-height: 0 !important;
+    padding: 0 12px !important;
+    opacity: 0;
   }
 }
