@@ -595,6 +595,9 @@ body {
   opacity: 1;
   width: 100%;
   box-sizing: border-box;
+  position: relative; /* Add this */
+  left: 0; /* Add this */
+  right: 0; /* Add this */
 }
 
 #panel.collapsed .panel-content,
@@ -2342,6 +2345,22 @@ input[type="checkbox"],
     background: linear-gradient(180deg, #1e1e1e 0%, #1a1a1a 100%);
     max-height: 400px;
     opacity: 1;
+  }
+
+  body[data-mode="sketch"] .pixel-controls {
+    display: none !important;
+  }
+
+  body[data-mode="sketch"] .sketch-controls {
+    display: block !important;
+  }
+  
+  .sketch-controls {
+    display: none;
+  }
+  
+  .pixel-controls {
+    display: block;
   }
   
   #panel.collapsed .panel-content,
