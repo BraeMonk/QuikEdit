@@ -314,10 +314,10 @@ body {
 #canvas-wrapper,
 .canvas-wrapper {
   position: relative;
-  display: inline-flex; /* better for centering content */
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: max-content; /* shrink-to-fit the canvas exactly */
+  width: max-content;
   height: max-content;
   border-radius: 12px;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
@@ -373,7 +373,6 @@ body {
   width: calc(var(--cols, 16) * var(--cellSize, 20px));
   height: calc(var(--rows, 16) * var(--cellSize, 20px));
 }
-
 
 /* Hidden Grid */
 #canvasGrid.hidden,
@@ -486,7 +485,6 @@ body {
   z-index: 10;
   border-radius: 4px;
 }
-
 
 /* ============================= */
 /* Right Panels                  */
@@ -1384,395 +1382,7 @@ input[type="checkbox"],
 }
 
 /* ============================= */
-/* MOBILE LANDSCAPE (HORIZONTAL LAYOUT) */
-/* ============================= */
-@media screen and (max-width: 1024px) and (orientation: landscape) and (max-height: 768px) {
-  html, body {
-    height: 100dvh;
-    width: 100vw;
-    overflow: hidden;
-    position: fixed;
-    font-size: 12px;
-  }
-  
-  #editor-container,
-  .editor-container {
-    display: grid;
-    grid-template-areas:
-      "header header header"
-      "sidebar canvas panels";
-    grid-template-columns: 70px 1fr 280px;
-    grid-template-rows: 45px 1fr;
-    height: 100dvh;
-    gap: 0;
-    background: #2a2a2a;
-  }
-  
-  /* ============================= */
-  /* LANDSCAPE HEADER               */
-  /* ============================= */
-  #header,
-  .header {
-    grid-area: header;
-    height: 45px;
-    padding: 0 12px;
-    border-bottom: 1px solid #333;
-    z-index: 200;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    background: linear-gradient(180deg, #1e1e1e 0%, #1a1a1a 100%);
-    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
-  }
-  
-  #logo,
-  .logo {
-    font-size: 15px;
-    font-weight: 700;
-    color: #4CAF50;
-    display: flex;
-    align-items: center;
-  }
-  
-  #mode-toggle,
-  .mode-toggle {
-    margin-left: 8px;
-    display: flex;
-    gap: 1px;
-    background: #333;
-    border-radius: 4px;
-    padding: 2px;
-  }
-  
-  #mode-btn,
-  .mode-btn {
-    padding: 6px 10px;
-    font-size: 10px;
-    min-width: 40px;
-    background: transparent;
-    border: none;
-    color: #e0e0e0;
-    font-weight: 600;
-    cursor: pointer;
-    border-radius: 3px;
-    transition: all 0.2s ease;
-  }
-  
-  #mode-btn.active,
-  .mode-btn.active {
-    background: linear-gradient(135deg, #4CAF50 0%, #66BB6A 100%);
-    color: #000;
-    box-shadow: 0 1px 3px rgba(76, 175, 80, 0.4);
-  }
-  
-  #header-controls,
-  .header-controls {
-    gap: 4px;
-    display: flex;
-  }
-  
-  #header-btn,
-  .header-btn,
-  #newProject,
-  #saveProject,
-  #exportPNG {
-    padding: 6px 8px;
-    font-size: 9px;
-    background: linear-gradient(135deg, #404040 0%, #333 100%);
-    border: 1px solid #555;
-    border-radius: 3px;
-    color: #e8e8e8;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    white-space: nowrap;
-  }
-  
-  #header-btn:active,
-  .header-btn:active,
-  #newProject:active,
-  #saveProject:active,
-  #exportPNG:active {
-    transform: scale(0.95);
-  }
-  
-  /* ============================= */
-  /* LANDSCAPE FULL-HEIGHT SIDEBAR */
-  /* ============================= */
-  #sidebar,
-  .sidebar {
-    grid-area: sidebar;
-    width: 70px;
-    background: linear-gradient(180deg, #1e1e1e 0%, #1a1a1a 100%);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding: 8px 0;
-    gap: 6px;
-    border-right: 1px solid #333;
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
-    box-shadow: 1px 0 4px rgba(0, 0, 0, 0.3);
-    z-index: 150;
-    height: calc(100dvh - 45px);
-  }
-  
-  #sidebar::-webkit-scrollbar {
-    width: 3px;
-  }
-  
-  #sidebar::-webkit-scrollbar-track {
-    background: #1a1a1a;
-  }
-  
-  #sidebar::-webkit-scrollbar-thumb {
-    background: #444;
-    border-radius: 2px;
-  }
-  
-  #tool-group,
-  .tool-group {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 6px;
-    width: 100%;
-  }
-  
-  #pixel-tools,
-  .pixel-tools,
-  #sketch-tools,
-  .sketch-tools {
-    display: none;
-    flex-direction: column;
-    align-items: center;
-    gap: 6px;
-    width: 100%;
-  }
-  
-  #pixel-tools.active,
-  .pixel-tools.active,
-  #sketch-tools.active,
-  .sketch-tools.active {
-    display: flex;
-  }
-  
-  #tool-btn,
-  .tool-btn {
-    width: 50px;
-    height: 50px;
-    background: linear-gradient(135deg, #333 0%, #2a2a2a 100%);
-    border: 2px solid #444;
-    border-radius: 8px;
-    color: #e8e8e8;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 16px;
-    transition: all 0.2s ease;
-    flex-shrink: 0;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-    touch-action: manipulation;
-  }
-  
-  #tool-btn:active,
-  .tool-btn:active {
-    transform: scale(0.95);
-  }
-  
-  #tool-btn.active,
-  .tool-btn.active {
-    background: linear-gradient(135deg, #4CAF50 0%, #66BB6A 100%);
-    border-color: #66BB6A;
-    color: #000;
-    font-weight: 600;
-    box-shadow: 0 3px 8px rgba(76, 175, 80, 0.5);
-    transform: scale(1.05);
-  }
-  
-  #tool-btn.symmetric-tool,
-  .tool-btn.symmetric-tool {
-    background: linear-gradient(135deg, #4A90E2 0%, #6BB6FF 100%);
-    border-color: #6BB6FF;
-    font-size: 14px;
-    box-shadow: 0 2px 4px rgba(74, 144, 226, 0.4);
-  }
-  
-  #tool-btn.symmetric-tool.active,
-  .tool-btn.symmetric-tool.active {
-    background: linear-gradient(135deg, #6BB6FF 0%, #4A90E2 100%);
-    color: #000;
-    box-shadow: 0 3px 8px rgba(74, 144, 226, 0.6);
-  }
-  
-  #tool-separator,
-  .tool-separator {
-    width: 70%;
-    height: 1px;
-    background: linear-gradient(90deg, transparent 0%, #444 50%, transparent 100%);
-    margin: 4px 0;
-    flex-shrink: 0;
-  }
-  
-  /* ============================= */
-  /* LANDSCAPE CANVAS AREA         */
-  /* ============================= */
-  #canvas-area,
-  .canvas-area {
-    grid-area: canvas;
-    background: radial-gradient(circle at center, #1e1e1e 0%, #1a1a1a 100%);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    position: relative;
-    overflow: visible;
-    padding: 8px;
-    min-height: 0;
-    height: calc(100dvh - 45px);
-  }
-  
-  #canvas-wrapper,
-  .canvas-wrapper {
-    position: relative;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 6px;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
-    overflow: visible;
-    transform-origin: center center;
-  }
-  
-  #canvas {
-    /* Maintain original structure - don't constrain */
-  }
-  
-  #sketchCanvas {
-    /* Maintain original structure - don't constrain */
-    border: 2px solid #555;
-    border-radius: 4px;
-  }
-  
-  #canvasInfo {
-    position: absolute;
-    bottom: 6px;
-    left: 6px;
-    background: rgba(0, 0, 0, 0.85);
-    padding: 4px 8px;
-    border-radius: 3px;
-    font-size: 9px;
-    backdrop-filter: blur(8px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-  }
-  
-  #zoomIndicator {
-    position: absolute;
-    top: 6px;
-    right: 6px;
-    background: rgba(0, 0, 0, 0.85);
-    padding: 4px 8px;
-    border-radius: 3px;
-    font-size: 9px;
-    backdrop-filter: blur(8px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-  }
-  
-  /* ============================= */
-  /* LANDSCAPE FULL-HEIGHT PANELS  */
-  /* ============================= */
-  #panels,
-  .panels {
-    grid-area: panels;
-    width: 280px;
-    background: linear-gradient(180deg, #1e1e1e 0%, #1a1a1a 100%);
-    display: flex;
-    flex-direction: column;
-    border-left: 1px solid #333;
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
-    box-shadow: -1px 0 4px rgba(0, 0, 0, 0.3);
-    z-index: 100;
-    height: calc(100dvh - 45px);
-  }
-  
-  #panels::-webkit-scrollbar {
-    width: 4px;
-  }
-  
-  #panels::-webkit-scrollbar-track {
-    background: #1a1a1a;
-  }
-  
-  #panels::-webkit-scrollbar-thumb {
-    background: #444;
-    border-radius: 2px;
-  }
-  
-  #panel,
-  .panel {
-    background: #1e1e1e;
-    border-bottom: 1px solid #333;
-    width: 100%;
-  }
-  
-  #panel-header,
-  .panel-header {
-    background: linear-gradient(135deg, #2a2a2a 0%, #333 100%);
-    padding: 10px 12px;
-    font-size: 12px;
-    font-weight: 600;
-    border-bottom: 1px solid #333;
-    cursor: pointer;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    transition: all 0.2s ease;
-    color: #e8e8e8;
-    min-height: 40px;
-    touch-action: manipulation;
-    width: 100%;
-    box-sizing: border-box;
-  }
-  
-  #panel-header:active,
-  .panel-header:active {
-    background: linear-gradient(135deg, #333 0%, #404040 100%);
-    transform: scale(0.98);
-  }
-  
-  #panel-header span,
-  .panel-header span {
-    font-size: 14px;
-    transition: transform 0.3s ease;
-  }
-  
-  #panel.collapsed .panel-header span,
-  .panel.collapsed .panel-header span {
-    transform: rotate(-90deg);
-  }
-  
-  #panel-content,
-  .panel-content {
-    padding: 10px 12px;
-    display: block;
-    transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-                padding 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-                opacity 0.3s ease;
-    overflow: hidden;
-    background: linear-gradient(180deg, #1e1e1e 0%, #1a1a1a 100%);
-    max-height: 400px;
-    opacity: 1;
-  }
-  
-  #panel.collapsed .panel-content,
-  .panel.collapsed .panel-content {
-    max-height: 0;
-    padding: 0 12px;
-    opacity: 0;
-  }/* ============================= */
-/* MOBILE PORTRAIT (STACKED VERTICALLY) */
+/* MOBILE PORTRAIT (STACKED)     */
 /* ============================= */
 @media screen and (max-width: 768px) and (orientation: portrait) {
   html, body {
@@ -1800,9 +1410,7 @@ input[type="checkbox"],
     overflow: hidden;
   }
   
-  /* ============================= */
-  /* PORTRAIT HEADER               */
-  /* ============================= */
+  /* Portrait Header */
   #header,
   .header {
     grid-area: header;
@@ -1823,8 +1431,6 @@ input[type="checkbox"],
     font-weight: 700;
     color: #4CAF50;
     letter-spacing: -0.5px;
-    display: flex;
-    align-items: center;
   }
   
   #mode-toggle,
@@ -1891,9 +1497,7 @@ input[type="checkbox"],
     background: linear-gradient(135deg, #4a4a4a 0%, #3a3a3a 100%);
   }
   
-  /* ============================= */
-  /* PORTRAIT CANVAS AREA          */
-  /* ============================= */
+  /* Portrait Canvas Area */
   #canvas-area,
   .canvas-area {
     grid-area: canvas;
@@ -1920,12 +1524,7 @@ input[type="checkbox"],
     transform-origin: center center;
   }
   
-  #canvas {
-    /* Maintain original structure - don't constrain */
-  }
-  
   #sketchCanvas {
-    /* Maintain original structure - don't constrain */
     border: 2px solid #555;
     border-radius: 4px;
   }
@@ -1961,9 +1560,7 @@ input[type="checkbox"],
     z-index: 10;
   }
   
-  /* ============================= */
-  /* PORTRAIT COMPACT TOOLBAR      */
-  /* ============================= */
+  /* Portrait Toolbar */
   #sidebar,
   .sidebar {
     grid-area: toolbar;
@@ -2084,9 +1681,7 @@ input[type="checkbox"],
     flex-shrink: 0;
   }
   
-  /* ============================= */
-  /* PORTRAIT UNIFORM PANELS       */
-  /* ============================= */
+  /* Portrait Panels */
   #panels,
   .panels {
     grid-area: panels;
@@ -2177,254 +1772,34 @@ input[type="checkbox"],
     opacity: 0;
   }
   
-  /* ============================= */
-  /* MOBILE FORM OPTIMIZATIONS     */
-  /* ============================= */
-  
   /* Portrait Form Controls */
-  @media screen and (max-width: 768px) and (orientation: portrait) {
-    #control-group,
-    .control-group {
-      margin-bottom: 16px;
-    }
-    
-    #control-group label,
-    .control-group label {
-      display: block;
-      font-size: 12px;
-      font-weight: 600;
-      margin-bottom: 8px;
-      color: #ccc;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-    }
-    
-    select,
-    input[type="number"],
-    input[type="range"],
-    input[type="color"],
-    textarea,
-    #brushSize,
-    #brushOpacity,
-    #layerOpacity {
-      background: linear-gradient(135deg, #333 0%, #2a2a2a 100%);
-      border: 1px solid #555;
-      color: #e8e8e8;
-      padding: 10px 12px;
-      border-radius: 6px;
-      font-size: 14px;
-      width: 100%;
-      min-height: 42px;
-    }
-    
-    input[type="range"] {
-      padding: 8px 0;
-      height: 42px;
-    }
-    
-    input[type="range"]::-webkit-slider-thumb {
-      width: 20px;
-      height: 20px;
-      background: linear-gradient(135deg, #4CAF50 0%, #66BB6A 100%);
-      border: 2px solid #333;
-    }
-    
-    #btn,
-    .btn {
-      background: linear-gradient(135deg, #404040 0%, #333 100%);
-      border: 1px solid #555;
-      color: #e8e8e8;
-      padding: 12px 16px;
-      border-radius: 6px;
-      font-size: 13px;
-      min-height: 44px;
-    }
-    
-    #btn-group,
-    .btn-group {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 8px;
-      margin-bottom: 12px;
-    }
-    
-    .swatches,
-    #swatches {
-      display: grid;
-      grid-template-columns: repeat(6, 1fr);
-      gap: 8px;
-      margin-top: 12px;
-    }
-    
-    #swatch,
-    .swatch {
-      width: 38px;
-      height: 38px;
-      border: 2px solid #555;
-      border-radius: 6px;
-    }
-  }
-  
-  /* Landscape Form Controls */
-  @media screen and (max-width: 1024px) and (orientation: landscape) and (max-height: 768px) {
-    #control-group,
-    .control-group {
-      margin-bottom: 12px;
-    }
-    
-    #control-group label,
-    .control-group label {
-      display: block;
-      font-size: 10px;
-      font-weight: 600;
-      margin-bottom: 6px;
-      color: #ccc;
-      text-transform: uppercase;
-      letter-spacing: 0.3px;
-    }
-    
-    select,
-    input[type="number"],
-    input[type="range"],
-    input[type="color"],
-    textarea,
-    #brushSize,
-    #brushOpacity,
-    #layerOpacity {
-      background: linear-gradient(135deg, #333 0%, #2a2a2a 100%);
-      border: 1px solid #555;
-      color: #e8e8e8;
-      padding: 6px 8px;
-      border-radius: 4px;
-      font-size: 11px;
-      width: 100%;
-      min-height: 30px;
-    }
-    
-    input[type="range"] {
-      padding: 4px 0;
-      height: 30px;
-    }
-    
-    input[type="range"]::-webkit-slider-thumb {
-      width: 16px;
-      height: 16px;
-      background: linear-gradient(135deg, #4CAF50 0%, #66BB6A 100%);
-      border: 2px solid #333;
-    }
-    
-    input[type="color"] {
-      height: 36px;
-      padding: 4px;
-    }
-    
-    #btn,
-    .btn {
-      background: linear-gradient(135deg, #404040 0%, #333 100%);
-      border: 1px solid #555;
-      color: #e8e8e8;
-      padding: 8px 12px;
-      border-radius: 4px;
-      font-size: 10px;
-      min-height: 32px;
-    }
-    
-    #btn-group,
-    .btn-group {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 6px;
-      margin-bottom: 8px;
-    }
-    
-    #btn-group.triple,
-    .btn-group.triple {
-      grid-template-columns: 1fr 1fr 1fr;
-    }
-    
-    .swatches,
-    #swatches {
-      display: grid;
-      grid-template-columns: repeat(6, 1fr);
-      gap: 6px;
-      margin-top: 8px;
-    }
-    
-    #swatch,
-    .swatch {
-      width: 28px;
-      height: 28px;
-      border: 2px solid #555;
-      border-radius: 4px;
-    }
-    
-    #layerList,
-    .layer-list {
-      max-height: 120px;
-      border: 1px solid #444;
-      margin-bottom: 8px;
-      border-radius: 4px;
-    }
-    
-    #layer-item,
-    .layer-item {
-      padding: 8px 10px;
-      font-size: 10px;
-      min-height: 32px;
-    }
-    
-    #brushPreview {
-      width: 50px;
-      height: 50px;
-      border: 2px solid #555;
-      margin: 8px auto 12px;
-    }
-    
-    #export-area textarea,
-    #output {
-      height: 80px;
-      padding: 8px;
-      font-size: 10px;
-    }
-  }
-  /* ============================= */
   #paletteSelector {
-    width: 100%;
     padding: 14px 16px;
-    background: linear-gradient(135deg, #333 0%, #2a2a2a 100%);
-    border: 2px solid #555;
-    color: #e8e8e8;
-    border-radius: 8px;
     font-size: 14px;
-    cursor: pointer;
-    transition: all 0.2s ease;
+    min-height: 48px;
+    border-radius: 8px;
     appearance: none;
     background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%23e8e8e8' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
     background-position: right 12px center;
     background-repeat: no-repeat;
     background-size: 16px;
     padding-right: 40px;
-    min-height: 48px;
   }
   
   .swatches,
   #swatches {
-    display: grid;
-    grid-template-columns: repeat(6, 1fr);
     gap: 12px;
     margin-top: 16px;
   }
   
-  #color-swatch,
-  .color-swatch,
   #swatch,
-  .swatch {
+  .swatch,
+  #color-swatch,
+  .color-swatch {
     width: 48px;
     height: 48px;
     border: 3px solid #555;
-    cursor: pointer;
     border-radius: 8px;
-    transition: all 0.2s ease;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
     touch-action: manipulation;
   }
@@ -2459,9 +1834,6 @@ input[type="checkbox"],
     right: -11px;
   }
   
-  /* ============================= */
-  /* PORTRAIT FORM CONTROLS        */
-  /* ============================= */
   #control-group,
   .control-group {
     margin-bottom: 24px;
@@ -2478,142 +1850,47 @@ input[type="checkbox"],
     letter-spacing: 0.8px;
   }
   
-  #control-row,
-  .control-row {
-    display: flex;
-    gap: 12px;
-    align-items: center;
-    margin-bottom: 12px;
-    flex-wrap: wrap;
-  }
-  
   select,
   input[type="number"],
   input[type="range"],
   input[type="color"],
   input[type="file"],
-  textarea,
-  #canvasWidth,
-  #canvasHeight,
-  #brushSize,
-  #brushOpacity,
-  #brushHardness,
-  #brushFlow,
-  #sketchColor,
-  #layerOpacity,
-  #blendMode,
-  #output,
-  #importFile {
-    background: linear-gradient(135deg, #333 0%, #2a2a2a 100%);
-    border: 2px solid #555;
-    color: #e8e8e8;
+  textarea {
     padding: 14px 16px;
-    border-radius: 8px;
     font-size: 14px;
-    width: 100%;
-    transition: all 0.2s ease;
     min-height: 48px;
+    border-radius: 8px;
   }
   
-  select:focus,
-  input:focus,
-  textarea:focus {
-    outline: none;
-    border-color: #4CAF50;
-    box-shadow: 0 0 0 4px rgba(76, 175, 80, 0.2);
-    transform: scale(1.02);
-  }
-  
-  input[type="color"],
-  #sketchColor {
+  input[type="color"] {
     height: 60px;
     padding: 8px;
-    cursor: pointer;
     border-radius: 12px;
   }
   
-  input[type="range"],
-  #brushSize,
-  #brushOpacity,
-  #brushHardness,
-  #brushFlow,
-  #layerOpacity {
+  input[type="range"] {
     padding: 10px 0;
-    background: #2a2a2a;
-    border: 2px solid #444;
     height: 48px;
   }
   
-  input[type="range"]::-webkit-slider-thumb,
-  #brushSize::-webkit-slider-thumb,
-  #brushOpacity::-webkit-slider-thumb,
-  #brushHardness::-webkit-slider-thumb,
-  #brushFlow::-webkit-slider-thumb,
-  #layerOpacity::-webkit-slider-thumb {
-    appearance: none;
+  input[type="range"]::-webkit-slider-thumb {
     width: 28px;
     height: 28px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, #4CAF50 0%, #66BB6A 100%);
-    cursor: pointer;
     border: 3px solid #333;
     box-shadow: 0 3px 8px rgba(0, 0, 0, 0.4);
   }
   
-  input[type="range"]::-webkit-slider-track,
-  #brushSize::-webkit-slider-track,
-  #brushOpacity::-webkit-slider-track,
-  #brushHardness::-webkit-slider-track,
-  #brushFlow::-webkit-slider-track,
-  #layerOpacity::-webkit-slider-track {
-    appearance: none;
+  input[type="range"]::-webkit-slider-track {
     height: 8px;
     border-radius: 4px;
-    background: linear-gradient(90deg, #333 0%, #555 100%);
-  }
-  
-  input[type="checkbox"],
-  #gridToggle {
-    width: auto;
-    margin-right: 12px;
-    accent-color: #4CAF50;
-    transform: scale(1.4);
-    min-height: auto;
   }
   
   #btn,
-  .btn,
-  #resizeCanvas,
-  #zoomIn,
-  #zoomOut,
-  #zoomReset,
-  #undo,
-  #redo,
-  #clear,
-  #rotateLeft,
-  #rotateRight,
-  #rotate180,
-  #flipHorizontal,
-  #flipVertical,
-  #newSprite,
-  #duplicateSprite,
-  #deleteSprite,
-  #addLayer,
-  #exportJSON,
-  #exportPNG2,
-  #saveCustomPalette {
-    background: linear-gradient(135deg, #404040 0%, #333 100%);
-    border: 2px solid #555;
-    color: #e8e8e8;
+  .btn {
     padding: 16px 20px;
-    border-radius: 8px;
-    cursor: pointer;
     font-size: 14px;
     font-weight: 600;
-    transition: all 0.2s ease;
-    white-space: nowrap;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
-    text-align: center;
+    border-radius: 8px;
     min-height: 52px;
     touch-action: manipulation;
   }
@@ -2621,28 +1898,6 @@ input[type="checkbox"],
   #btn:active,
   .btn:active {
     transform: scale(0.95);
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-  }
-  
-  #btn.primary,
-  .btn.primary,
-  #exportJSON,
-  #saveCustomPalette,
-  #addLayer {
-    background: linear-gradient(135deg, #4CAF50 0%, #66BB6A 100%);
-    border-color: #66BB6A;
-    color: #000;
-    font-weight: 600;
-  }
-  
-  #btn.danger,
-  .btn.danger,
-  #clear,
-  #deleteSprite {
-    background: linear-gradient(135deg, #f44336 0%, #e57373 100%);
-    border-color: #e57373;
-    color: #fff;
-    font-weight: 600;
   }
   
   #btn-group,
@@ -2653,38 +1908,17 @@ input[type="checkbox"],
     margin-bottom: 16px;
   }
   
-  #btn-group.triple,
-  .btn-group.triple {
-    grid-template-columns: 1fr 1fr 1fr;
-  }
-  
-  #btn-group.single,
-  .btn-group.single {
-    grid-template-columns: 1fr;
-  }
-  
-  /* ============================= */
-  /* PORTRAIT LAYER CONTROLS       */
-  /* ============================= */
   #layerList,
   .layer-list {
     max-height: 240px;
-    overflow-y: auto;
-    border: 2px solid #444;
-    margin-bottom: 16px;
-    background: linear-gradient(135deg, #2a2a2a 0%, #252525 100%);
     border-radius: 8px;
+    margin-bottom: 16px;
     -webkit-overflow-scrolling: touch;
   }
   
   #layer-item,
   .layer-item {
-    display: flex;
-    align-items: center;
     padding: 16px 18px;
-    cursor: pointer;
-    border-bottom: 1px solid #333;
-    transition: all 0.2s ease;
     font-size: 14px;
     min-height: 60px;
     touch-action: manipulation;
@@ -2693,111 +1927,26 @@ input[type="checkbox"],
   #layer-item:active,
   .layer-item:active {
     transform: scale(0.98);
-    background: linear-gradient(135deg, #333 0%, #404040 100%);
   }
   
-  #layer-item.active,
-  .layer-item.active {
-    background: linear-gradient(135deg, #4CAF50 0%, #66BB6A 100%);
-    color: #000;
-    font-weight: 600;
-  }
-  
-  /* ============================= */
-  /* PORTRAIT SYMMETRY CONTROLS    */
-  /* ============================= */
-  #symmetry-controls,
-  .symmetry-controls {
-    margin-bottom: 16px;
-  }
-  
-  #symmetry-btn,
-  .symmetry-btn {
-    min-width: 90px;
-    padding: 14px 18px;
-    font-size: 13px;
-    font-weight: 600;
-    min-height: 48px;
-  }
-  
-  #symmetry-btn.active,
-  .symmetry-btn.active {
-    background: linear-gradient(135deg, #4A90E2 0%, #6BB6FF 100%);
-    border-color: #6BB6FF;
-    color: #fff;
-    box-shadow: 0 4px 12px rgba(74, 144, 226, 0.5);
-  }
-  
-  /* ============================= */
-  /* PORTRAIT BRUSH PREVIEW        */
-  /* ============================= */
   #brushPreview {
     width: 100px;
     height: 100px;
     border: 3px solid #555;
-    border-radius: 50%;
     margin: 20px auto 24px;
-    background: linear-gradient(135deg, #333 0%, #2a2a2a 100%);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    box-shadow: inset 0 4px 10px rgba(0, 0, 0, 0.4);
-  }
-  
-  /* ============================= */
-  /* PORTRAIT EXPORT AREA          */
-  /* ============================= */
-  #export-area,
-  .export-area {
-    margin-top: 20px;
   }
   
   #export-area textarea,
-  .export-area textarea,
   #output {
-    width: 100%;
     height: 140px;
-    background: linear-gradient(135deg, #333 0%, #2a2a2a 100%);
-    border: 2px solid #555;
-    color: #e8e8e8;
     padding: 16px;
     border-radius: 8px;
-    font-family: 'Consolas', 'Monaco', monospace;
     font-size: 12px;
-    resize: vertical;
-    line-height: 1.5;
-  }
-  
-  /* ============================= */
-  /* PORTRAIT TOUCH OPTIMIZATIONS  */
-  /* ============================= */
-  * {
-    -webkit-tap-highlight-color: transparent;
-    -webkit-touch-callout: none;
-    -webkit-user-select: none;
-    user-select: none;
-  }
-  
-  input, textarea, select {
-    -webkit-user-select: text;
-    user-select: text;
-  }
-  
-  /* Prevent zoom on inputs */
-  input[type="text"],
-  input[type="number"],
-  input[type="email"],
-  input[type="tel"],
-  input[type="url"],
-  input[type="search"],
-  textarea,
-  select {
-    font-size: 16px;
   }
 }
 
 /* ============================= */
-/* MOBILE LANDSCAPE (HORIZONTAL LAYOUT) */
+/* MOBILE LANDSCAPE (HORIZONTAL) */
 /* ============================= */
 @media screen and (max-width: 1024px) and (orientation: landscape) and (max-height: 768px) {
   html, body {
@@ -2805,7 +1954,7 @@ input[type="checkbox"],
     width: 100vw;
     overflow: hidden;
     position: fixed;
-    font-size: 13px;
+    font-size: 12px;
   }
   
   #editor-container,
@@ -2814,60 +1963,56 @@ input[type="checkbox"],
     grid-template-areas:
       "header header header"
       "sidebar canvas panels";
-    grid-template-columns: 80px 1fr 340px;
-    grid-template-rows: 55px 1fr;
+    grid-template-columns: 70px 1fr 280px;
+    grid-template-rows: 45px 1fr;
     height: 100dvh;
     gap: 0;
     background: #2a2a2a;
   }
   
-  /* ============================= */
-  /* LANDSCAPE HEADER               */
-  /* ============================= */
+  /* Landscape Header */
   #header,
   .header {
     grid-area: header;
-    height: 55px;
-    padding: 0 16px;
-    border-bottom: 2px solid #333;
+    height: 45px;
+    padding: 0 12px;
+    border-bottom: 1px solid #333;
     z-index: 200;
     display: flex;
     align-items: center;
     justify-content: space-between;
     background: linear-gradient(180deg, #1e1e1e 0%, #1a1a1a 100%);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
   }
   
   #logo,
   .logo {
-    font-size: 17px;
+    font-size: 15px;
     font-weight: 700;
     color: #4CAF50;
-    display: flex;
-    align-items: center;
   }
   
   #mode-toggle,
   .mode-toggle {
-    margin-left: 12px;
+    margin-left: 8px;
     display: flex;
-    gap: 2px;
+    gap: 1px;
     background: #333;
-    border-radius: 6px;
+    border-radius: 4px;
     padding: 2px;
   }
   
   #mode-btn,
   .mode-btn {
-    padding: 8px 12px;
-    font-size: 12px;
-    min-width: 50px;
+    padding: 6px 10px;
+    font-size: 10px;
+    min-width: 40px;
     background: transparent;
     border: none;
     color: #e0e0e0;
     font-weight: 600;
     cursor: pointer;
-    border-radius: 4px;
+    border-radius: 3px;
     transition: all 0.2s ease;
   }
   
@@ -2875,12 +2020,12 @@ input[type="checkbox"],
   .mode-btn.active {
     background: linear-gradient(135deg, #4CAF50 0%, #66BB6A 100%);
     color: #000;
-    box-shadow: 0 2px 6px rgba(76, 175, 80, 0.4);
+    box-shadow: 0 1px 3px rgba(76, 175, 80, 0.4);
   }
   
   #header-controls,
   .header-controls {
-    gap: 6px;
+    gap: 4px;
     display: flex;
   }
   
@@ -2889,11 +2034,11 @@ input[type="checkbox"],
   #newProject,
   #saveProject,
   #exportPNG {
-    padding: 8px 12px;
-    font-size: 11px;
+    padding: 6px 8px;
+    font-size: 9px;
     background: linear-gradient(135deg, #404040 0%, #333 100%);
     border: 1px solid #555;
-    border-radius: 6px;
+    border-radius: 3px;
     color: #e8e8e8;
     font-weight: 500;
     cursor: pointer;
@@ -2909,28 +2054,27 @@ input[type="checkbox"],
     transform: scale(0.95);
   }
   
-  /* ============================= */
-  /* LANDSCAPE SIDEBAR (VERTICAL)  */
-  /* ============================= */
+  /* Landscape Sidebar */
   #sidebar,
   .sidebar {
     grid-area: sidebar;
-    width: 80px;
+    width: 70px;
     background: linear-gradient(180deg, #1e1e1e 0%, #1a1a1a 100%);
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 12px 0;
-    gap: 8px;
-    border-right: 2px solid #333;
+    padding: 8px 0;
+    gap: 6px;
+    border-right: 1px solid #333;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
-    box-shadow: 2px 0 8px rgba(0, 0, 0, 0.3);
+    box-shadow: 1px 0 4px rgba(0, 0, 0, 0.3);
     z-index: 150;
+    height: calc(100dvh - 45px);
   }
   
   #sidebar::-webkit-scrollbar {
-    width: 4px;
+    width: 3px;
   }
   
   #sidebar::-webkit-scrollbar-track {
@@ -2947,7 +2091,7 @@ input[type="checkbox"],
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 8px;
+    gap: 6px;
     width: 100%;
   }
   
@@ -2958,7 +2102,7 @@ input[type="checkbox"],
     display: none;
     flex-direction: column;
     align-items: center;
-    gap: 8px;
+    gap: 6px;
     width: 100%;
   }
   
@@ -2971,20 +2115,20 @@ input[type="checkbox"],
   
   #tool-btn,
   .tool-btn {
-    width: 56px;
-    height: 56px;
+    width: 50px;
+    height: 50px;
     background: linear-gradient(135deg, #333 0%, #2a2a2a 100%);
     border: 2px solid #444;
-    border-radius: 10px;
+    border-radius: 8px;
     color: #e8e8e8;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 18px;
+    font-size: 16px;
     transition: all 0.2s ease;
     flex-shrink: 0;
-    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
     touch-action: manipulation;
   }
   
@@ -2999,7 +2143,7 @@ input[type="checkbox"],
     border-color: #66BB6A;
     color: #000;
     font-weight: 600;
-    box-shadow: 0 4px 12px rgba(76, 175, 80, 0.5);
+    box-shadow: 0 3px 8px rgba(76, 175, 80, 0.5);
     transform: scale(1.05);
   }
   
@@ -3007,29 +2151,27 @@ input[type="checkbox"],
   .tool-btn.symmetric-tool {
     background: linear-gradient(135deg, #4A90E2 0%, #6BB6FF 100%);
     border-color: #6BB6FF;
-    font-size: 16px;
-    box-shadow: 0 4px 8px rgba(74, 144, 226, 0.4);
+    font-size: 14px;
+    box-shadow: 0 2px 4px rgba(74, 144, 226, 0.4);
   }
   
   #tool-btn.symmetric-tool.active,
   .tool-btn.symmetric-tool.active {
     background: linear-gradient(135deg, #6BB6FF 0%, #4A90E2 100%);
     color: #000;
-    box-shadow: 0 4px 12px rgba(74, 144, 226, 0.6);
+    box-shadow: 0 3px 8px rgba(74, 144, 226, 0.6);
   }
   
   #tool-separator,
   .tool-separator {
-    width: 80%;
-    height: 2px;
+    width: 70%;
+    height: 1px;
     background: linear-gradient(90deg, transparent 0%, #444 50%, transparent 100%);
-    margin: 8px 0;
+    margin: 4px 0;
     flex-shrink: 0;
   }
   
-  /* ============================= */
-  /* LANDSCAPE CANVAS AREA         */
-  /* ============================= */
+  /* Landscape Canvas Area */
   #canvas-area,
   .canvas-area {
     grid-area: canvas;
@@ -3039,10 +2181,10 @@ input[type="checkbox"],
     align-items: center;
     justify-content: center;
     position: relative;
-    overflow: auto;
-    -webkit-overflow-scrolling: touch;
-    padding: 16px;
+    overflow: visible;
+    padding: 8px;
     min-height: 0;
+    height: calc(100dvh - 45px);
   }
   
   #canvas-wrapper,
@@ -3051,69 +2193,59 @@ input[type="checkbox"],
     display: flex;
     align-items: center;
     justify-content: center;
-    max-width: calc(100% - 32px);
-    max-height: calc(100% - 32px);
-    border-radius: 8px;
-    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
-  }
-  
-  #canvas {
-    max-width: 100%;
-    max-height: 100%;
-    min-width: 200px;
-    min-height: 200px;
+    border-radius: 6px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+    overflow: visible;
+    transform-origin: center center;
   }
   
   #sketchCanvas {
-    max-width: calc(100% - 64px);
-    max-height: calc(100% - 64px);
     border: 2px solid #555;
-    border-radius: 6px;
+    border-radius: 4px;
   }
   
   #canvasInfo {
     position: absolute;
-    bottom: 8px;
-    left: 8px;
+    bottom: 6px;
+    left: 6px;
     background: rgba(0, 0, 0, 0.85);
-    padding: 6px 10px;
-    border-radius: 4px;
-    font-size: 10px;
+    padding: 4px 8px;
+    border-radius: 3px;
+    font-size: 9px;
     backdrop-filter: blur(8px);
     border: 1px solid rgba(255, 255, 255, 0.1);
   }
   
   #zoomIndicator {
     position: absolute;
-    top: 8px;
-    right: 8px;
+    top: 6px;
+    right: 6px;
     background: rgba(0, 0, 0, 0.85);
-    padding: 6px 10px;
-    border-radius: 4px;
-    font-size: 10px;
+    padding: 4px 8px;
+    border-radius: 3px;
+    font-size: 9px;
     backdrop-filter: blur(8px);
     border: 1px solid rgba(255, 255, 255, 0.1);
   }
   
-  /* ============================= */
-  /* LANDSCAPE RIGHT PANELS        */
-  /* ============================= */
+  /* Landscape Panels */
   #panels,
   .panels {
     grid-area: panels;
-    width: 340px;
+    width: 280px;
     background: linear-gradient(180deg, #1e1e1e 0%, #1a1a1a 100%);
     display: flex;
     flex-direction: column;
-    border-left: 2px solid #333;
+    border-left: 1px solid #333;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
-    box-shadow: -2px 0 8px rgba(0, 0, 0, 0.3);
+    box-shadow: -1px 0 4px rgba(0, 0, 0, 0.3);
     z-index: 100;
+    height: calc(100dvh - 45px);
   }
   
   #panels::-webkit-scrollbar {
-    width: 6px;
+    width: 4px;
   }
   
   #panels::-webkit-scrollbar-track {
@@ -3122,20 +2254,21 @@ input[type="checkbox"],
   
   #panels::-webkit-scrollbar-thumb {
     background: #444;
-    border-radius: 3px;
+    border-radius: 2px;
   }
   
   #panel,
   .panel {
     background: #1e1e1e;
     border-bottom: 1px solid #333;
+    width: 100%;
   }
   
   #panel-header,
   .panel-header {
     background: linear-gradient(135deg, #2a2a2a 0%, #333 100%);
-    padding: 14px 18px;
-    font-size: 13px;
+    padding: 10px 12px;
+    font-size: 12px;
     font-weight: 600;
     border-bottom: 1px solid #333;
     cursor: pointer;
@@ -3144,8 +2277,10 @@ input[type="checkbox"],
     align-items: center;
     transition: all 0.2s ease;
     color: #e8e8e8;
-    min-height: 48px;
+    min-height: 40px;
     touch-action: manipulation;
+    width: 100%;
+    box-sizing: border-box;
   }
   
   #panel-header:active,
@@ -3156,7 +2291,7 @@ input[type="checkbox"],
   
   #panel-header span,
   .panel-header span {
-    font-size: 16px;
+    font-size: 14px;
     transition: transform 0.3s ease;
   }
   
@@ -3167,489 +2302,120 @@ input[type="checkbox"],
   
   #panel-content,
   .panel-content {
-    padding: 16px;
+    padding: 10px 12px;
     display: block;
     transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1),
                 padding 0.3s cubic-bezier(0.4, 0, 0.2, 1),
                 opacity 0.3s ease;
     overflow: hidden;
     background: linear-gradient(180deg, #1e1e1e 0%, #1a1a1a 100%);
-    max-height: 600px;
+    max-height: 400px;
     opacity: 1;
   }
   
   #panel.collapsed .panel-content,
   .panel.collapsed .panel-content {
     max-height: 0;
-    padding: 0 16px;
+    padding: 0 12px;
     opacity: 0;
   }
   
-  /* ============================= */
-  /* LANDSCAPE COLOR CONTROLS      */
-  /* ============================= */
-  #paletteSelector {
-    width: 100%;
-    padding: 10px 14px;
-    background: linear-gradient(135deg, #333 0%, #2a2a2a 100%);
-    border: 2px solid #555;
-    color: #e8e8e8;
-    border-radius: 6px;
-    font-size: 12px;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    appearance: none;
-    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%23e8e8e8' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
-    background-position: right 12px center;
-    background-repeat: no-repeat;
-    background-size: 14px;
-    padding-right: 38px;
-    min-height: 40px;
-  }
-  
-  .swatches,
-  #swatches {
-    display: grid;
-    grid-template-columns: repeat(6, 1fr);
-    gap: 8px;
-    margin-top: 12px;
-  }
-  
-  #color-swatch,
-  .color-swatch,
-  #swatch,
-  .swatch {
-    width: 36px;
-    height: 36px;
-    border: 2px solid #555;
-    cursor: pointer;
-    border-radius: 6px;
-    transition: all 0.2s ease;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
-    touch-action: manipulation;
-  }
-  
-  #swatch:active,
-  .swatch:active,
-  #color-swatch:active,
-  .color-swatch:active {
-    transform: scale(0.9);
-  }
-  
-  #swatch.selected,
-  .swatch.selected,
-  #primaryColor,
-  #secondaryColor {
-    border-color: #4CAF50;
-    box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.4), 0 3px 8px rgba(0, 0, 0, 0.4);
-    transform: scale(1.05);
-  }
-  
-  #primaryColor::after,
-  #secondaryColor::after,
-  #swatch.primary::after,
-  .swatch.primary::after,
-  #swatch.secondary::after,
-  .swatch.secondary::after {
-    width: 18px;
-    height: 18px;
-    font-size: 10px;
-    font-weight: 700;
-    top: -9px;
-    right: -9px;
-  }
-  
-  /* ============================= */
-  /* LANDSCAPE FORM CONTROLS       */
-  /* ============================= */
+  /* Landscape Form Controls */
   #control-group,
   .control-group {
-    margin-bottom: 16px;
+    margin-bottom: 12px;
   }
   
   #control-group label,
   .control-group label {
-    display: block;
-    font-size: 12px;
+    font-size: 10px;
     font-weight: 600;
-    margin-bottom: 8px;
-    color: #ccc;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-  }
-  
-  #control-row,
-  .control-row {
-    display: flex;
-    gap: 8px;
-    align-items: center;
-    margin-bottom: 8px;
+    margin-bottom: 6px;
+    letter-spacing: 0.3px;
   }
   
   select,
   input[type="number"],
   input[type="range"],
   input[type="color"],
-  input[type="file"],
-  textarea,
-  #canvasWidth,
-  #canvasHeight,
-  #brushSize,
-  #brushOpacity,
-  #brushHardness,
-  #brushFlow,
-  #sketchColor,
-  #layerOpacity,
-  #blendMode,
-  #output,
-  #importFile {
-    background: linear-gradient(135deg, #333 0%, #2a2a2a 100%);
-    border: 2px solid #555;
-    color: #e8e8e8;
-    padding: 8px 12px;
-    border-radius: 6px;
-    font-size: 12px;
-    width: 100%;
-    transition: all 0.2s ease;
-    min-height: 36px;
+  textarea {
+    padding: 6px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    min-height: 30px;
   }
   
-  select:focus,
-  input:focus,
-  textarea:focus {
-    outline: none;
-    border-color: #4CAF50;
-    box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.2);
+  input[type="range"] {
+    padding: 4px 0;
+    height: 30px;
   }
   
-  input[type="color"],
-  #sketchColor {
-    height: 44px;
-    padding: 6px;
-    cursor: pointer;
-    border-radius: 8px;
-  }
-  
-  input[type="range"],
-  #brushSize,
-  #brushOpacity,
-  #brushHardness,
-  #brushFlow,
-  #layerOpacity {
-    padding: 6px 0;
-    background: #2a2a2a;
-    border: 2px solid #444;
-    height: 36px;
-  }
-  
-  input[type="range"]::-webkit-slider-thumb,
-  #brushSize::-webkit-slider-thumb,
-  #brushOpacity::-webkit-slider-thumb,
-  #brushHardness::-webkit-slider-thumb,
-  #brushFlow::-webkit-slider-thumb,
-  #layerOpacity::-webkit-slider-thumb {
-    appearance: none;
-    width: 20px;
-    height: 20px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, #4CAF50 0%, #66BB6A 100%);
-    cursor: pointer;
+  input[type="range"]::-webkit-slider-thumb {
+    width: 16px;
+    height: 16px;
     border: 2px solid #333;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
   }
   
-  input[type="range"]::-webkit-slider-track,
-  #brushSize::-webkit-slider-track,
-  #brushOpacity::-webkit-slider-track,
-  #brushHardness::-webkit-slider-track,
-  #brushFlow::-webkit-slider-track,
-  #layerOpacity::-webkit-slider-track {
-    appearance: none;
-    height: 6px;
-    border-radius: 3px;
-    background: linear-gradient(90deg, #333 0%, #555 100%);
-  }
-  
-  input[type="checkbox"],
-  #gridToggle {
-    width: auto;
-    margin-right: 10px;
-    accent-color: #4CAF50;
-    transform: scale(1.2);
-    min-height: auto;
+  input[type="color"] {
+    height: 36px;
+    padding: 4px;
   }
   
   #btn,
-  .btn,
-  #resizeCanvas,
-  #zoomIn,
-  #zoomOut,
-  #zoomReset,
-  #undo,
-  #redo,
-  #clear,
-  #rotateLeft,
-  #rotateRight,
-  #rotate180,
-  #flipHorizontal,
-  #flipVertical,
-  #newSprite,
-  #duplicateSprite,
-  #deleteSprite,
-  #addLayer,
-  #exportJSON,
-  #exportPNG2,
-  #saveCustomPalette {
-    background: linear-gradient(135deg, #404040 0%, #333 100%);
-    border: 2px solid #555;
-    color: #e8e8e8;
-    padding: 10px 14px;
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 12px;
-    font-weight: 600;
-    transition: all 0.2s ease;
-    white-space: nowrap;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
-    text-align: center;
-    min-height: 40px;
-    touch-action: manipulation;
-  }
-  
-  #btn:active,
-  .btn:active {
-    transform: scale(0.95);
-  }
-  
-  #btn.primary,
-  .btn.primary,
-  #exportJSON,
-  #saveCustomPalette,
-  #addLayer {
-    background: linear-gradient(135deg, #4CAF50 0%, #66BB6A 100%);
-    border-color: #66BB6A;
-    color: #000;
-    font-weight: 600;
-  }
-  
-  #btn.danger,
-  .btn.danger,
-  #clear,
-  #deleteSprite {
-    background: linear-gradient(135deg, #f44336 0%, #e57373 100%);
-    border-color: #e57373;
-    color: #fff;
-    font-weight: 600;
+  .btn {
+    padding: 8px 12px;
+    font-size: 10px;
+    min-height: 32px;
+    border-radius: 4px;
   }
   
   #btn-group,
   .btn-group {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 8px;
-    margin-bottom: 12px;
+    gap: 6px;
+    margin-bottom: 8px;
   }
   
-  #btn-group.triple,
-  .btn-group.triple {
-    grid-template-columns: 1fr 1fr 1fr;
+  .swatches,
+  #swatches {
+    gap: 6px;
+    margin-top: 8px;
   }
   
-  #btn-group.single,
-  .btn-group.single {
-    grid-template-columns: 1fr;
+  #swatch,
+  .swatch {
+    width: 28px;
+    height: 28px;
+    border: 2px solid #555;
+    border-radius: 4px;
   }
   
-  /* ============================= */
-  /* LANDSCAPE LAYER CONTROLS      */
-  /* ============================= */
   #layerList,
   .layer-list {
-    max-height: 160px;
-    overflow-y: auto;
-    border: 2px solid #444;
-    margin-bottom: 12px;
-    background: linear-gradient(135deg, #2a2a2a 0%, #252525 100%);
-    border-radius: 6px;
-    -webkit-overflow-scrolling: touch;
+    max-height: 120px;
+    border: 1px solid #444;
+    margin-bottom: 8px;
+    border-radius: 4px;
   }
   
   #layer-item,
   .layer-item {
-    display: flex;
-    align-items: center;
-    padding: 12px 14px;
-    cursor: pointer;
-    border-bottom: 1px solid #333;
-    transition: all 0.2s ease;
-    font-size: 12px;
-    min-height: 44px;
-    touch-action: manipulation;
-  }
-  
-  #layer-item:active,
-  .layer-item:active {
-    transform: scale(0.98);
-    background: linear-gradient(135deg, #333 0%, #404040 100%);
-  }
-  
-  #layer-item.active,
-  .layer-item.active {
-    background: linear-gradient(135deg, #4CAF50 0%, #66BB6A 100%);
-    color: #000;
-    font-weight: 600;
-  }
-  
-  #layer-item input[type="checkbox"],
-  .layer-item input[type="checkbox"] {
-    margin-right: 8px;
-    width: 14px;
-    height: 14px;
-    accent-color: #4CAF50;
-  }
-  
-  #layer-item span,
-  .layer-item span,
-  #layer-name,
-  .layer-name {
-    flex: 1;
-    font-size: 11px;
-  }
-  
-  #layer-toggle,
-  .layer-toggle,
-  #layer-delete,
-  .layer-delete {
-    background: none;
-    border: none;
-    font-size: 12px;
-    cursor: pointer;
-    padding: 4px 6px;
-    border-radius: 3px;
-    transition: background 0.2s ease;
-    margin-left: 4px;
-    color: #e8e8e8;
-  }
-  
-  #layer-toggle:active,
-  .layer-toggle:active,
-  #layer-delete:active,
-  .layer-delete:active {
-    background: rgba(255, 255, 255, 0.2);
-  }
-  
-  /* ============================= */
-  /* LANDSCAPE SYMMETRY CONTROLS   */
-  /* ============================= */
-  #symmetry-controls,
-  .symmetry-controls {
-    margin-bottom: 12px;
-  }
-  
-  #symmetry-btn,
-  .symmetry-btn {
-    min-width: 70px;
-    padding: 10px 12px;
-    font-size: 11px;
-    font-weight: 600;
-    min-height: 40px;
-    background: linear-gradient(135deg, #333 0%, #2a2a2a 100%);
-    border: 2px solid #555;
-    color: #e0e0e0;
-    transition: all 0.2s ease;
-  }
-  
-  #symmetry-btn:active,
-  .symmetry-btn:active {
-    background: linear-gradient(135deg, #4A90E2 0%, #6BB6FF 100%);
-    border-color: #6BB6FF;
-    color: #fff;
-    transform: scale(0.95);
-  }
-  
-  #symmetry-btn.active,
-  .symmetry-btn.active {
-    background: linear-gradient(135deg, #4A90E2 0%, #6BB6FF 100%);
-    border-color: #6BB6FF;
-    color: #fff;
-    box-shadow: 0 3px 10px rgba(74, 144, 226, 0.4);
-  }
-  
-  #symmetry-info,
-  .symmetry-info {
-    margin-top: 12px;
-    padding: 10px;
-    background: linear-gradient(135deg, rgba(74, 144, 226, 0.1) 0%, rgba(74, 144, 226, 0.05) 100%);
-    border: 1px solid rgba(74, 144, 226, 0.3);
-    border-radius: 6px;
-  }
-  
-  #symmetry-info small,
-  .symmetry-info small {
-    color: #bbb;
+    padding: 8px 10px;
     font-size: 10px;
-    line-height: 1.4;
-    font-style: italic;
+    min-height: 32px;
   }
   
-  /* ============================= */
-  /* LANDSCAPE TRANSFORM CONTROLS  */
-  /* ============================= */
-  #transform-info,
-  .transform-info {
-    margin-top: 12px;
-    padding: 10px;
-    background: linear-gradient(135deg, rgba(76, 175, 80, 0.1) 0%, rgba(76, 175, 80, 0.05) 100%);
-    border: 1px solid rgba(76, 175, 80, 0.3);
-    border-radius: 6px;
-  }
-  
-  #transform-info small,
-  .transform-info small {
-    color: #bbb;
-    font-size: 10px;
-    line-height: 1.4;
-    font-style: italic;
-  }
-  
-  /* ============================= */
-  /* LANDSCAPE BRUSH PREVIEW       */
-  /* ============================= */
   #brushPreview {
-    width: 70px;
-    height: 70px;
+    width: 50px;
+    height: 50px;
     border: 2px solid #555;
-    border-radius: 50%;
-    margin: 12px auto 16px;
-    background: linear-gradient(135deg, #333 0%, #2a2a2a 100%);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.3);
-  }
-  
-  /* ============================= */
-  /* LANDSCAPE EXPORT AREA         */
-  /* ============================= */
-  #export-area,
-  .export-area {
-    margin-top: 16px;
+    margin: 8px auto 12px;
   }
   
   #export-area textarea,
-  .export-area textarea,
   #output {
-    width: 100%;
-    height: 100px;
-    background: linear-gradient(135deg, #333 0%, #2a2a2a 100%);
-    border: 2px solid #555;
-    color: #e8e8e8;
-    padding: 12px;
-    border-radius: 6px;
-    font-family: 'Consolas', 'Monaco', monospace;
-    font-size: 11px;
-    resize: vertical;
-    line-height: 1.4;
+    height: 80px;
+    padding: 8px;
+    font-size: 10px;
   }
 }
 
@@ -3672,22 +2438,6 @@ input[type="checkbox"],
   #tool-btn.symmetric-tool,
   .tool-btn.symmetric-tool {
     font-size: 14px;
-  }
-}
-
-/* ============================= */
-/* VERY TALL/SHORT SCREENS       */
-/* ============================= */
-@media (max-height: 600px) and (max-width: 768px) {
-  #panels,
-  .panels {
-    max-height: 35vh;
-  }
-  
-  #sidebar,
-  .sidebar {
-    min-height: 60px;
-    max-height: 60px;
   }
 }
 
@@ -3741,23 +2491,6 @@ input[type="checkbox"],
   to { opacity: 1; transform: translateY(0); }
 }
 
-#tool-tooltip,
-.tool-tooltip {
-  position: absolute;
-  background: linear-gradient(135deg, #000 0%, #1a1a1a 100%);
-  color: #fff;
-  padding: 6px 10px;
-  border-radius: 6px;
-  font-size: 12px;
-  white-space: nowrap;
-  pointer-events: none;
-  z-index: 1000;
-  opacity: 0;
-  transition: opacity 0.3s ease;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-}
-
 /* ============================= */
 /* Accessibility                 */
 /* ============================= */
@@ -3790,44 +2523,6 @@ input:focus {
   #grid-cell,
   .grid-cell {
     border-color: #888;
-  }
-}
-
-/* Dark mode enhancements */
-@media (prefers-color-scheme: dark) {
-  body {
-    background: linear-gradient(135deg, #0d1117 0%, #161b22 100%);
-  }
-  
-  #editor-container,
-  .editor-container {
-    background: #21262d;
-  }
-}
-
-/* ============================= */
-/* Print Styles                  */
-/* ============================= */
-@media print {
-  #editor-container,
-  .editor-container {
-    display: block;
-  }
-  
-  #sidebar,
-  .sidebar,
-  #panels,
-  .panels,
-  #header,
-  .header {
-    display: none;
-  }
-  
-  #canvas-area,
-  .canvas-area {
-    width: 100%;
-    height: auto;
-    background: white;
   }
 }
 
