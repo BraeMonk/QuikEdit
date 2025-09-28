@@ -1384,7 +1384,7 @@ input[type="checkbox"],
 }
 
 /* ============================= */
-/* Mobile Portrait Layout        */
+/* MOBILE PORTRAIT (STACKED VERTICALLY) */
 /* ============================= */
 @media screen and (max-width: 768px) and (orientation: portrait) {
   html, body {
@@ -1393,18 +1393,19 @@ input[type="checkbox"],
     overflow: hidden;
     position: fixed;
     -webkit-overflow-scrolling: touch;
+    font-size: 14px;
   }
   
   #editor-container,
   .editor-container {
     display: grid;
     grid-template-areas:
-    “header”
-    “canvas”
-    “toolbar”
-    “panels”;
+      "header"
+      "canvas"
+      "toolbar"
+      "panels";
     grid-template-columns: 1fr;
-    grid-template-rows: 56px 1fr 70px auto;
+    grid-template-rows: 60px 1fr 80px minmax(200px, 50vh);
     height: 100dvh;
     gap: 0;
     background: #2a2a2a;
@@ -1412,12 +1413,12 @@ input[type="checkbox"],
   }
   
   /* ============================= */
-  /* Mobile Header                 */
+  /* PORTRAIT HEADER               */
   /* ============================= */
   #header,
   .header {
     grid-area: header;
-    height: 56px;
+    height: 60px;
     padding: 0 16px;
     display: flex;
     align-items: center;
@@ -1426,6 +1427,8 @@ input[type="checkbox"],
     border-bottom: 2px solid #333;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
     z-index: 200;
+    position: sticky;
+    top: 0;
   }
   
   #logo,
@@ -1434,12 +1437,14 @@ input[type="checkbox"],
     font-weight: 700;
     color: #4CAF50;
     letter-spacing: -0.5px;
+    display: flex;
+    align-items: center;
   }
   
   #mode-toggle,
   .mode-toggle {
     display: flex;
-    gap: 1px;
+    gap: 2px;
     background: #333;
     border-radius: 8px;
     padding: 3px;
@@ -1448,7 +1453,7 @@ input[type="checkbox"],
   
   #mode-btn,
   .mode-btn {
-    padding: 8px 12px;
+    padding: 8px 14px;
     background: transparent;
     border: none;
     color: #e0e0e0;
@@ -1484,15 +1489,24 @@ input[type="checkbox"],
     border: 1px solid #555;
     border-radius: 6px;
     color: #e8e8e8;
-    font-size: 12px;
+    font-size: 11px;
     font-weight: 500;
     cursor: pointer;
     transition: all 0.2s ease;
     white-space: nowrap;
   }
   
+  #header-btn:active,
+  .header-btn:active,
+  #newProject:active,
+  #saveProject:active,
+  #exportPNG:active {
+    transform: scale(0.95);
+    background: linear-gradient(135deg, #4a4a4a 0%, #3a3a3a 100%);
+  }
+  
   /* ============================= */
-  /* Mobile Canvas Area            */
+  /* PORTRAIT CANVAS AREA          */
   /* ============================= */
   #canvas-area,
   .canvas-area {
@@ -1505,7 +1519,7 @@ input[type="checkbox"],
     position: relative;
     overflow: auto;
     -webkit-overflow-scrolling: touch;
-    padding: 16px;
+    padding: 12px;
     min-height: 0;
   }
   
@@ -1515,11 +1529,11 @@ input[type="checkbox"],
     display: flex;
     align-items: center;
     justify-content: center;
-    max-width: calc(100vw - 32px);
-    max-height: calc(100% - 32px);
+    max-width: calc(100vw - 24px);
+    max-height: calc(100% - 24px);
     border-radius: 8px;
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
-    overflow: auto;
+    overflow: visible;
   }
   
   #canvas {
@@ -1530,8 +1544,8 @@ input[type="checkbox"],
   }
   
   #sketchCanvas {
-    max-width: calc(100vw - 64px);
-    max-height: calc(100vh - 300px);
+    max-width: calc(100vw - 48px);
+    max-height: calc(100vh - 320px);
     border: 2px solid #555;
     border-radius: 6px;
   }
@@ -1541,10 +1555,14 @@ input[type="checkbox"],
     bottom: 8px;
     left: 8px;
     background: rgba(0, 0, 0, 0.85);
+    color: #e8e8e8;
     padding: 6px 10px;
     border-radius: 6px;
     font-size: 11px;
+    font-family: 'Consolas', 'Monaco', monospace;
     backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    z-index: 10;
   }
   
   #zoomIndicator {
@@ -1552,26 +1570,31 @@ input[type="checkbox"],
     top: 8px;
     right: 8px;
     background: rgba(0, 0, 0, 0.85);
+    color: #e8e8e8;
     padding: 6px 10px;
     border-radius: 6px;
     font-size: 11px;
+    font-family: 'Consolas', 'Monaco', monospace;
+    font-weight: 600;
     backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    z-index: 10;
   }
   
   /* ============================= */
-  /* Mobile Horizontal Toolbar     */
+  /* PORTRAIT HORIZONTAL TOOLBAR   */
   /* ============================= */
   #sidebar,
   .sidebar {
     grid-area: toolbar;
-    height: 70px;
+    height: 80px;
     background: linear-gradient(180deg, #1e1e1e 0%, #1a1a1a 100%);
     display: flex;
     flex-direction: row;
     align-items: center;
     justify-content: flex-start;
-    padding: 8px 12px;
-    gap: 8px;
+    padding: 10px 16px;
+    gap: 10px;
     border-top: 2px solid #333;
     border-bottom: 1px solid #333;
     box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.3), 0 2px 4px rgba(0, 0, 0, 0.2);
@@ -1599,7 +1622,7 @@ input[type="checkbox"],
     display: flex;
     flex-direction: row;
     align-items: center;
-    gap: 8px;
+    gap: 10px;
     min-width: max-content;
   }
   
@@ -1610,7 +1633,7 @@ input[type="checkbox"],
     display: none;
     flex-direction: row;
     align-items: center;
-    gap: 8px;
+    gap: 10px;
     min-width: max-content;
   }
   
@@ -1623,21 +1646,21 @@ input[type="checkbox"],
   
   #tool-btn,
   .tool-btn {
-    width: 54px;
-    height: 54px;
+    width: 60px;
+    height: 60px;
     background: linear-gradient(135deg, #333 0%, #2a2a2a 100%);
     border: 2px solid #444;
-    border-radius: 10px;
+    border-radius: 12px;
     color: #e8e8e8;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 20px;
+    font-size: 22px;
     transition: all 0.2s ease;
     position: relative;
     flex-shrink: 0;
-    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
     touch-action: manipulation;
   }
   
@@ -1675,14 +1698,14 @@ input[type="checkbox"],
   #tool-separator,
   .tool-separator {
     width: 2px;
-    height: 40px;
+    height: 50px;
     background: linear-gradient(180deg, transparent 0%, #444 50%, transparent 100%);
-    margin: 0 4px;
+    margin: 0 5px;
     flex-shrink: 0;
   }
   
   /* ============================= */
-  /* Mobile Accordion Panels       */
+  /* PORTRAIT ACCORDION PANELS     */
   /* ============================= */
   #panels,
   .panels {
@@ -1721,7 +1744,7 @@ input[type="checkbox"],
   #panel-header,
   .panel-header {
     background: linear-gradient(135deg, #2a2a2a 0%, #333 100%);
-    padding: 16px 20px;
+    padding: 18px 20px;
     font-size: 15px;
     font-weight: 600;
     border-bottom: 1px solid #333;
@@ -1731,7 +1754,7 @@ input[type="checkbox"],
     align-items: center;
     transition: all 0.2s ease;
     color: #e8e8e8;
-    min-height: 56px;
+    min-height: 60px;
     touch-action: manipulation;
   }
   
@@ -1743,7 +1766,7 @@ input[type="checkbox"],
   
   #panel-header span,
   .panel-header span {
-    font-size: 18px;
+    font-size: 20px;
     transition: transform 0.3s ease;
   }
   
@@ -1757,11 +1780,11 @@ input[type="checkbox"],
     padding: 20px;
     display: block;
     transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-    padding 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-    opacity 0.3s ease;
+                padding 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+                opacity 0.3s ease;
     overflow: hidden;
     background: linear-gradient(180deg, #1e1e1e 0%, #1a1a1a 100%);
-    max-height: 500px;
+    max-height: 800px;
     opacity: 1;
   }
   
@@ -1773,11 +1796,11 @@ input[type="checkbox"],
   }
   
   /* ============================= */
-  /* Mobile Color Palette          */
+  /* PORTRAIT COLOR CONTROLS       */
   /* ============================= */
   #paletteSelector {
     width: 100%;
-    padding: 12px 16px;
+    padding: 14px 16px;
     background: linear-gradient(135deg, #333 0%, #2a2a2a 100%);
     border: 2px solid #555;
     color: #e8e8e8;
@@ -1786,18 +1809,19 @@ input[type="checkbox"],
     cursor: pointer;
     transition: all 0.2s ease;
     appearance: none;
-    background-image: url(“data:image/svg+xml,%3csvg xmlns=‘http://www.w3.org/2000/svg’ fill=‘none’ viewBox=‘0 0 20 20’%3e%3cpath stroke=’%23e8e8e8’ stroke-linecap=‘round’ stroke-linejoin=‘round’ stroke-width=‘1.5’ d=‘M6 8l4 4 4-4’/%3e%3c/svg%3e”);
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%23e8e8e8' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
     background-position: right 12px center;
     background-repeat: no-repeat;
     background-size: 16px;
     padding-right: 40px;
+    min-height: 48px;
   }
   
   .swatches,
   #swatches {
     display: grid;
-    grid-template-columns: repeat(5, 1fr);
-    gap: 10px;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 12px;
     margin-top: 16px;
   }
   
@@ -1805,13 +1829,13 @@ input[type="checkbox"],
   .color-swatch,
   #swatch,
   .swatch {
-    width: 44px;
-    height: 44px;
+    width: 48px;
+    height: 48px;
     border: 3px solid #555;
     cursor: pointer;
     border-radius: 8px;
     transition: all 0.2s ease;
-    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.4);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
     touch-action: manipulation;
   }
   
@@ -1837,16 +1861,16 @@ input[type="checkbox"],
   .swatch.primary::after,
   #swatch.secondary::after,
   .swatch.secondary::after {
-    width: 20px;
-    height: 20px;
+    width: 22px;
+    height: 22px;
     font-size: 12px;
     font-weight: 700;
-    top: -10px;
-    right: -10px;
+    top: -11px;
+    right: -11px;
   }
   
   /* ============================= */
-  /* Mobile Controls               */
+  /* PORTRAIT FORM CONTROLS        */
   /* ============================= */
   #control-group,
   .control-group {
@@ -1858,7 +1882,7 @@ input[type="checkbox"],
     display: block;
     font-size: 14px;
     font-weight: 600;
-    margin-bottom: 10px;
+    margin-bottom: 12px;
     color: #ccc;
     text-transform: uppercase;
     letter-spacing: 0.8px;
@@ -1874,10 +1898,10 @@ input[type="checkbox"],
   }
   
   select,
-  input[type=“number”],
-  input[type=“range”],
-  input[type=“color”],
-  input[type=“file”],
+  input[type="number"],
+  input[type="range"],
+  input[type="color"],
+  input[type="file"],
   textarea,
   #canvasWidth,
   #canvasHeight,
@@ -1893,12 +1917,12 @@ input[type="checkbox"],
     background: linear-gradient(135deg, #333 0%, #2a2a2a 100%);
     border: 2px solid #555;
     color: #e8e8e8;
-    padding: 12px 16px;
+    padding: 14px 16px;
     border-radius: 8px;
     font-size: 14px;
     width: 100%;
     transition: all 0.2s ease;
-    min-height: 44px;
+    min-height: 48px;
   }
   
   select:focus,
@@ -1910,35 +1934,35 @@ input[type="checkbox"],
     transform: scale(1.02);
   }
   
-  input[type=“color”],
+  input[type="color"],
   #sketchColor {
-    height: 50px;
-    padding: 6px;
+    height: 60px;
+    padding: 8px;
     cursor: pointer;
-    border-radius: 10px;
+    border-radius: 12px;
   }
   
-  input[type=“range”],
+  input[type="range"],
   #brushSize,
   #brushOpacity,
   #brushHardness,
   #brushFlow,
   #layerOpacity {
-    padding: 8px 0;
+    padding: 10px 0;
     background: #2a2a2a;
     border: 2px solid #444;
-    height: 44px;
+    height: 48px;
   }
   
-  input[type=“range”]::-webkit-slider-thumb,
+  input[type="range"]::-webkit-slider-thumb,
   #brushSize::-webkit-slider-thumb,
   #brushOpacity::-webkit-slider-thumb,
   #brushHardness::-webkit-slider-thumb,
   #brushFlow::-webkit-slider-thumb,
   #layerOpacity::-webkit-slider-thumb {
     appearance: none;
-    width: 24px;
-    height: 24px;
+    width: 28px;
+    height: 28px;
     border-radius: 50%;
     background: linear-gradient(135deg, #4CAF50 0%, #66BB6A 100%);
     cursor: pointer;
@@ -1946,7 +1970,7 @@ input[type="checkbox"],
     box-shadow: 0 3px 8px rgba(0, 0, 0, 0.4);
   }
   
-  input[type=“range”]::-webkit-slider-track,
+  input[type="range"]::-webkit-slider-track,
   #brushSize::-webkit-slider-track,
   #brushOpacity::-webkit-slider-track,
   #brushHardness::-webkit-slider-track,
@@ -1956,6 +1980,15 @@ input[type="checkbox"],
     height: 8px;
     border-radius: 4px;
     background: linear-gradient(90deg, #333 0%, #555 100%);
+  }
+  
+  input[type="checkbox"],
+  #gridToggle {
+    width: auto;
+    margin-right: 12px;
+    accent-color: #4CAF50;
+    transform: scale(1.4);
+    min-height: auto;
   }
   
   #btn,
@@ -1982,16 +2015,16 @@ input[type="checkbox"],
     background: linear-gradient(135deg, #404040 0%, #333 100%);
     border: 2px solid #555;
     color: #e8e8e8;
-    padding: 14px 20px;
+    padding: 16px 20px;
     border-radius: 8px;
     cursor: pointer;
     font-size: 14px;
     font-weight: 600;
     transition: all 0.2s ease;
     white-space: nowrap;
-    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
     text-align: center;
-    min-height: 48px;
+    min-height: 52px;
     touch-action: manipulation;
   }
   
@@ -2001,12 +2034,33 @@ input[type="checkbox"],
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
   }
   
+  #btn.primary,
+  .btn.primary,
+  #exportJSON,
+  #saveCustomPalette,
+  #addLayer {
+    background: linear-gradient(135deg, #4CAF50 0%, #66BB6A 100%);
+    border-color: #66BB6A;
+    color: #000;
+    font-weight: 600;
+  }
+  
+  #btn.danger,
+  .btn.danger,
+  #clear,
+  #deleteSprite {
+    background: linear-gradient(135deg, #f44336 0%, #e57373 100%);
+    border-color: #e57373;
+    color: #fff;
+    font-weight: 600;
+  }
+  
   #btn-group,
   .btn-group {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 10px;
-    margin-bottom: 12px;
+    gap: 12px;
+    margin-bottom: 16px;
   }
   
   #btn-group.triple,
@@ -2020,11 +2074,11 @@ input[type="checkbox"],
   }
   
   /* ============================= */
-  /* Mobile Layer Controls         */
+  /* PORTRAIT LAYER CONTROLS       */
   /* ============================= */
   #layerList,
   .layer-list {
-    max-height: 200px;
+    max-height: 240px;
     overflow-y: auto;
     border: 2px solid #444;
     margin-bottom: 16px;
@@ -2037,12 +2091,12 @@ input[type="checkbox"],
   .layer-item {
     display: flex;
     align-items: center;
-    padding: 14px 16px;
+    padding: 16px 18px;
     cursor: pointer;
     border-bottom: 1px solid #333;
     transition: all 0.2s ease;
     font-size: 14px;
-    min-height: 56px;
+    min-height: 60px;
     touch-action: manipulation;
   }
   
@@ -2060,7 +2114,7 @@ input[type="checkbox"],
   }
   
   /* ============================= */
-  /* Mobile Symmetry Controls      */
+  /* PORTRAIT SYMMETRY CONTROLS    */
   /* ============================= */
   #symmetry-controls,
   .symmetry-controls {
@@ -2069,11 +2123,11 @@ input[type="checkbox"],
   
   #symmetry-btn,
   .symmetry-btn {
-    min-width: 80px;
-    padding: 12px 16px;
+    min-width: 90px;
+    padding: 14px 18px;
     font-size: 13px;
     font-weight: 600;
-    min-height: 44px;
+    min-height: 48px;
   }
   
   #symmetry-btn.active,
@@ -2085,23 +2139,23 @@ input[type="checkbox"],
   }
   
   /* ============================= */
-  /* Mobile Brush Preview          */
+  /* PORTRAIT BRUSH PREVIEW        */
   /* ============================= */
   #brushPreview {
-    width: 80px;
-    height: 80px;
+    width: 100px;
+    height: 100px;
     border: 3px solid #555;
     border-radius: 50%;
-    margin: 16px auto 20px;
+    margin: 20px auto 24px;
     background: linear-gradient(135deg, #333 0%, #2a2a2a 100%);
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: inset 0 3px 8px rgba(0, 0, 0, 0.4);
+    box-shadow: inset 0 4px 10px rgba(0, 0, 0, 0.4);
   }
   
   /* ============================= */
-  /* Mobile Export Area            */
+  /* PORTRAIT EXPORT AREA          */
   /* ============================= */
   #export-area,
   .export-area {
@@ -2112,28 +2166,27 @@ input[type="checkbox"],
   .export-area textarea,
   #output {
     width: 100%;
-    height: 120px;
+    height: 140px;
     background: linear-gradient(135deg, #333 0%, #2a2a2a 100%);
     border: 2px solid #555;
     color: #e8e8e8;
     padding: 16px;
     border-radius: 8px;
-    font-family: ‘Consolas’, ‘Monaco’, monospace;
+    font-family: 'Consolas', 'Monaco', monospace;
     font-size: 12px;
     resize: vertical;
     line-height: 1.5;
   }
   
   /* ============================= */
-  /* Mobile Touch Optimizations    */
+  /* PORTRAIT TOUCH OPTIMIZATIONS  */
   /* ============================= */
-  
-  - {
-      -webkit-tap-highlight-color: transparent;
-      -webkit-touch-callout: none;
-      -webkit-user-select: none;
-      user-select: none;
-    }
+  * {
+    -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+  }
   
   input, textarea, select {
     -webkit-user-select: text;
@@ -2141,20 +2194,20 @@ input[type="checkbox"],
   }
   
   /* Prevent zoom on inputs */
-  input[type=“text”],
-  input[type=“number”],
-  input[type=“email”],
-  input[type=“tel”],
-  input[type=“url”],
-  input[type=“search”],
+  input[type="text"],
+  input[type="number"],
+  input[type="email"],
+  input[type="tel"],
+  input[type="url"],
+  input[type="search"],
   textarea,
   select {
     font-size: 16px;
   }
 }
-  
+
 /* ============================= */
-/* Mobile Landscape Layout       */
+/* MOBILE LANDSCAPE (HORIZONTAL LAYOUT) */
 /* ============================= */
 @media screen and (max-width: 1024px) and (orientation: landscape) and (max-height: 768px) {
   html, body {
@@ -2162,53 +2215,83 @@ input[type="checkbox"],
     width: 100vw;
     overflow: hidden;
     position: fixed;
+    font-size: 13px;
   }
   
   #editor-container,
   .editor-container {
     display: grid;
     grid-template-areas:
-    “header header header”
-    “sidebar canvas panels”;
-    grid-template-columns: 70px 1fr 320px;
-    grid-template-rows: 50px 1fr;
+      "header header header"
+      "sidebar canvas panels";
+    grid-template-columns: 80px 1fr 340px;
+    grid-template-rows: 55px 1fr;
     height: 100dvh;
     gap: 0;
     background: #2a2a2a;
   }
   
   /* ============================= */
-  /* Landscape Header              */
+  /* LANDSCAPE HEADER               */
   /* ============================= */
   #header,
   .header {
     grid-area: header;
-    height: 50px;
+    height: 55px;
     padding: 0 16px;
     border-bottom: 2px solid #333;
     z-index: 200;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: linear-gradient(180deg, #1e1e1e 0%, #1a1a1a 100%);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
   }
   
   #logo,
   .logo {
     font-size: 17px;
+    font-weight: 700;
+    color: #4CAF50;
+    display: flex;
+    align-items: center;
   }
   
   #mode-toggle,
   .mode-toggle {
-    margin-left: 10px;
+    margin-left: 12px;
+    display: flex;
+    gap: 2px;
+    background: #333;
+    border-radius: 6px;
+    padding: 2px;
   }
   
   #mode-btn,
   .mode-btn {
-    padding: 6px 10px;
+    padding: 8px 12px;
     font-size: 12px;
-    min-width: 45px;
+    min-width: 50px;
+    background: transparent;
+    border: none;
+    color: #e0e0e0;
+    font-weight: 600;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+  }
+  
+  #mode-btn.active,
+  .mode-btn.active {
+    background: linear-gradient(135deg, #4CAF50 0%, #66BB6A 100%);
+    color: #000;
+    box-shadow: 0 2px 6px rgba(76, 175, 80, 0.4);
   }
   
   #header-controls,
   .header-controls {
-    gap: 5px;
+    gap: 6px;
+    display: flex;
   }
   
   #header-btn,
@@ -2216,23 +2299,39 @@ input[type="checkbox"],
   #newProject,
   #saveProject,
   #exportPNG {
-    padding: 6px 10px;
+    padding: 8px 12px;
     font-size: 11px;
+    background: linear-gradient(135deg, #404040 0%, #333 100%);
+    border: 1px solid #555;
+    border-radius: 6px;
+    color: #e8e8e8;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+  }
+  
+  #header-btn:active,
+  .header-btn:active,
+  #newProject:active,
+  #saveProject:active,
+  #exportPNG:active {
+    transform: scale(0.95);
   }
   
   /* ============================= */
-  /* Landscape Sidebar (Vertical)  */
+  /* LANDSCAPE SIDEBAR (VERTICAL)  */
   /* ============================= */
   #sidebar,
   .sidebar {
     grid-area: sidebar;
-    width: 70px;
+    width: 80px;
     background: linear-gradient(180deg, #1e1e1e 0%, #1a1a1a 100%);
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 10px 0;
-    gap: 6px;
+    padding: 12px 0;
+    gap: 8px;
     border-right: 2px solid #333;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
@@ -2244,12 +2343,21 @@ input[type="checkbox"],
     width: 4px;
   }
   
+  #sidebar::-webkit-scrollbar-track {
+    background: #1a1a1a;
+  }
+  
+  #sidebar::-webkit-scrollbar-thumb {
+    background: #444;
+    border-radius: 2px;
+  }
+  
   #tool-group,
   .tool-group {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 6px;
+    gap: 8px;
     width: 100%;
   }
   
@@ -2260,7 +2368,7 @@ input[type="checkbox"],
     display: none;
     flex-direction: column;
     align-items: center;
-    gap: 6px;
+    gap: 8px;
     width: 100%;
   }
   
@@ -2273,8 +2381,8 @@ input[type="checkbox"],
   
   #tool-btn,
   .tool-btn {
-    width: 52px;
-    height: 52px;
+    width: 56px;
+    height: 56px;
     background: linear-gradient(135deg, #333 0%, #2a2a2a 100%);
     border: 2px solid #444;
     border-radius: 10px;
@@ -2325,12 +2433,12 @@ input[type="checkbox"],
     width: 80%;
     height: 2px;
     background: linear-gradient(90deg, transparent 0%, #444 50%, transparent 100%);
-    margin: 6px 0;
+    margin: 8px 0;
     flex-shrink: 0;
   }
   
   /* ============================= */
-  /* Landscape Canvas Area         */
+  /* LANDSCAPE CANVAS AREA         */
   /* ============================= */
   #canvas-area,
   .canvas-area {
@@ -2343,7 +2451,7 @@ input[type="checkbox"],
     position: relative;
     overflow: auto;
     -webkit-overflow-scrolling: touch;
-    padding: 12px;
+    padding: 16px;
     min-height: 0;
   }
   
@@ -2353,8 +2461,8 @@ input[type="checkbox"],
     display: flex;
     align-items: center;
     justify-content: center;
-    max-width: calc(100% - 24px);
-    max-height: calc(100% - 24px);
+    max-width: calc(100% - 32px);
+    max-height: calc(100% - 32px);
     border-radius: 8px;
     box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
   }
@@ -2362,46 +2470,48 @@ input[type="checkbox"],
   #canvas {
     max-width: 100%;
     max-height: 100%;
-    min-width: 150px;
-    min-height: 150px;
+    min-width: 200px;
+    min-height: 200px;
   }
   
   #sketchCanvas {
-    max-width: calc(100% - 48px);
-    max-height: calc(100% - 48px);
+    max-width: calc(100% - 64px);
+    max-height: calc(100% - 64px);
     border: 2px solid #555;
     border-radius: 6px;
   }
   
   #canvasInfo {
     position: absolute;
-    bottom: 6px;
-    left: 6px;
+    bottom: 8px;
+    left: 8px;
     background: rgba(0, 0, 0, 0.85);
-    padding: 5px 8px;
+    padding: 6px 10px;
     border-radius: 4px;
     font-size: 10px;
     backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
   }
   
   #zoomIndicator {
     position: absolute;
-    top: 6px;
-    right: 6px;
+    top: 8px;
+    right: 8px;
     background: rgba(0, 0, 0, 0.85);
-    padding: 5px 8px;
+    padding: 6px 10px;
     border-radius: 4px;
     font-size: 10px;
     backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
   }
   
   /* ============================= */
-  /* Landscape Right Panels        */
+  /* LANDSCAPE RIGHT PANELS        */
   /* ============================= */
   #panels,
   .panels {
     grid-area: panels;
-    width: 320px;
+    width: 340px;
     background: linear-gradient(180deg, #1e1e1e 0%, #1a1a1a 100%);
     display: flex;
     flex-direction: column;
@@ -2413,7 +2523,7 @@ input[type="checkbox"],
   }
   
   #panels::-webkit-scrollbar {
-    width: 5px;
+    width: 6px;
   }
   
   #panels::-webkit-scrollbar-track {
@@ -2434,7 +2544,7 @@ input[type="checkbox"],
   #panel-header,
   .panel-header {
     background: linear-gradient(135deg, #2a2a2a 0%, #333 100%);
-    padding: 12px 16px;
+    padding: 14px 18px;
     font-size: 13px;
     font-weight: 600;
     border-bottom: 1px solid #333;
@@ -2444,7 +2554,7 @@ input[type="checkbox"],
     align-items: center;
     transition: all 0.2s ease;
     color: #e8e8e8;
-    min-height: 44px;
+    min-height: 48px;
     touch-action: manipulation;
   }
   
@@ -2470,11 +2580,11 @@ input[type="checkbox"],
     padding: 16px;
     display: block;
     transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-    padding 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-    opacity 0.3s ease;
+                padding 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+                opacity 0.3s ease;
     overflow: hidden;
     background: linear-gradient(180deg, #1e1e1e 0%, #1a1a1a 100%);
-    max-height: 400px;
+    max-height: 600px;
     opacity: 1;
   }
   
@@ -2486,11 +2596,11 @@ input[type="checkbox"],
   }
   
   /* ============================= */
-  /* Landscape Color Controls      */
+  /* LANDSCAPE COLOR CONTROLS      */
   /* ============================= */
   #paletteSelector {
     width: 100%;
-    padding: 10px 12px;
+    padding: 10px 14px;
     background: linear-gradient(135deg, #333 0%, #2a2a2a 100%);
     border: 2px solid #555;
     color: #e8e8e8;
@@ -2499,18 +2609,19 @@ input[type="checkbox"],
     cursor: pointer;
     transition: all 0.2s ease;
     appearance: none;
-    background-image: url(“data:image/svg+xml,%3csvg xmlns=‘http://www.w3.org/2000/svg’ fill=‘none’ viewBox=‘0 0 20 20’%3e%3cpath stroke=’%23e8e8e8’ stroke-linecap=‘round’ stroke-linejoin=‘round’ stroke-width=‘1.5’ d=‘M6 8l4 4 4-4’/%3e%3c/svg%3e”);
-    background-position: right 10px center;
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%23e8e8e8' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+    background-position: right 12px center;
     background-repeat: no-repeat;
     background-size: 14px;
-    padding-right: 35px;
+    padding-right: 38px;
+    min-height: 40px;
   }
   
   .swatches,
   #swatches {
     display: grid;
     grid-template-columns: repeat(6, 1fr);
-    gap: 6px;
+    gap: 8px;
     margin-top: 12px;
   }
   
@@ -2518,8 +2629,8 @@ input[type="checkbox"],
   .color-swatch,
   #swatch,
   .swatch {
-    width: 32px;
-    height: 32px;
+    width: 36px;
+    height: 36px;
     border: 2px solid #555;
     cursor: pointer;
     border-radius: 6px;
@@ -2550,16 +2661,16 @@ input[type="checkbox"],
   .swatch.primary::after,
   #swatch.secondary::after,
   .swatch.secondary::after {
-    width: 16px;
-    height: 16px;
+    width: 18px;
+    height: 18px;
     font-size: 10px;
     font-weight: 700;
-    top: -8px;
-    right: -8px;
+    top: -9px;
+    right: -9px;
   }
   
   /* ============================= */
-  /* Landscape Form Controls       */
+  /* LANDSCAPE FORM CONTROLS       */
   /* ============================= */
   #control-group,
   .control-group {
@@ -2586,10 +2697,10 @@ input[type="checkbox"],
   }
   
   select,
-  input[type=“number”],
-  input[type=“range”],
-  input[type=“color”],
-  input[type=“file”],
+  input[type="number"],
+  input[type="range"],
+  input[type="color"],
+  input[type="file"],
   textarea,
   #canvasWidth,
   #canvasHeight,
@@ -2621,15 +2732,15 @@ input[type="checkbox"],
     box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.2);
   }
   
-  input[type=“color”],
+  input[type="color"],
   #sketchColor {
-    height: 40px;
-    padding: 4px;
+    height: 44px;
+    padding: 6px;
     cursor: pointer;
     border-radius: 8px;
   }
   
-  input[type=“range”],
+  input[type="range"],
   #brushSize,
   #brushOpacity,
   #brushHardness,
@@ -2641,15 +2752,15 @@ input[type="checkbox"],
     height: 36px;
   }
   
-  input[type=“range”]::-webkit-slider-thumb,
+  input[type="range"]::-webkit-slider-thumb,
   #brushSize::-webkit-slider-thumb,
   #brushOpacity::-webkit-slider-thumb,
   #brushHardness::-webkit-slider-thumb,
   #brushFlow::-webkit-slider-thumb,
   #layerOpacity::-webkit-slider-thumb {
     appearance: none;
-    width: 18px;
-    height: 18px;
+    width: 20px;
+    height: 20px;
     border-radius: 50%;
     background: linear-gradient(135deg, #4CAF50 0%, #66BB6A 100%);
     cursor: pointer;
@@ -2657,7 +2768,7 @@ input[type="checkbox"],
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
   }
   
-  input[type=“range”]::-webkit-slider-track,
+  input[type="range"]::-webkit-slider-track,
   #brushSize::-webkit-slider-track,
   #brushOpacity::-webkit-slider-track,
   #brushHardness::-webkit-slider-track,
@@ -2667,6 +2778,15 @@ input[type="checkbox"],
     height: 6px;
     border-radius: 3px;
     background: linear-gradient(90deg, #333 0%, #555 100%);
+  }
+  
+  input[type="checkbox"],
+  #gridToggle {
+    width: auto;
+    margin-right: 10px;
+    accent-color: #4CAF50;
+    transform: scale(1.2);
+    min-height: auto;
   }
   
   #btn,
@@ -2693,7 +2813,7 @@ input[type="checkbox"],
     background: linear-gradient(135deg, #404040 0%, #333 100%);
     border: 2px solid #555;
     color: #e8e8e8;
-    padding: 8px 12px;
+    padding: 10px 14px;
     border-radius: 6px;
     cursor: pointer;
     font-size: 12px;
@@ -2702,14 +2822,13 @@ input[type="checkbox"],
     white-space: nowrap;
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
     text-align: center;
-    min-height: 36px;
+    min-height: 40px;
     touch-action: manipulation;
   }
   
   #btn:active,
   .btn:active {
     transform: scale(0.95);
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
   }
   
   #btn.primary,
@@ -2723,15 +2842,6 @@ input[type="checkbox"],
     font-weight: 600;
   }
   
-  #btn.primary:active,
-  .btn.primary:active,
-  #exportJSON:active,
-  #saveCustomPalette:active,
-  #addLayer:active {
-    background: linear-gradient(135deg, #66BB6A 0%, #81C784 100%);
-    border-color: #81C784;
-  }
-  
   #btn.danger,
   .btn.danger,
   #clear,
@@ -2742,20 +2852,12 @@ input[type="checkbox"],
     font-weight: 600;
   }
   
-  #btn.danger:active,
-  .btn.danger:active,
-  #clear:active,
-  #deleteSprite:active {
-    background: linear-gradient(135deg, #e57373 0%, #ef5350 100%);
-    border-color: #ef5350;
-  }
-  
   #btn-group,
   .btn-group {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 6px;
-    margin-bottom: 8px;
+    gap: 8px;
+    margin-bottom: 12px;
   }
   
   #btn-group.triple,
@@ -2769,11 +2871,11 @@ input[type="checkbox"],
   }
   
   /* ============================= */
-  /* Landscape Layer Controls      */
+  /* LANDSCAPE LAYER CONTROLS      */
   /* ============================= */
   #layerList,
   .layer-list {
-    max-height: 140px;
+    max-height: 160px;
     overflow-y: auto;
     border: 2px solid #444;
     margin-bottom: 12px;
@@ -2786,12 +2888,12 @@ input[type="checkbox"],
   .layer-item {
     display: flex;
     align-items: center;
-    padding: 10px 12px;
+    padding: 12px 14px;
     cursor: pointer;
     border-bottom: 1px solid #333;
     transition: all 0.2s ease;
     font-size: 12px;
-    min-height: 40px;
+    min-height: 44px;
     touch-action: manipulation;
   }
   
@@ -2808,8 +2910,8 @@ input[type="checkbox"],
     font-weight: 600;
   }
   
-  #layer-item input[type=“checkbox”],
-  .layer-item input[type=“checkbox”] {
+  #layer-item input[type="checkbox"],
+  .layer-item input[type="checkbox"] {
     margin-right: 8px;
     width: 14px;
     height: 14px;
@@ -2832,7 +2934,7 @@ input[type="checkbox"],
     border: none;
     font-size: 12px;
     cursor: pointer;
-    padding: 2px 4px;
+    padding: 4px 6px;
     border-radius: 3px;
     transition: background 0.2s ease;
     margin-left: 4px;
@@ -2847,7 +2949,7 @@ input[type="checkbox"],
   }
   
   /* ============================= */
-  /* Landscape Symmetry Controls   */
+  /* LANDSCAPE SYMMETRY CONTROLS   */
   /* ============================= */
   #symmetry-controls,
   .symmetry-controls {
@@ -2857,10 +2959,10 @@ input[type="checkbox"],
   #symmetry-btn,
   .symmetry-btn {
     min-width: 70px;
-    padding: 8px 12px;
+    padding: 10px 12px;
     font-size: 11px;
     font-weight: 600;
-    min-height: 36px;
+    min-height: 40px;
     background: linear-gradient(135deg, #333 0%, #2a2a2a 100%);
     border: 2px solid #555;
     color: #e0e0e0;
@@ -2881,7 +2983,6 @@ input[type="checkbox"],
     border-color: #6BB6FF;
     color: #fff;
     box-shadow: 0 3px 10px rgba(74, 144, 226, 0.4);
-    font-weight: 600;
   }
   
   #symmetry-info,
@@ -2902,7 +3003,7 @@ input[type="checkbox"],
   }
   
   /* ============================= */
-  /* Landscape Transform Controls  */
+  /* LANDSCAPE TRANSFORM CONTROLS  */
   /* ============================= */
   #transform-info,
   .transform-info {
@@ -2922,11 +3023,11 @@ input[type="checkbox"],
   }
   
   /* ============================= */
-  /* Landscape Brush Preview       */
+  /* LANDSCAPE BRUSH PREVIEW       */
   /* ============================= */
   #brushPreview {
-    width: 60px;
-    height: 60px;
+    width: 70px;
+    height: 70px;
     border: 2px solid #555;
     border-radius: 50%;
     margin: 12px auto 16px;
@@ -2938,7 +3039,7 @@ input[type="checkbox"],
   }
   
   /* ============================= */
-  /* Landscape Export Area         */
+  /* LANDSCAPE EXPORT AREA         */
   /* ============================= */
   #export-area,
   .export-area {
@@ -2949,30 +3050,32 @@ input[type="checkbox"],
   .export-area textarea,
   #output {
     width: 100%;
-    height: 80px;
+    height: 100px;
     background: linear-gradient(135deg, #333 0%, #2a2a2a 100%);
     border: 2px solid #555;
     color: #e8e8e8;
     padding: 12px;
     border-radius: 6px;
-    font-family: ‘Consolas’, ‘Monaco’, monospace;
+    font-family: 'Consolas', 'Monaco', monospace;
     font-size: 11px;
     resize: vertical;
     line-height: 1.4;
   }
 }
 
-/* Tablet specific adjustments */
+/* ============================= */
+/* TABLET ADJUSTMENTS            */
+/* ============================= */
 @media (min-width: 768px) and (max-width: 1024px) {
   #editor-container,
   .editor-container {
-    grid-template-columns: 60px 1fr 280px;
+    grid-template-columns: 70px 1fr 300px;
   }
 
   #tool-btn,
   .tool-btn {
-    width: 46px;
-    height: 46px;
+    width: 50px;
+    height: 50px;
     font-size: 16px;
   }
 
@@ -2980,14 +3083,11 @@ input[type="checkbox"],
   .tool-btn.symmetric-tool {
     font-size: 14px;
   }
-
-  #panel-content,
-  .panel-content {
-    padding: 16px;
-  }
 }
 
-/* Fix for very tall mobile screens */
+/* ============================= */
+/* VERY TALL/SHORT SCREENS       */
+/* ============================= */
 @media (max-height: 600px) and (max-width: 768px) {
   #panels,
   .panels {
@@ -3002,7 +3102,7 @@ input[type="checkbox"],
 }
 
 /* ============================= */
-/* Touch & Interaction           */
+/* ACCESSIBILITY & TOUCH         */
 /* ============================= */
 @media (hover: none) {
   #tool-btn:hover,
@@ -3025,6 +3125,17 @@ input[type="checkbox"],
   #swatch:active,
   .swatch:active {
     transform: scale(1.1);
+  }
+}
+
+/* Ensure proper touch targets */
+@media (pointer: coarse) {
+  #tool-btn,
+  .tool-btn,
+  #btn,
+  .btn {
+    min-width: 44px;
+    min-height: 44px;
   }
 }
 
