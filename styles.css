@@ -584,24 +584,26 @@ body {
 
 #panel-content,
 .panel-content {
-  padding: 18px;
+  padding: 16px;
   width: 100%;
-  display: block;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
   transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1),
               padding 0.4s cubic-bezier(0.4, 0, 0.2, 1),
               opacity 0.3s ease;
-  overflow: hidden;
+  overflow: visible;
   background: linear-gradient(180deg, #1e1e1e 0%, #1a1a1a 100%);
-  max-height: 1000px;
+  max-height: none;
+  height: auto;
+  min-height: 0;
   opacity: 1;
   box-sizing: border-box;
-  overflow: hidden;
-  overflow-x: hidden;
-  margin: 0;
-  align-self: stretch;
 }
 
-.panel-content * {
+.panel-content > * {
+  flex-shrink: 0;
+  width: 100%;
   max-width: 100%;
   box-sizing: border-box;
 }
@@ -708,18 +710,13 @@ body[data-mode="sketch"] .sketch-controls {
   box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.2);
 }
 
-.swatches {
-  display: grid;
-  grid-template-columns: repeat(6, 1fr);
-  gap: 6px;
-  margin-top: 12px;
-}
-
+.swatches,
 #swatches {
   display: grid;
-  grid-template-columns: repeat(6, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(32px, 1fr));
   gap: 6px;
-  margin-top: 12px;
+  margin-top: 8px;
+  width: 100%;
 }
 
 #color-swatch,
@@ -834,9 +831,11 @@ body[data-mode="sketch"] .sketch-controls {
   height: 60px;
   border: 2px solid #555;
   border-radius: 50%;
-  margin: 12px auto;
+  margin: 8px auto;
   background: linear-gradient(135deg, #333 0%, #2a2a2a 100%);
   display: flex;
+  flex-shrink: 0;
+  align-self: center;
   align-items: center;
   justify-content: center;
   box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3);
@@ -847,10 +846,12 @@ body[data-mode="sketch"] .sketch-controls {
 /* ============================= */
 #layerList,
 .layer-list {
-  max-height: 140px;
+  max-height: 160px;
+  min-height: 80px;
   overflow-y: auto;
   border: 2px solid #444;
-  margin-bottom: 12px;
+  margin-bottom: 0;
+  flex-shrink: 0;
   background: linear-gradient(135deg, #2a2a2a 0%, #252525 100%);
   border-radius: 6px;
 }
@@ -940,7 +941,11 @@ body[data-mode="sketch"] .sketch-controls {
 /* ============================= */
 #control-group,
 .control-group {
-  margin-bottom: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 0;
+  flex-shrink: 0;
 }
 
 #control-group label,
@@ -957,9 +962,10 @@ body[data-mode="sketch"] .sketch-controls {
 #control-row,
 .control-row {
   display: flex;
-  gap: 10px;
+  flex-wrap: wrap;
+  gap: 8px;
   align-items: center;
-  margin-bottom: 10px;
+  margin-bottom: 0;
 }
 
 select,
@@ -986,6 +992,9 @@ textarea,
   border-radius: 6px;
   font-size: 13px;
   width: 100%;
+  max-width: 100%;
+  flex: 1;
+  min-width: 0;
   box-sizing: border-box;
   transition: all 0.2s ease;
 }
@@ -1217,15 +1226,17 @@ input[type="checkbox"],
 .btn-group {
   display: flex;
   gap: 6px;
-  margin-bottom: 8px;
+  margin-bottom: 0;
+  flex-wrap: wrap;
 }
 
 #btn-group .btn,
 .btn-group .btn,
 #btn-group button,
 .btn-group button {
-  flex: 1;
+  flex: 1 1 auto;
   min-width: 0;
+  white-space: nowrap;
 }
 
 #btn.btn-sm,
@@ -1274,7 +1285,9 @@ input[type="checkbox"],
 
 #symmetry-info,
 .symmetry-info {
-  margin-top: 14px;
+  margin-top: 8px;
+  margin-bottom: 0;
+  flex-shrink: 0;
   padding: 12px;
   background: linear-gradient(135deg, rgba(74, 144, 226, 0.1) 0%, rgba(74, 144, 226, 0.05) 100%);
   border: 2px solid rgba(74, 144, 226, 0.3);
@@ -1295,7 +1308,9 @@ input[type="checkbox"],
 /* ============================= */
 #transform-info,
 .transform-info {
-  margin-top: 14px;
+  margin-top: 8px;
+  margin-bottom: 0;
+  flex-shrink: 0;
   padding: 12px;
   background: linear-gradient(135deg, rgba(76, 175, 80, 0.1) 0%, rgba(76, 175, 80, 0.05) 100%);
   border: 2px solid rgba(76, 175, 80, 0.3);
@@ -1350,14 +1365,18 @@ input[type="checkbox"],
 /* ============================= */
 #export-area,
 .export-area {
-  margin-top: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 0;
 }
 
 #export-area textarea,
 .export-area textarea,
 #output {
   width: 100%;
-  height: 100px;
+  height: 80px;
+  min-height: 80px;
   background: linear-gradient(135deg, #333 0%, #2a2a2a 100%);
   border: 2px solid #555;
   color: #e8e8e8;
@@ -1367,6 +1386,7 @@ input[type="checkbox"],
   font-size: 11px;
   resize: vertical;
   line-height: 1.4;
+  flex-shrink: 0;
 }
 
 #export-area input[type="file"],
@@ -1411,9 +1431,10 @@ input[type="checkbox"],
 
 #colorPickers {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 8px;
-  margin-bottom: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(32px, 1fr));
+  gap: 6px;
+  margin-bottom: 8px;
+  width: 100%;
 }
 
 /* ============================= */
@@ -1845,8 +1866,10 @@ input[type="checkbox"],
   
   #panel-content,
   .panel-content {
-    padding: 16px;
-    display: block;
+    padding: 12px;
+    gap: 16px;
+    display: flex;
+    flex-direction: column;
     transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1),
                 padding 0.3s cubic-bezier(0.4, 0, 0.2, 1),
                 opacity 0.3s ease;
@@ -1879,7 +1902,8 @@ input[type="checkbox"],
   
   .swatches,
   #swatches {
-    gap: 12px;
+    gap: 8px;
+    grid-template-columns: repeat(auto-fit, minmax(44px, 1fr));
     margin-top: 16px;
   }
   
@@ -1927,7 +1951,11 @@ input[type="checkbox"],
   
   #control-group,
   .control-group {
-    margin-bottom: 24px;
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+    gap: 12px;
+    margin-bottom: 0;
   }
   
   #control-group label,
@@ -1995,13 +2023,14 @@ input[type="checkbox"],
   .btn-group {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 12px;
+    gap: 8px;
     margin-bottom: 16px;
   }
   
   #layerList,
   .layer-list {
-    max-height: 240px;
+    max-height: 200px;
+    min-height: 120px;
     border-radius: 8px;
     margin-bottom: 16px;
     -webkit-overflow-scrolling: touch;
@@ -2028,8 +2057,10 @@ input[type="checkbox"],
   }
   
   #export-area textarea,
+  .export-area textarea,
   #output {
-    height: 140px;
+    height: 120px;
+    min-height: 120px;
     padding: 16px;
     border-radius: 8px;
     font-size: 12px;
@@ -2394,8 +2425,10 @@ input[type="checkbox"],
   
   #panel-content,
   .panel-content {
-    padding: 12px;
-    display: block;
+    padding: 8px;
+    gap: 8px;
+    display: flex;
+    flex-direction: column;
     transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1),
                 padding 0.3s cubic-bezier(0.4, 0, 0.2, 1),
                 opacity 0.3s ease;
@@ -2433,7 +2466,11 @@ input[type="checkbox"],
   /* Landscape Form Controls */
   #control-group,
   .control-group {
-    margin-bottom: 12px;
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+    margin-bottom: 0;
+    gap: 6px;
   }
   
   #control-group label,
@@ -2481,13 +2518,14 @@ input[type="checkbox"],
   
   #btn-group,
   .btn-group {
-    gap: 6px;
+    gap: 4px;
     margin-bottom: 8px;
   }
   
   .swatches,
   #swatches {
-    gap: 6px;
+    grid-template-columns: repeat(auto-fit, minmax(24px, 1fr));
+    gap: 4px;
     margin-top: 8px;
   }
   
@@ -2501,7 +2539,8 @@ input[type="checkbox"],
   
   #layerList,
   .layer-list {
-    max-height: 120px;
+    max-height: 100px;
+    min-height: 60px;
     border: 1px solid #444;
     margin-bottom: 8px;
     border-radius: 4px;
@@ -2522,8 +2561,10 @@ input[type="checkbox"],
   }
   
   #export-area textarea,
+  .export-area textarea,
   #output {
-    height: 80px;
+    height: 60px;
+    min-height: 60px;
     padding: 8px;
     font-size: 10px;
   }
