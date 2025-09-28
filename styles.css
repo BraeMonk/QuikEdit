@@ -1387,25 +1387,18 @@ input[type="checkbox"],
 /* Mobile Layouts                */
 /* ============================= */
 
-/* ---------- Global mobile adjustments ---------- */
-@media (max-width: 1024px) {
+/* ----------------------------- */
+/* Portrait Mode                 */
+/* ----------------------------- */
+@media (max-width: 900px) and (orientation: portrait) {
   html, body {
-    height: 100dvh; /* full viewport height */
+    height: 100dvh;
     width: 100vw;
-    overflow: hidden; /* parent scroll handled inside panels/canvas */
-    touch-action: none; /* prevent accidental scrolling */
+    overflow: hidden;
   }
 
-  /* Reduce font sizes slightly for mobile readability */
-  body {
-    font-size: 14px;
-    line-height: 1.3;
-  }
-}
-
-/* ---------- Portrait Mode ---------- */
-@media (max-width: 1024px) and (orientation: portrait) {
-  #editor-container, .editor-container {
+  #editor-container,
+  .editor-container {
     display: grid;
     grid-template-areas:
       "header"
@@ -1414,140 +1407,146 @@ input[type="checkbox"],
       "controls";
     grid-template-columns: 1fr;
     grid-template-rows: auto 1fr auto auto;
-    height: 100dvh;
+    height: 100%;
     gap: 1px;
   }
 
-  #header, .header {
-    height: 50px; /* slightly smaller than desktop */
+  #header,
+  .header {
+    height: 50px;
+    grid-area: header;
   }
 
-  #sidebar, .sidebar {
-    display: flex;
-    flex-direction: row; /* horizontal toolbar at bottom */
-    align-items: center;
-    justify-content: start;
-    overflow-x: auto;
-    overflow-y: hidden;
-    height: auto;
-    width: 100%;
-    padding: 6px 0;
-    gap: 6px;
-    border-right: none;
-    border-bottom: 2px solid #333;
-  }
-
-  #canvas-area, .canvas-area {
+  /* Canvas stretches to fill available space */
+  #canvas-area,
+  .canvas-area {
     grid-area: canvas;
-    width: 100%;
     height: auto;
     overflow: auto;
-    flex: 1;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    padding: 6px;
   }
 
-  #panels, .panels {
+  /* Horizontal toolbar below canvas */
+  #sidebar,
+  .sidebar {
+    grid-area: toolbar;
+    display: flex;
+    flex-direction: row;
+    justify-content: flex-start;
+    overflow-x: auto;
+    overflow-y: hidden;
+    height: 60px;
+    gap: 6px;
+    padding: 6px;
+    border-right: none;
+    border-bottom: 2px solid #333;
+    box-shadow: inset 0 -2px 4px rgba(0,0,0,0.2);
+  }
+
+  /* Panels stack vertically below toolbar */
+  #panels,
+  .panels {
     grid-area: controls;
+    display: flex;
     flex-direction: column;
-    width: 100%;
-    max-height: 40%; /* accordion style */
     overflow-y: auto;
+    height: auto;
+    max-height: 40vh; /* allow scrolling for large accordion content */
     border-left: none;
     border-top: 2px solid #333;
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.2);
   }
 
-  #panels::-webkit-scrollbar,
-  .panels::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
+  /* Accordion panels fill width */
+  #panel,
+  .panel {
+    width: 100%;
   }
 
-  #panels::-webkit-scrollbar-thumb,
-  .panels::-webkit-scrollbar-thumb {
-    background: #444;
-    border-radius: 3px;
-  }
-
-  #panels::-webkit-scrollbar-thumb:hover,
-  .panels::-webkit-scrollbar-thumb:hover {
-    background: #555;
+  #panel-content,
+  .panel-content {
+    max-height: none; /* accordion will handle collapse/expand */
   }
 }
 
-/* ---------- Landscape Mode ---------- */
-@media (max-width: 1024px) and (orientation: landscape) {
-  #editor-container, .editor-container {
+/* ----------------------------- */
+/* Landscape Mode                */
+/* ----------------------------- */
+@media (max-width: 1200px) and (orientation: landscape) {
+  html, body {
+    height: 100dvh;
+    width: 100vw;
+    overflow: hidden;
+  }
+
+  #editor-container,
+  .editor-container {
     display: grid;
     grid-template-areas:
       "header header header"
-      "toolbar canvas panels";
-    grid-template-columns: auto 1fr auto;
-    grid-template-rows: 40px 1fr; /* header smaller */
-    height: 100dvh;
+      "sidebar canvas panels";
+    grid-template-columns: 65px 1fr 300px;
+    grid-template-rows: 45px 1fr; /* header slightly smaller */
+    height: 100%;
     gap: 1px;
   }
 
-  #header, .header {
-    height: 40px;
-    font-size: 13px;
+  #header,
+  .header {
+    height: 45px;
   }
 
-  #sidebar, .sidebar {
-    grid-area: toolbar;
-    display: flex;
-    flex-direction: column; /* vertical full-height toolbar */
-    align-items: center;
-    justify-content: start;
+  /* Vertical toolbar */
+  #sidebar,
+  .sidebar {
+    flex-direction: column;
     overflow-y: auto;
     overflow-x: hidden;
     height: 100%;
-    width: auto;
-    padding: 12px 0;
-    border-right: 2px solid #333;
   }
 
-  #canvas-area, .canvas-area {
-    grid-area: canvas;
-    width: 100%;
-    height: 100%;
+  /* Canvas fills center space */
+  #canvas-area,
+  .canvas-area {
     overflow: auto;
-    display: flex;
-    justify-content: center;
-    align-items: center;
   }
 
-  #panels, .panels {
-    grid-area: panels;
+  /* Right panels vertical, accordion style */
+  #panels,
+  .panels {
     flex-direction: column;
     overflow-y: auto;
     height: 100%;
-    max-width: 320px; /* adjustable for smaller screens */
-    border-left: 2px solid #333;
   }
 
-  #panels::-webkit-scrollbar,
-  .panels::-webkit-scrollbar {
-    width: 8px;
-  }
-
-  #panels::-webkit-scrollbar-thumb {
-    background: #444;
-    border-radius: 4px;
-  }
-
-  #panels::-webkit-scrollbar-thumb:hover {
-    background: #555;
+  #panel-content,
+  .panel-content {
+    max-height: none;
   }
 }
 
-/* ---------- Optional: Smooth touch scrolling for panels and toolbar ---------- */
-#sidebar, .sidebar,
-#panels, .panels,
-#canvas-area, .canvas-area {
-  -webkit-overflow-scrolling: touch;
+/* ----------------------------- */
+/* Scrollbar Styling             */
+/* ----------------------------- */
+#sidebar::-webkit-scrollbar,
+.panels::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+#sidebar::-webkit-scrollbar-track,
+.panels::-webkit-scrollbar-track {
+  background: #1a1a1a;
+}
+
+#sidebar::-webkit-scrollbar-thumb,
+.panels::-webkit-scrollbar-thumb {
+  background: #444;
+  border-radius: 3px;
+}
+
+#sidebar::-webkit-scrollbar-thumb:hover,
+.panels::-webkit-scrollbar-thumb:hover {
+  background: #555;
 }
 
 /* Tablet specific adjustments */
