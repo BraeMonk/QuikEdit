@@ -2829,14 +2829,13 @@ input:focus {
 }
 
 /* ============================= */
-/* FORCE SKETCH TOOLS SCROLLING  */
+/* MOBILE PORTRAIT TOOLBAR SCROLL */
 /* ============================= */
 
-/* Mobile Portrait - Force sketch tools to scroll horizontally */
 @media screen and (max-width: 768px) and (orientation: portrait) {
-  /* Override any conflicting sidebar styles for sketch mode */
-  body[data-mode="sketch"] #sidebar,
-  body[data-mode="sketch"] .sidebar {
+  /* Force horizontal scrolling for ALL tools in portrait mode */
+  #sidebar,
+  .sidebar {
     overflow-x: auto !important;
     overflow-y: hidden !important;
     -webkit-overflow-scrolling: touch !important;
@@ -2846,21 +2845,11 @@ input:focus {
     align-items: center !important;
   }
 
-  /* Make sure sketch tools display properly */
-  body[data-mode="sketch"] #sketch-tools,
-  body[data-mode="sketch"] .sketch-tools {
-    display: flex !important;
-    flex-direction: row !important;
-    align-items: center !important;
-    gap: 6px !important;
-    min-width: max-content !important;
-    width: max-content !important;
-    height: 48px !important;
-  }
-
-  /* Ensure sketch tools are always active when in sketch mode */
-  body[data-mode="sketch"] #sketch-tools.active,
-  body[data-mode="sketch"] .sketch-tools.active {
+  /* Make sure both pixel and sketch tools work horizontally */
+  #pixel-tools.active,
+  .pixel-tools.active,
+  #sketch-tools.active,
+  .sketch-tools.active {
     display: flex !important;
     flex-direction: row !important;
     align-items: center !important;
@@ -2869,30 +2858,23 @@ input:focus {
     width: max-content !important;
   }
 
-  /* Hide pixel tools in sketch mode */
-  body[data-mode="sketch"] #pixel-tools,
-  body[data-mode="sketch"] .pixel-tools {
-    display: none !important;
-  }
-
-  /* Fix scroll indicators for sketch mode */
-  body[data-mode="sketch"] #sidebar::-webkit-scrollbar {
+  /* Horizontal scrollbar styling */
+  #sidebar::-webkit-scrollbar,
+  .sidebar::-webkit-scrollbar {
     height: 4px !important;
     width: 0 !important;
   }
 
-  body[data-mode="sketch"] #sidebar::-webkit-scrollbar-track {
+  #sidebar::-webkit-scrollbar-track,
+  .sidebar::-webkit-scrollbar-track {
     background: rgba(255, 255, 255, 0.1) !important;
     border-radius: 2px !important;
   }
 
-  body[data-mode="sketch"] #sidebar::-webkit-scrollbar-thumb {
+  #sidebar::-webkit-scrollbar-thumb,
+  .sidebar::-webkit-scrollbar-thumb {
     background: #4CAF50 !important;
     border-radius: 2px !important;
-  }
-
-  body[data-mode="sketch"] #sidebar::-webkit-scrollbar-thumb:hover {
-    background: #66BB6A !important;
   }
 }
 
@@ -3042,113 +3024,5 @@ body[data-mode="sketch"] .panel .panel-content > * {
     max-width: 100% !important;
     min-width: 0 !important;
     box-sizing: border-box !important;
-  }
-}
-
-/* ============================= */
-/* UNIFIED PANEL SCROLLING       */
-/* ============================= */
-
-/* Remove individual panel content scrolling - let panels container handle all scrolling */
-#panel-content,
-.panel-content {
-  overflow-y: visible !important; /* Don't let individual panels scroll */
-  overflow-x: hidden !important;
-  max-height: none !important; /* Remove height restrictions when expanded */
-}
-
-/* Collapsed panels still need height restriction */
-#panel.collapsed .panel-content,
-.panel.collapsed .panel-content {
-  max-height: 0 !important;
-  overflow: hidden !important;
-}
-
-/* Ensure the main panels container handles ALL scrolling */
-#panels,
-.panels {
-  overflow-y: auto !important;
-  overflow-x: hidden !important;
-  scroll-behavior: smooth !important;
-}
-
-/* Same fix for sketch mode specifically */
-body[data-mode="sketch"] .panel .panel-content {
-  overflow-y: visible !important;
-  overflow-x: hidden !important;
-  max-height: none !important;
-}
-
-body[data-mode="sketch"] .panel.collapsed .panel-content {
-  max-height: 0 !important;
-  overflow: hidden !important;
-}
-
-body[data-mode="sketch"] #panels,
-body[data-mode="sketch"] .panels {
-  overflow-y: auto !important;
-  overflow-x: hidden !important;
-  scroll-behavior: smooth !important;
-}
-
-/* Mobile Portrait - Unified scrolling */
-@media screen and (max-width: 768px) and (orientation: portrait) {
-  .panel-content {
-    overflow-y: visible !important;
-    max-height: none !important;
-  }
-  
-  .panel.collapsed .panel-content {
-    max-height: 0 !important;
-    overflow: hidden !important;
-  }
-  
-  #panels,
-  .panels {
-    overflow-y: auto !important;
-    overflow-x: hidden !important;
-    scroll-behavior: smooth !important;
-    -webkit-overflow-scrolling: touch !important;
-  }
-  
-  body[data-mode="sketch"] .panel-content {
-    overflow-y: visible !important;
-    max-height: none !important;
-  }
-  
-  body[data-mode="sketch"] .panel.collapsed .panel-content {
-    max-height: 0 !important;
-    overflow: hidden !important;
-  }
-}
-
-/* Mobile Landscape - Unified scrolling */
-@media screen and (max-width: 1024px) and (orientation: landscape) and (max-height: 768px) {
-  .panel-content {
-    overflow-y: visible !important;
-    max-height: none !important;
-  }
-  
-  .panel.collapsed .panel-content {
-    max-height: 0 !important;
-    overflow: hidden !important;
-  }
-  
-  #panels,
-  .panels {
-    overflow-y: auto !important;
-    overflow-x: hidden !important;
-    scroll-behavior: smooth !important;
-    -webkit-overflow-scrolling: touch !important;
-  }
-  
-  body[data-mode="sketch"] .panel-content {
-    overflow-y: visible !important;
-    max-height: none !important;
-  }
-  
-  body[data-mode="sketch"] .panel.collapsed .panel-content {
-    max-height: 0 !important;
-    overflow: hidden !important;
   }
 }
