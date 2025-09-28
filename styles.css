@@ -593,7 +593,6 @@ body {
   background: linear-gradient(180deg, #1e1e1e 0%, #1a1a1a 100%);
   max-height: 1000px;
   opacity: 1;
-  width: 100%;
   box-sizing: border-box;
 }
 
