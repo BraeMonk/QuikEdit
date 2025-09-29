@@ -578,8 +578,10 @@ class JerryEditor {
         this.pixelCanvas.style.height = `${canvasHeightPx}px`;
         this.pixelCanvas.style.gridTemplateColumns = `repeat(${this.canvasWidth}, ${this.pixelSize}px)`;
         this.pixelCanvas.style.gridTemplateRows = `repeat(${this.canvasHeight}, ${this.pixelSize}px)`;
+        this.pixelCanvas.style.position = 'relative';
+        this.pixelCanvas.style.margin = '0';
     
-        // Update wrapper CSS variables (checkerboard/grid support)
+        // Update wrapper CSS variables
         this.canvasWrapper.style.setProperty('--cellSize', `${this.pixelSize}px`);
         this.canvasWrapper.style.setProperty('--halfCell', `${this.pixelSize / 2}px`);
         this.canvasWrapper.style.setProperty('--cols', this.canvasWidth);
@@ -588,10 +590,10 @@ class JerryEditor {
         // Update grid overlay to match exactly
         this.canvasGrid.style.width = `${canvasWidthPx}px`;
         this.canvasGrid.style.height = `${canvasHeightPx}px`;
-        this.canvasGrid.style.setProperty('--cols', this.canvasWidth);
-        this.canvasGrid.style.setProperty('--rows', this.canvasHeight);
-        this.canvasGrid.style.setProperty('--cellSize', `${this.pixelSize}px`);
-        this.canvasGrid.style.transform = 'translate(-50%, -50%)'; // ensure grid stays centered
+        this.canvasGrid.style.position = 'absolute';
+        this.canvasGrid.style.top = '50%';
+        this.canvasGrid.style.left = '50%';
+        this.canvasGrid.style.transform = 'translate(-50%, -50%)';
     
         // Populate pixels
         for (let y = 0; y < this.canvasHeight; y++) {
@@ -611,23 +613,26 @@ class JerryEditor {
     
     updateGrid() {
         if (this.mode !== 'pixel') return;
-
+    
         const grid = this.canvasGrid;
-
+        const canvasWidthPx = this.canvasWidth * this.pixelSize;
+        const canvasHeightPx = this.canvasHeight * this.pixelSize;
+    
         // Set size to match canvas exactly
-        grid.style.width = `${this.canvasWidth * this.pixelSize}px`;
-        grid.style.height = `${this.canvasHeight * this.pixelSize}px`;
-
-        // Center grid in wrapper
+        grid.style.width = `${canvasWidthPx}px`;
+        grid.style.height = `${canvasHeightPx}px`;
+    
+        // Position grid to overlay canvas perfectly
         grid.style.position = 'absolute';
-        grid.style.top = '0';
-        grid.style.left = '0';
+        grid.style.top = '50%';
+        grid.style.left = '50%';
+        grid.style.transform = 'translate(-50%, -50%)';
         grid.style.pointerEvents = 'none';
         grid.style.zIndex = '10';
-
+    
         const lineColor = 'rgba(255, 255, 255, 0.2)';
         const offset = 0.5;
-
+    
         grid.style.backgroundImage = `
             repeating-linear-gradient(
                 to right,
@@ -646,6 +651,9 @@ class JerryEditor {
         `;
         grid.style.backgroundSize = `${this.pixelSize}px ${this.pixelSize}px`;
         grid.style.backgroundPosition = `${offset}px ${offset}px`;
+        
+        // Show/hide based on toggle
+        grid.style.display = this.showGrid ? 'block' : 'none';
     }
     
     getCanvasPos(e) {
@@ -2086,7 +2094,7 @@ class JerryEditor {
     }
     
     resizePixelCanvas(newWidth, newHeight) {
-        // --- 1. Preserve existing pixels in a new grid ---
+        // Preserve existing pixels in a new grid
         const newGrid = [];
         for (let y = 0; y < newHeight; y++) {
             newGrid[y] = [];
@@ -2100,26 +2108,15 @@ class JerryEditor {
         this.canvasWidth = newWidth;
         this.canvasHeight = newHeight;
     
-        // --- 2. Calculate uniform pixel size for square pixels ---
-        const maxDisplaySize = 512; // Maximum display size in px
+        // Calculate uniform pixel size
+        const maxDisplaySize = 512;
         this.pixelSize = Math.floor(maxDisplaySize / Math.max(newWidth, newHeight));
     
-        // --- 3. Update wrapper CSS variables for scaling/checkerboard ---
-        const wrapper = this.canvasWrapper;
-        wrapper.style.setProperty('--cellSize', `${this.pixelSize}px`);
-        wrapper.style.setProperty('--halfCell', `${this.pixelSize / 2}px`);
-        wrapper.style.setProperty('--cols', this.canvasWidth);
-        wrapper.style.setProperty('--rows', this.canvasHeight);
-    
-        // --- 4. Update canvas and grid overlay ---
+        // Update everything
         this.updatePixelCanvas();
         this.updateGrid();
         this.updateCanvasInfo();
-    
-        // --- 5. Center canvas inside wrapper ---
-        this.pixelCanvas.style.margin = '0 auto';
-        this.canvasGrid.style.transform = 'none';
-
+        this.setZoom(1);
         this.saveStateImmediate();
     }
 
@@ -2170,14 +2167,35 @@ class JerryEditor {
         this.setZoom(this.zoom * factor);
     }
     
+    calculateAutoScale() {
+        const wrapper = this.canvasWrapper;
+        if (!wrapper) return 1;
+        
+        const wrapperRect = wrapper.getBoundingClientRect();
+        const padding = 40; // Leave some breathing room
+        const availableWidth = wrapperRect.width - padding;
+        const availableHeight = wrapperRect.height - padding;
+        
+        const canvasWidthPx = this.canvasWidth * this.pixelSize;
+        const canvasHeightPx = this.canvasHeight * this.pixelSize;
+        
+        const scaleX = availableWidth / canvasWidthPx;
+        const scaleY = availableHeight / canvasHeightPx;
+        
+        // Use the smaller scale to ensure entire canvas fits
+        return Math.min(scaleX, scaleY, 1); // Don't scale up beyond 100% automatically
+    }
+    
     setZoom(zoom) {
         this.zoom = Math.max(0.25, Math.min(8, zoom));
-    
+        
         const canvasContainer = document.querySelector('.canvas-container');
         if (canvasContainer) {
-            canvasContainer.style.transform = `scale(${this.zoom})`;
+            const autoScale = this.calculateAutoScale();
+            const finalScale = autoScale * this.zoom;
+            canvasContainer.style.transform = `scale(${finalScale})`;
         }
-    
+        
         this.zoomIndicator.textContent = `${Math.round(this.zoom * 100)}%`;
     }
 
