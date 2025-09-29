@@ -578,11 +578,6 @@ class JerryEditor {
         this.pixelCanvas.style.height = `${canvasHeightPx}px`;
         this.pixelCanvas.style.gridTemplateColumns = `repeat(${this.canvasWidth}, ${this.pixelSize}px)`;
         this.pixelCanvas.style.gridTemplateRows = `repeat(${this.canvasHeight}, ${this.pixelSize}px)`;
-        this.pixelCanvas.style.backgroundColor = 'transparent';
-        this.pixelCanvas.style.position = 'relative';
-        this.pixelCanvas.style.top = '0';
-        this.pixelCanvas.style.left = '0';
-        this.pixelCanvas.style.transform = 'none'; // remove old scaling
     
         // Update wrapper CSS variables (checkerboard/grid support)
         this.canvasWrapper.style.setProperty('--cellSize', `${this.pixelSize}px`);
@@ -625,9 +620,8 @@ class JerryEditor {
 
         // Center grid in wrapper
         grid.style.position = 'absolute';
-        grid.style.top = '50%';
-        grid.style.left = '50%';
-        grid.style.transform = 'translate(-50%, -50%)';
+        grid.style.top = '0';
+        grid.style.left = '0';
         grid.style.pointerEvents = 'none';
         grid.style.zIndex = '10';
 
@@ -2178,12 +2172,13 @@ class JerryEditor {
     
     setZoom(zoom) {
         this.zoom = Math.max(0.25, Math.min(8, zoom));
-        
-        const canvasWrapper = document.querySelector('.canvas-container');
-        canvasWrapper.style.transform = `scale(${this.zoom})`;
-        
+    
+        const canvasContainer = document.querySelector('.canvas-container');
+        if (canvasContainer) {
+            canvasContainer.style.transform = `scale(${this.zoom})`;
+        }
+    
         this.zoomIndicator.textContent = `${Math.round(this.zoom * 100)}%`;
-        this.updateGrid();
     }
 
     saveStateImmediate() {
