@@ -277,7 +277,7 @@ input, textarea, select {
   flex-direction: column;
   background: var(--primary-bg);
   position: relative;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .canvas-wrapper {
@@ -287,7 +287,8 @@ input, textarea, select {
   justify-content: center;
   padding: var(--spacing-lg);
   position: relative;
-  overflow: hidden;
+  overflow: visible;
+  contain: none;
   background: 
     linear-gradient(45deg, #2a2a2a 25%, transparent 25%), 
     linear-gradient(-45deg, #2a2a2a 25%, transparent 25%), 
@@ -331,7 +332,7 @@ input, textarea, select {
   height: auto;
   max-width: none;
   max-height: none;
-
+  overflow: visible;
   margin: auto;
 }
 
@@ -352,7 +353,7 @@ input, textarea, select {
   flex-shrink: 0;
   max-width: none;
   max-height: none;
-
+  overflow: visible;
   margin: auto;
 }
 
@@ -369,6 +370,7 @@ input, textarea, select {
   border: 1px solid var(--border-color);
 
   flex-shrink: 0;
+  overflow: visible;
 }
 
 /* Zoom scaling applied via transform */
@@ -946,7 +948,7 @@ body[data-mode="sketch"] .pixel-controls {
 
   .canvas-wrapper {
     padding: var(--spacing-sm);
-    overflow: hidden;
+    overflow: visible;
   }
 
   .btn {
@@ -1067,7 +1069,7 @@ body[data-mode="sketch"] .pixel-controls {
     padding: var(--spacing-sm);
     background-size: 15px 15px;
     background-position: 0 0, 0 7px, 7px -7px, -7px 0px;
-    overflow: hidden;
+    overflow: visible;
   }
 
   .panels {
