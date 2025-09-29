@@ -74,10 +74,12 @@
 
     <div class="canvas-area">
       <div class="canvas-wrapper checkerboard">
-        <div id="canvas" style="display: grid;"></div> 
-        <canvas id="sketchCanvas" width="800" height="600" style="display: none;"></canvas>
-        <canvas id="selectionOverlay" width="800" height="600" style="position: absolute; top: 0; left: 0; pointer-events: none; display: none;"></canvas>
-        <div class="canvas-grid" id="canvasGrid"></div>
+        <div class="canvas-container">
+          <div id="canvas" style="display: grid;"></div> 
+          <canvas id="sketchCanvas" width="800" height="600" style="display: none;"></canvas>
+          <canvas id="selectionOverlay" width="800" height="600" style="position: absolute; top: 0; left: 0; pointer-events: none; display: none;"></canvas>
+          <div class="canvas-grid" id="canvasGrid"></div>
+        </div>
       </div>
       <div id="canvasInfo">16×16 | Pencil | #000000</div>
       <div id="zoomIndicator">100%</div>
