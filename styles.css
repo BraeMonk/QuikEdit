@@ -1101,6 +1101,7 @@ body[data-mode="sketch"] .pixel-controls {
   #canvas,
   #sketchCanvas {
     margin: auto;
+    display: block;
   }
 
   .panels {
