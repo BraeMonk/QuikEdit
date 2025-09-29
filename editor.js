@@ -3424,10 +3424,23 @@ class JerryEditorPersistence {
     
         // --- Redraw immediately ---
         if (this.editor.mode === 'pixel') {
-            this.editor.redrawGrid?.();
-        } else if (this.editor.mode === 'sketch') {
+            const ctx = this.editor.pixelCanvas.getContext('2d');
+            const pixelSize = this.editor.pixelSize;
+
+            ctx.clearRect(0, 0, this.editor.canvasWidth * pixelSize, this.editor.canvasHeight * pixelSize);
+
+            for (let y = 0; y < this.editor.canvasHeight; y++) {
+                for (let x = 0; x < this.editor.canvasWidth; x++) {
+                    const color = (this.editor.grid[y] && this.editor.grid[y][x]) || '#ffffff';
+                    ctx.fillStyle = color;
+                    ctx.fillRect(x * pixelSize, y * pixelSize, pixelSize, pixelSize);
+                }
+            }
+        } 
+        else if (this.editor.mode === 'sketch') {
             const mainCtx = this.editor.sketchCanvas.getContext('2d');
             mainCtx.clearRect(0, 0, this.editor.sketchCanvas.width, this.editor.sketchCanvas.height);
+
             this.editor.layers.forEach(layer => {
                 if (layer.visible) {
                     mainCtx.globalAlpha = layer.opacity;
@@ -3435,12 +3448,12 @@ class JerryEditorPersistence {
                     mainCtx.drawImage(layer.canvas, 0, 0);
                 }
             });
+
             mainCtx.globalAlpha = 1;
             mainCtx.globalCompositeOperation = 'source-over';
         }
-    
-        // --- Update UI ---
-        await this.updateUI();
+        
+        this.updateUI();
     }
 
     
