@@ -492,8 +492,8 @@ class JerryEditor {
         this.pixelCanvas.style.display = mode === 'pixel' ? 'grid' : 'none';
         this.sketchCanvas.style.display = mode === 'sketch' ? 'block' : 'none';
         this.selectionOverlay.style.display = mode === 'sketch' ? 'block' : 'none';
-        this.canvasGrid.style.display = mode === 'pixel' && this.showGrid ? 'grid' : 'none';
-
+        this.canvasGrid.style.display = mode === 'pixel' && this.showGrid ? 'block' : 'none';
+        
         // ----- INITIALIZE MODE -----
         if (mode === 'pixel') {
             this.currentTool = 'pencil';
