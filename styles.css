@@ -277,17 +277,17 @@ input, textarea, select {
   flex-direction: column;
   background: var(--primary-bg);
   position: relative;
-  overflow: visible;
+  overflow: hidden;
+  z-index: 1;
 }
 
 .canvas-wrapper {
   flex: 1;
+  position: relative;
+  overflow: hidden;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: var(--spacing-lg);
-  position: relative;
-  overflow: auto;
   background: 
     linear-gradient(45deg, #2a2a2a 25%, transparent 25%), 
     linear-gradient(-45deg, #2a2a2a 25%, transparent 25%), 
@@ -297,12 +297,12 @@ input, textarea, select {
   background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
 }
 
-.canvas-container {
+canvas-container {
   position: relative;
-  display: block;
   transform-origin: center center;
   transition: transform 0.2s ease;
-  margin: auto;
+  max-width: 100%;
+  max-height: 100%;
 }
 
 /* Inner container wrapper for proper scaling */
@@ -325,12 +325,11 @@ input, textarea, select {
   box-shadow: var(--shadow-lg);
   background: transparent;
   image-rendering: pixelated;
-  image-rendering: -moz-crisp-edges;
-  image-rendering: crisp-edges;
   cursor: crosshair;
   position: relative;
-  z-index: 10;
-  /* Fixed dimensions - set by JavaScript based on grid size */
+  z-index: 1;
+  max-width: 100%;
+  max-height: 100%;
 }
 
 .pixel {
@@ -361,7 +360,7 @@ input, textarea, select {
   left: 50%;
   transform: translate(-50%, -50%);
   pointer-events: none;
-  z-index: 20;
+  z-index: 2;
   border: 1px solid var(--border-color);
 }
 
