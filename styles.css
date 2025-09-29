@@ -287,7 +287,7 @@ input, textarea, select {
   justify-content: center;
   padding: var(--spacing-lg);
   position: relative;
-  overflow: auto;
+  overflow: hidden;
   background: 
     linear-gradient(45deg, #2a2a2a 25%, transparent 25%), 
     linear-gradient(-45deg, #2a2a2a 25%, transparent 25%), 
@@ -295,6 +295,15 @@ input, textarea, select {
     linear-gradient(-45deg, transparent 75%, #2a2a2a 75%);
   background-size: 20px 20px;
   background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+
+  transform-origin: center center;
+}
+
+/* Inner container wrapper for proper scaling */
+.canvas-wrapper > * {
+  position: relative;
+  transform-origin: center center;
+  transition: transform 0.2s ease;
 }
 
 .canvas-wrapper.checkerboard {
@@ -316,6 +325,14 @@ input, textarea, select {
   cursor: crosshair;
   position: relative;
   z-index: 10;
+
+  flex-shrink: 0;
+  width: auto;
+  height: auto;
+  max-width: none;
+  max-height: none;
+
+  margin: auto;
 }
 
 .pixel {
@@ -331,6 +348,12 @@ input, textarea, select {
   background: white;
   cursor: crosshair;
   border-radius: var(--radius-sm);
+
+  flex-shrink: 0;
+  max-width: none;
+  max-height: none;
+
+  margin: auto;
 }
 
 #selectionOverlay {
@@ -344,6 +367,13 @@ input, textarea, select {
   pointer-events: none;
   z-index: 20;
   border: 1px solid var(--border-color);
+
+  flex-shrink: 0;
+}
+
+/* Zoom scaling applied via transform */
+.canvas-wrapper[style*="scale"] {
+  transition: transform 0.2s ease;
 }
 
 /* Canvas Info Bar */
