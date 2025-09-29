@@ -3450,6 +3450,25 @@ class JerryEditorPersistence {
         if (state.redoStack) {
             await this.restoreUndoStack(state.redoStack, 'redoStack', state.undoCanvasDimensions);
         }
+
+        // Force full redraw after restoring
+        if (this.editor.mode === 'pixel') {
+            this.editor.redrawGrid?.(); // redraw the pixel grid if you have that method
+        }
+        
+        if (this.editor.mode === 'sketch') {
+            const mainCtx = this.editor.sketchCanvas.getContext('2d');
+            mainCtx.clearRect(0, 0, this.editor.sketchCanvas.width, this.editor.sketchCanvas.height);
+            this.editor.layers.forEach(layer => {
+                if (layer.visible) {
+                    mainCtx.globalAlpha = layer.opacity;
+                    mainCtx.globalCompositeOperation = layer.blendMode || 'source-over';
+                    mainCtx.drawImage(layer.canvas, 0, 0);
+                }
+            });
+            mainCtx.globalAlpha = 1;
+            mainCtx.globalCompositeOperation = 'source-over';
+        }
         
         // Update all UI elements
         await this.updateUI();
