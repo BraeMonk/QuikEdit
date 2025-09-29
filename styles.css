@@ -90,6 +90,12 @@ body {
   -ms-user-select: none;
 }
 
+html, body {
+  overscroll-behavior: none; /* disables pull-to-refresh / bounce */
+  touch-action: none;        /* disables default touch gestures */
+}
+   
+
 button {
   font-family: inherit;
   font-size: inherit;
