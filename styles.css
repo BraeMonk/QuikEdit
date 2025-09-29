@@ -347,7 +347,7 @@ canvas-container {
   border-radius: var(--radius-sm);
   position: relative;
   z-index: 1;
-  display: block;
+  display: none;
 }
 
 #selectionOverlay {
@@ -357,6 +357,7 @@ canvas-container {
   transform: translate(-50%, -50%);
   pointer-events: none;
   z-index: 15;
+  display: none;
 }
 
 /* Canvas Grid Overlay */
