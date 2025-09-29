@@ -569,23 +569,33 @@ class JerryEditor {
     updatePixelCanvas() {
         this.pixelCanvas.innerHTML = '';
     
-        const canvasWidthPx = this.canvasWidth * this.pixelSize;
-        const canvasHeightPx = this.canvasHeight * this.pixelSize;
+        // Calculate available space in the wrapper
+        const wrapper = this.canvasWrapper;
+        const availableWidth = wrapper.clientWidth - 40;  // Account for padding/margins
+        const availableHeight = wrapper.clientHeight - 40;
+        
+        // Calculate what pixel size would fit in available space
+        const maxPixelWidth = Math.floor(availableWidth / this.canvasWidth);
+        const maxPixelHeight = Math.floor(availableHeight / this.canvasHeight);
+        
+        // Use the smaller of calculated size or default pixelSize, but minimum 2px
+        const actualPixelSize = Math.max(2, Math.min(maxPixelWidth, maxPixelHeight, this.pixelSize));
+        
+        const canvasWidthPx = this.canvasWidth * actualPixelSize;
+        const canvasHeightPx = this.canvasHeight * actualPixelSize;
     
         // Set pixel canvas dimensions
-        const isMobile = window.innerWidth <= 767 || (window.innerWidth <= 479 && window.matchMedia('(orientation: portrait)').matches);
-        
         this.pixelCanvas.style.display = 'grid';
         this.pixelCanvas.style.width = `${canvasWidthPx}px`;
         this.pixelCanvas.style.height = `${canvasHeightPx}px`;
-        this.pixelCanvas.style.gridTemplateColumns = `repeat(${this.canvasWidth}, ${this.pixelSize}px)`;
-        this.pixelCanvas.style.gridTemplateRows = `repeat(${this.canvasHeight}, ${this.pixelSize}px)`;
+        this.pixelCanvas.style.gridTemplateColumns = `repeat(${this.canvasWidth}, ${actualPixelSize}px)`;
+        this.pixelCanvas.style.gridTemplateRows = `repeat(${this.canvasHeight}, ${actualPixelSize}px)`;
         this.pixelCanvas.style.position = 'relative';
-        this.pixelCanvas.style.margin = isMobile ? '0' : '0';
+        this.pixelCanvas.style.margin = '0';
     
         // Update wrapper CSS variables
-        this.canvasWrapper.style.setProperty('--cellSize', `${this.pixelSize}px`);
-        this.canvasWrapper.style.setProperty('--halfCell', `${this.pixelSize / 2}px`);
+        this.canvasWrapper.style.setProperty('--cellSize', `${actualPixelSize}px`);
+        this.canvasWrapper.style.setProperty('--halfCell', `${actualPixelSize / 2}px`);
         this.canvasWrapper.style.setProperty('--cols', this.canvasWidth);
         this.canvasWrapper.style.setProperty('--rows', this.canvasHeight);
     
@@ -602,8 +612,8 @@ class JerryEditor {
             for (let x = 0; x < this.canvasWidth; x++) {
                 const pixel = document.createElement('div');
                 pixel.className = 'pixel';
-                pixel.style.width = `${this.pixelSize}px`;
-                pixel.style.height = `${this.pixelSize}px`;
+                pixel.style.width = `${actualPixelSize}px`;
+                pixel.style.height = `${actualPixelSize}px`;
                 const color = this.grid[y][x];
                 pixel.style.backgroundColor = color === 'transparent' ? 'transparent' : color;
                 pixel.dataset.x = x;
@@ -612,7 +622,7 @@ class JerryEditor {
             }
         }
     }
-    
+        
     updateGrid() {
         if (this.mode !== 'pixel') return;
     
