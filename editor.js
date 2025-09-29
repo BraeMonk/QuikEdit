@@ -1169,8 +1169,6 @@ class JerryEditor {
             // Allow 'transparent' to be shown as empty
             el.style.backgroundColor = (color === 'transparent') ? 'transparent' : color;
         }
-
-        this.saveStateImmediate();
     }
 
     
@@ -2999,464 +2997,693 @@ class JerryEditor {
 
 class JerryEditorPersistence {
     constructor(editor) {
+        this.db = new JerryDB();
+
         this.editor = editor;
         this.STORAGE_KEYS = {
             PROJECT: 'jerryEditor_currentProject',
             AUTOSAVE: 'jerryEditor_autosave',
-            SETTINGS: 'jerryEditor_settings'
+            SETTINGS: 'jerryEditor_settings',
+            OVERFLOW: 'jerryEditor_overflow_' // For chunked storage
         };
         
-        // Debounce timer for performance
         this.saveTimeout = null;
-        this.saveDelay = 100; // Save 100ms after last change
+        this.saveDelay = 100;
+        this.isSaving = false;
+        this.saveQueue = [];
+        this.lastSaveHash = null;
+        this.maxChunkSize = 1024 * 1024; // 1MB chunks
         
         this.setupPersistence();
     }
     
     setupPersistence() {
-        // Restore state immediately on load
         this.restoreState();
-        
-        // Save on EVERY significant event
         this.setupRealtimeSaving();
         
-        // Save on page unload (guaranteed save)
-        window.addEventListener('beforeunload', () => {
+        window.addEventListener('beforeunload', (e) => {
             this.saveImmediately();
+            // Show warning if save is still in progress
+            if (this.isSaving) {
+                e.preventDefault();
+                e.returnValue = '';
+            }
         });
         
-        // Save on visibility change (tab switching, minimizing)
         document.addEventListener('visibilitychange', () => {
             if (document.hidden) {
                 this.saveImmediately();
             }
         });
         
-        // Save on focus loss
         window.addEventListener('blur', () => {
             this.saveImmediately();
         });
         
-        // Backup auto-save every 5 seconds as fallback
-        setInterval(() => {
-            this.saveImmediately();
-        }, 5000);
+        // Backup auto-save every 3 seconds
+        setInterval(() => this.saveImmediately(), 3000);
     }
     
     setupRealtimeSaving() {
-        const editor = this.editor;
+        const saveOnEvent = () => this.saveCurrentState();
         
-        // Intercept ALL methods that modify state
-        this.wrapMethod(editor, 'drawPixel');
-        this.wrapMethod(editor, 'switchMode');
-        this.wrapMethod(editor, 'resizePixelCanvas');
-        this.wrapMethod(editor, 'resizeSketchCanvas');
-        this.wrapMethod(editor, 'addLayer');
-        this.wrapMethod(editor, 'redrawLayers');
-        this.wrapMethod(editor, 'rotate');
-        this.wrapMethod(editor, 'flip');
-        this.wrapMethod(editor, 'clearCanvas');
-        this.wrapMethod(editor, 'switchSprite');
-        this.wrapMethod(editor, 'setZoom');
-        this.wrapMethod(editor, 'undo');
-        this.wrapMethod(editor, 'redo');
+        // Monitor pixel canvas mutations
+        if (this.editor.pixelCanvas) {
+            const observer = new MutationObserver(() => saveOnEvent());
+            observer.observe(this.editor.pixelCanvas, { 
+                childList: true, 
+                attributes: true, 
+                subtree: true 
+            });
+        }
         
-        // Save after drawing stops
-        this.wrapMethod(editor, 'stopDrawing', true);
-        
-        // Save on color changes
-        this.wrapMethod(editor, 'openColorPicker');
-        
-        // Save on tool/mode changes
-        const originalSwitchMode = editor.switchMode.bind(editor);
-        editor.switchMode = (...args) => {
-            originalSwitchMode(...args);
-            this.saveCurrentState();
-        };
-    }
-    
-    wrapMethod(obj, methodName, immediate = false) {
-        const original = obj[methodName];
-        if (!original) return;
-        
-        obj[methodName] = (...args) => {
-            const result = original.apply(obj, args);
-            
-            if (immediate) {
-                this.saveImmediately();
-            } else {
-                this.scheduleSave();
+        // Monitor all input changes
+        ['canvasWidthInput', 'canvasHeightInput', 'brushSizeSlider', 
+         'brushOpacitySlider', 'brushHardnessSlider', 'brushFlowSlider',
+         'layerOpacitySlider'].forEach(inputName => {
+            const input = this.editor[inputName];
+            if (input) {
+                input.addEventListener('input', saveOnEvent);
+                input.addEventListener('change', saveOnEvent);
             }
-            
-            return result;
-        };
-    }
-    
-    scheduleSave() {
-        // Debounce saves for performance
-        clearTimeout(this.saveTimeout);
-        this.saveTimeout = setTimeout(() => {
-            this.saveCurrentState();
-        }, this.saveDelay);
-    }
-    
-    saveImmediately() {
-        clearTimeout(this.saveTimeout);
-        this.saveCurrentState();
+        });
     }
     
     saveCurrentState() {
+        if (this.saveTimeout) {
+            clearTimeout(this.saveTimeout);
+        }
+        
+        this.saveTimeout = setTimeout(() => {
+            this.saveImmediately();
+        }, this.saveDelay);
+    }
+    
+    async saveImmediately() {
+        if (this.isSaving) {
+            this.saveQueue.push(Date.now());
+            return;
+        }
+        this.isSaving = true;
+    
         try {
-            const state = this.getCompleteState();
-            const stateStr = JSON.stringify(state);
-            
-            // Save to both slots for redundancy
+            const state = this.captureFullState();
+            const meta = {
+                version: state.version,
+                timestamp: state.timestamp,
+                mode: state.mode,
+                canvasWidth: state.canvasWidth,
+                canvasHeight: state.canvasHeight,
+                zoom: state.zoom,
+                currentTool: state.currentTool
+            };
+    
+            const stateStr = JSON.stringify(meta);
+            const stateHash = this.simpleHash(stateStr);
+            if (stateHash === this.lastSaveHash) {
+                this.isSaving = false;
+                return;
+            }
+            this.lastSaveHash = stateHash;
+    
+            // ✅ Always safe to keep metadata in localStorage
             localStorage.setItem(this.STORAGE_KEYS.PROJECT, stateStr);
-            localStorage.setItem(this.STORAGE_KEYS.AUTOSAVE, JSON.stringify({
-                ...state,
-                timestamp: Date.now()
-            }));
-            
-            console.log('✓ State saved', new Date().toLocaleTimeString());
-            
-        } catch (error) {
-            console.warn('Failed to save state:', error);
-            
-            // If localStorage is full, cleanup and retry
-            if (error.name === 'QuotaExceededError') {
-                this.cleanupStorage();
-                try {
-                    const state = this.getCompleteState();
-                    localStorage.setItem(this.STORAGE_KEYS.PROJECT, JSON.stringify(state));
-                } catch (retryError) {
-                    console.error('Failed to save even after cleanup:', retryError);
-                    alert('Storage full! Please export your work as JSON.');
-                }
+    
+            // ✅ Full heavy state into IndexedDB
+            await this.db.saveState(state);
+    
+            // ✅ Redundant autosave copy
+            localStorage.setItem(this.STORAGE_KEYS.AUTOSAVE, stateStr);
+    
+        } catch (e) {
+            console.error('Critical save error:', e);
+            this.emergencyBackup();
+        } finally {
+            this.isSaving = false;
+            if (this.saveQueue.length > 0) {
+                this.saveQueue = [];
+                setTimeout(() => this.saveImmediately(), 50);
             }
         }
     }
+
     
-    getCompleteState() {
-        const editor = this.editor;
-        
-        const baseState = {
-            version: '2.1',
-            timestamp: Date.now(),
-            mode: editor.mode,
-            currentTool: editor.currentTool,
-            symmetryMode: editor.symmetryMode,
-            primaryColor: editor.primaryColor,
-            secondaryColor: editor.secondaryColor,
-            showGrid: editor.showGrid,
-            zoom: editor.zoom,
-            canvasWidth: editor.canvasWidth,
-            canvasHeight: editor.canvasHeight,
-            pixelSize: editor.pixelSize
-        };
-        
-        if (editor.mode === 'pixel') {
-            // Save current sprite data before capturing state
-            if (editor.sprites[editor.currentSprite]) {
-                editor.sprites[editor.currentSprite].data = JSON.parse(JSON.stringify(editor.grid));
-            }
-            
-            baseState.pixel = {
-                grid: editor.grid,
-                sprites: editor.sprites,
-                currentSprite: editor.currentSprite,
-                pixelSelection: editor.pixelSelection,
-                pixelSelectionData: editor.pixelSelectionData
-            };
-        } else {
-            baseState.sketch = {
-                canvasWidth: editor.sketchCanvas.width,
-                canvasHeight: editor.sketchCanvas.height,
-                currentLayer: editor.currentLayer,
-                brushSize: editor.brushSize,
-                brushOpacity: editor.brushOpacity,
-                brushHardness: editor.brushHardness,
-                brushFlow: editor.brushFlow,
-                blendMode: editor.blendMode,
-                layers: editor.layers.map(layer => ({
-                    data: layer.canvas.toDataURL('image/png', 0.95), // Slight compression
-                    visible: layer.visible,
-                    opacity: layer.opacity,
-                    blendMode: layer.blendMode,
-                    name: layer.name
-                }))
-            };
+    simpleHash(str) {
+        let hash = 0;
+        for (let i = 0; i < str.length; i++) {
+            const char = str.charCodeAt(i);
+            hash = ((hash << 5) - hash) + char;
+            hash = hash & hash;
         }
-        
-        return baseState;
+        return hash;
     }
     
-    restoreState() {
+    async saveChunked(dataStr) {
+        this.clearChunkedStorage();
+        
+        const chunks = [];
+        for (let i = 0; i < dataStr.length; i += this.maxChunkSize) {
+            chunks.push(dataStr.slice(i, i + this.maxChunkSize));
+        }
+        
+        localStorage.setItem(this.STORAGE_KEYS.PROJECT, JSON.stringify({
+            chunked: true,
+            chunkCount: chunks.length,
+            timestamp: Date.now()
+        }));
+        
+        chunks.forEach((chunk, i) => {
+            localStorage.setItem(`${this.STORAGE_KEYS.OVERFLOW}${i}`, chunk);
+        });
+    }
+    
+    loadChunked() {
+        const meta = JSON.parse(localStorage.getItem(this.STORAGE_KEYS.PROJECT));
+        if (!meta || !meta.chunked) return null;
+        
+        let fullData = '';
+        for (let i = 0; i < meta.chunkCount; i++) {
+            const chunk = localStorage.getItem(`${this.STORAGE_KEYS.OVERFLOW}${i}`);
+            if (!chunk) {
+                console.error(`Missing chunk ${i}`);
+                return null;
+            }
+            fullData += chunk;
+        }
+        
+        return JSON.parse(fullData);
+    }
+    
+    clearChunkedStorage() {
+        Object.keys(localStorage).forEach(key => {
+            if (key.startsWith(this.STORAGE_KEYS.OVERFLOW)) {
+                localStorage.removeItem(key);
+            }
+        });
+    }
+    
+    emergencyBackup() {
         try {
-            let saved = localStorage.getItem(this.STORAGE_KEYS.PROJECT);
-            let state = null;
-            
-            if (saved) {
-                state = JSON.parse(saved);
-                console.log('✓ Restoring from main project');
-            } else {
-                saved = localStorage.getItem(this.STORAGE_KEYS.AUTOSAVE);
-                if (saved) {
-                    const autosave = JSON.parse(saved);
-                    // Restore autosave if within last 24 hours
-                    if (Date.now() - autosave.timestamp < 86400000) {
-                        state = autosave;
-                        console.log('✓ Restoring from autosave');
-                    }
-                }
-            }
-            
-            if (state && state.version) {
-                this.loadState(state);
-                console.log('✓ State restored successfully');
-                return true;
-            } else {
-                console.log('No saved state found');
-                return false;
-            }
-            
-        } catch (error) {
-            console.error('Failed to restore state:', error);
-            return false;
+            const state = this.captureFullState();
+            // Store in session storage as last resort
+            sessionStorage.setItem('jerryEditor_emergency', JSON.stringify(state));
+        } catch (e) {
+            console.error('Emergency backup failed:', e);
         }
     }
     
-    loadState(state) {
-        const editor = this.editor;
-        
-        // Restore basic properties
-        editor.mode = state.mode || 'pixel';
-        editor.currentTool = state.currentTool || (editor.mode === 'pixel' ? 'pencil' : 'brush');
-        editor.symmetryMode = state.symmetryMode || 'none';
-        editor.primaryColor = state.primaryColor || '#000000';
-        editor.secondaryColor = state.secondaryColor || '#ffffff';
-        editor.showGrid = state.showGrid !== undefined ? state.showGrid : true;
-        editor.zoom = state.zoom || 1;
-        
-        // Update UI
-        if (editor.primaryColorEl) editor.primaryColorEl.style.background = editor.primaryColor;
-        if (editor.secondaryColorEl) editor.secondaryColorEl.style.background = editor.secondaryColor;
-        if (editor.sketchColorPicker) editor.sketchColorPicker.value = editor.primaryColor;
-        
-        const gridToggle = document.getElementById('gridToggle');
-        if (gridToggle) gridToggle.checked = editor.showGrid;
-        
-        document.querySelectorAll('.symmetry-btn').forEach(btn => {
-            btn.classList.toggle('active', btn.dataset.symmetry === editor.symmetryMode);
-        });
-        
-        if (state.mode === 'pixel' && state.pixel) {
-            this.restorePixelState(state.pixel);
-        } else if (state.mode === 'sketch' && state.sketch) {
-            this.restoreSketchState(state.sketch);
-        }
-        
-        // Switch to correct mode WITHOUT triggering save
-        const originalSwitchMode = editor.switchMode;
-        editor.switchMode = function(mode) {
-            editor.mode = mode;
-            document.body.setAttribute('data-mode', mode);
-            const pixelTools = document.querySelector('.pixel-tools');
-            const sketchTools = document.querySelector('.sketch-tools');
-            if (pixelTools) pixelTools.classList.toggle('active', mode === 'pixel');
-            if (sketchTools) sketchTools.classList.toggle('active', mode === 'sketch');
+    captureFullState() {
+        const state = {
+            version: '1.1',
+            timestamp: Date.now(),
+            mode: this.editor.mode,
             
-            document.querySelectorAll('.panel.pixel-controls').forEach(el => {
-                el.style.display = mode === 'pixel' ? 'flex' : 'none';
-            });
-            document.querySelectorAll('.panel.sketch-controls').forEach(el => {
-                el.style.display = mode === 'sketch' ? 'flex' : 'none';
-            });
+            // Pixel state
+            canvasWidth: this.editor.canvasWidth,
+            canvasHeight: this.editor.canvasHeight,
+            pixelSize: this.editor.pixelSize,
+            grid: JSON.parse(JSON.stringify(this.editor.grid)),
+            sprites: JSON.parse(JSON.stringify(this.editor.sprites)),
+            currentSprite: this.editor.currentSprite,
             
-            editor.pixelCanvas.style.display = mode === 'pixel' ? 'grid' : 'none';
-            editor.sketchCanvas.style.display = mode === 'sketch' ? 'block' : 'none';
-            editor.selectionOverlay.style.display = mode === 'sketch' ? 'block' : 'none';
-            editor.canvasGrid.style.display = mode === 'pixel' && editor.showGrid ? 'grid' : 'none';
+            // Selection state
+            pixelSelection: this.editor.pixelSelection ? JSON.parse(JSON.stringify(this.editor.pixelSelection)) : null,
+            pixelSelectionData: this.editor.pixelSelectionData ? JSON.parse(JSON.stringify(this.editor.pixelSelectionData)) : null,
             
-            if (mode === 'pixel') {
-                editor.updatePixelCanvas();
-                editor.updateGrid();
-            } else {
-                editor.redrawLayers();
+            // Colors and tools
+            primaryColor: this.editor.primaryColor,
+            secondaryColor: this.editor.secondaryColor,
+            currentTool: this.editor.currentTool,
+            symmetryMode: this.editor.symmetryMode,
+            showGrid: this.editor.showGrid,
+            zoom: this.editor.zoom,
+            
+            // Sketch state
+            sketchCanvas: {
+                width: this.editor.sketchCanvas.width,
+                height: this.editor.sketchCanvas.height
+            },
+            brushSize: this.editor.brushSize,
+            brushOpacity: this.editor.brushOpacity,
+            brushHardness: this.editor.brushHardness,
+            brushFlow: this.editor.brushFlow,
+            currentLayer: this.editor.currentLayer,
+            
+            // Undo/redo with canvas dimensions
+            undoStack: this.serializeUndoStack(this.editor.undoStack),
+            redoStack: this.serializeUndoStack(this.editor.redoStack),
+            undoCanvasDimensions: {
+                width: this.editor.canvasWidth,
+                height: this.editor.canvasHeight
             }
-            
-            editor.updateUI();
         };
         
-        editor.switchMode(editor.mode);
-        editor.switchMode = originalSwitchMode;
+        // Save layers with error handling
+        if (this.editor.layers && this.editor.layers.length > 0) {
+            state.layers = this.editor.layers.map((layer, index) => {
+                try {
+                    return {
+                        data: layer.canvas.toDataURL('image/png', 0.9), // Reduce quality slightly
+                        visible: layer.visible,
+                        opacity: layer.opacity,
+                        blendMode: layer.blendMode,
+                        name: layer.name
+                    };
+                } catch (e) {
+                    console.error(`Failed to serialize layer ${index}:`, e);
+                    return null;
+                }
+            }).filter(l => l !== null);
+        }
         
-        editor.setZoom(editor.zoom);
-        
-        document.querySelectorAll('.tool-btn').forEach(btn => {
-            btn.classList.toggle('active', btn.dataset.tool === editor.currentTool);
-        });
-        
-        editor.updateUI();
+        return state;
     }
     
-    restorePixelState(pixelState) {
-        const editor = this.editor;
+    serializeUndoStack(stack) {
+        // Limit undo stack size for storage
+        const maxUndoStates = 10;
+        const limitedStack = stack.slice(-maxUndoStates);
         
-        editor.canvasWidth = pixelState.canvasWidth || 16;
-        editor.canvasHeight = pixelState.canvasHeight || 16;
-        editor.pixelSize = pixelState.pixelSize || 20;
-        editor.grid = pixelState.grid || [];
-        editor.sprites = pixelState.sprites || [{ name: 'Sprite 1', data: null }];
-        editor.currentSprite = pixelState.currentSprite || 0;
-        
-        if (pixelState.pixelSelection) {
-            editor.pixelSelection = pixelState.pixelSelection;
-            editor.pixelSelectionData = pixelState.pixelSelectionData;
+        if (this.editor.mode === 'pixel') {
+            return limitedStack.map(state => ({
+                grid: state.grid,
+                canvasWidth: state.canvasWidth,
+                canvasHeight: state.canvasHeight
+            }));
+        } else {
+            return limitedStack.map(layerStates => {
+                return layerStates.map(layer => {
+                    try {
+                        return {
+                            data: layer.canvas.toDataURL('image/png', 0.8),
+                            visible: layer.visible,
+                            opacity: layer.opacity,
+                            blendMode: layer.blendMode,
+                            name: layer.name
+                        };
+                    } catch (e) {
+                        return null;
+                    }
+                }).filter(l => l !== null);
+            }).filter(s => s.length > 0);
         }
-        
-        if (editor.canvasWidthInput) editor.canvasWidthInput.value = editor.canvasWidth;
-        if (editor.canvasHeightInput) editor.canvasHeightInput.value = editor.canvasHeight;
-        
-        if (editor.grid.length === 0) {
-            editor.initializeGrid();
-        }
-        
-        editor.updatePixelCanvas();
-        editor.updateGrid();
-        editor.updateSpriteSelector();
     }
     
-    restoreSketchState(sketchState) {
-        const editor = this.editor;
-        
-        editor.sketchCanvas.width = sketchState.canvasWidth;
-        editor.sketchCanvas.height = sketchState.canvasHeight;
-        editor.selectionOverlay.width = sketchState.canvasWidth;
-        editor.selectionOverlay.height = sketchState.canvasHeight;
-        
-        editor.brushSize = sketchState.brushSize || 10;
-        editor.brushOpacity = sketchState.brushOpacity || 100;
-        editor.brushHardness = sketchState.brushHardness || 100;
-        editor.brushFlow = sketchState.brushFlow || 100;
-        editor.blendMode = sketchState.blendMode || 'source-over';
-        editor.currentLayer = sketchState.currentLayer || 0;
-        
-        if (editor.brushSizeSlider) {
-            editor.brushSizeSlider.value = editor.brushSize;
-            document.getElementById('brushSizeLabel').textContent = editor.brushSize;
+    async restoreState() {
+        try {
+            // Emergency first
+            let state = sessionStorage.getItem('jerryEditor_emergency');
+            if (state) {
+                sessionStorage.removeItem('jerryEditor_emergency');
+                state = JSON.parse(state);
+            } else {
+                // Try IndexedDB first
+                state = await this.db.loadLatest();
+                if (!state) {
+                    // Fallback: localStorage metadata
+                    const saved = localStorage.getItem(this.STORAGE_KEYS.PROJECT);
+                    if (saved) state = JSON.parse(saved);
+                }
+            }
+    
+            if (state) {
+                await this.applyState(state);
+            }
+        } catch (e) {
+            console.error('Failed to restore state:', e);
         }
-        if (editor.brushOpacitySlider) {
-            editor.brushOpacitySlider.value = editor.brushOpacity;
-            document.getElementById('opacityLabel').textContent = editor.brushOpacity;
-        }
-        if (editor.brushHardnessSlider) {
-            editor.brushHardnessSlider.value = editor.brushHardness;
-            document.getElementById('hardnessLabel').textContent = editor.brushHardness;
-        }
-        if (editor.brushFlowSlider) {
-            editor.brushFlowSlider.value = editor.brushFlow;
-            document.getElementById('flowLabel').textContent = editor.brushFlow;
+    }
+
+    
+    async applyState(state) {
+        // Wait for any pending operations
+        await new Promise(resolve => setTimeout(resolve, 50));
+        
+        // Apply basic state
+        this.editor.mode = state.mode || 'pixel';
+        this.editor.canvasWidth = state.canvasWidth || 16;
+        this.editor.canvasHeight = state.canvasHeight || 16;
+        this.editor.pixelSize = state.pixelSize || 20;
+        
+        // Validate and restore grid
+        if (state.grid && Array.isArray(state.grid) && 
+            state.grid.length === state.canvasHeight &&
+            state.grid[0] && state.grid[0].length === state.canvasWidth) {
+            this.editor.grid = state.grid;
+        } else {
+            this.editor.initializeGrid();
         }
         
-        editor.layers = [];
-        if (sketchState.layers && sketchState.layers.length > 0) {
-            const loadPromises = sketchState.layers.map((layerData, index) => {
+        this.editor.sprites = state.sprites || [{ name: 'Sprite 1', data: null }];
+        this.editor.currentSprite = state.currentSprite || 0;
+        
+        // Restore selection state
+        this.editor.pixelSelection = state.pixelSelection || null;
+        this.editor.pixelSelectionData = state.pixelSelectionData || null;
+        
+        // Restore colors and settings
+        this.editor.primaryColor = state.primaryColor || '#000000';
+        this.editor.secondaryColor = state.secondaryColor || '#ffffff';
+        this.editor.currentTool = state.currentTool || (state.mode === 'pixel' ? 'pencil' : 'brush');
+        this.editor.symmetryMode = state.symmetryMode || 'none';
+        this.editor.showGrid = state.showGrid !== undefined ? state.showGrid : true;
+        this.editor.zoom = state.zoom || 1;
+        
+        // Restore brush settings
+        this.editor.brushSize = state.brushSize || 10;
+        this.editor.brushOpacity = state.brushOpacity || 100;
+        this.editor.brushHardness = state.brushHardness || 100;
+        this.editor.brushFlow = state.brushFlow || 100;
+        this.editor.currentLayer = state.currentLayer || 0;
+        
+        // Restore sketch canvas
+        if (state.sketchCanvas) {
+            this.editor.sketchCanvas.width = state.sketchCanvas.width;
+            this.editor.sketchCanvas.height = state.sketchCanvas.height;
+            this.editor.selectionOverlay.width = state.sketchCanvas.width;
+            this.editor.selectionOverlay.height = state.sketchCanvas.height;
+        }
+
+        // Add to applyState() after sketch canvas restoration:
+        if (state.mode === 'sketch') {
+            this.editor.tempCanvas = document.createElement('canvas');
+            this.editor.tempCanvas.width = this.editor.sketchCanvas.width;
+            this.editor.tempCanvas.height = this.editor.sketchCanvas.height;
+            this.editor.tempCtx = this.editor.tempCanvas.getContext('2d');
+            this.editor.tempCtx.lineCap = 'round';
+            this.editor.tempCtx.lineJoin = 'round';
+        }
+
+        // Restore palettes if they exist
+        const savedPalettes = localStorage.getItem('jerryEditor_palettes');
+        if (savedPalettes) {
+            try {
+                const palettes = JSON.parse(savedPalettes);
+                Object.assign(this.editor.palettes, palettes);
+            } catch (e) {
+                console.warn('Failed to restore palettes');
+            }
+        }
+        
+        // Restore layers with proper error handling
+        if (state.layers && state.layers.length > 0) {
+            this.editor.layers = [];
+            
+            const loadPromises = state.layers.map((layerData, index) => {
                 return new Promise((resolve) => {
                     const img = new Image();
+                    const timeout = setTimeout(() => {
+                        console.warn(`Layer ${index} load timeout`);
+                        resolve(null);
+                    }, 5000);
+                    
                     img.onload = () => {
+                        clearTimeout(timeout);
                         const canvas = document.createElement('canvas');
-                        canvas.width = editor.sketchCanvas.width;
-                        canvas.height = editor.sketchCanvas.height;
+                        canvas.width = this.editor.sketchCanvas.width;
+                        canvas.height = this.editor.sketchCanvas.height;
                         const ctx = canvas.getContext('2d');
                         ctx.lineCap = 'round';
                         ctx.lineJoin = 'round';
                         ctx.imageSmoothingEnabled = true;
                         ctx.drawImage(img, 0, 0);
                         
-                        editor.layers[index] = {
+                        this.editor.layers[index] = {
                             canvas: canvas,
                             ctx: ctx,
-                            visible: layerData.visible,
-                            opacity: layerData.opacity,
-                            blendMode: layerData.blendMode,
-                            name: layerData.name
+                            visible: layerData.visible !== undefined ? layerData.visible : true,
+                            opacity: layerData.opacity || 1,
+                            blendMode: layerData.blendMode || 'source-over',
+                            name: layerData.name || `Layer ${index + 1}`
                         };
-                        resolve();
+                        resolve(this.editor.layers[index]);
                     };
+                    
                     img.onerror = () => {
-                        const canvas = document.createElement('canvas');
-                        canvas.width = editor.sketchCanvas.width;
-                        canvas.height = editor.sketchCanvas.height;
-                        const ctx = canvas.getContext('2d');
-                        ctx.lineCap = 'round';
-                        ctx.lineJoin = 'round';
-                        ctx.imageSmoothingEnabled = true;
-                        
-                        editor.layers[index] = {
-                            canvas: canvas,
-                            ctx: ctx,
-                            visible: true,
-                            opacity: 1,
-                            blendMode: 'source-over',
-                            name: `Layer ${index + 1}`
-                        };
-                        resolve();
+                        clearTimeout(timeout);
+                        console.error(`Failed to load layer ${index}`);
+                        resolve(null);
                     };
+                    
                     img.src = layerData.data;
                 });
             });
             
-            Promise.all(loadPromises).then(() => {
-                editor.updateLayerList();
-                editor.updateLayerControls();
-                editor.redrawLayers();
-                editor.updateBrushPreview();
+            await Promise.all(loadPromises);
+            
+            // Filter out failed layers and ensure at least one layer exists
+            this.editor.layers = this.editor.layers.filter(l => l !== null);
+            if (this.editor.layers.length === 0) {
+                this.editor.addLayer();
+            }
+            
+            // Ensure currentLayer is valid
+            if (this.editor.currentLayer >= this.editor.layers.length) {
+                this.editor.currentLayer = this.editor.layers.length - 1;
+            }
+        }
+        
+        // Restore undo/redo stacks
+        if (state.undoStack) {
+            await this.restoreUndoStack(state.undoStack, 'undoStack', state.undoCanvasDimensions);
+        }
+        if (state.redoStack) {
+            await this.restoreUndoStack(state.redoStack, 'redoStack', state.undoCanvasDimensions);
+        }
+        
+        // Update all UI elements
+        await this.updateUI();
+    }
+    
+    async restoreUndoStack(stackData, stackName, canvasDimensions) {
+        if (!stackData || stackData.length === 0) {
+            this.editor[stackName] = [];
+            return;
+        }
+        
+        if (this.editor.mode === 'pixel') {
+            // Validate canvas dimensions match
+            this.editor[stackName] = stackData.filter(state => {
+                return state.canvasWidth === this.editor.canvasWidth &&
+                       state.canvasHeight === this.editor.canvasHeight;
             });
         } else {
-            editor.addLayer();
-            editor.layers[0].ctx.fillStyle = '#ffffff';
-            editor.layers[0].ctx.fillRect(0, 0, editor.sketchCanvas.width, editor.sketchCanvas.height);
+            // For sketch mode, restore layer canvases
+            const restoredStack = [];
+            
+            for (const layerStates of stackData) {
+                const loadedLayers = await Promise.all(
+                    layerStates.map(layerData => {
+                        return new Promise((resolve) => {
+                            const img = new Image();
+                            const timeout = setTimeout(() => resolve(null), 3000);
+                            
+                            img.onload = () => {
+                                clearTimeout(timeout);
+                                const canvas = document.createElement('canvas');
+                                canvas.width = this.editor.sketchCanvas.width;
+                                canvas.height = this.editor.sketchCanvas.height;
+                                const ctx = canvas.getContext('2d');
+                                ctx.drawImage(img, 0, 0);
+                                
+                                resolve({
+                                    canvas: canvas,
+                                    visible: layerData.visible,
+                                    opacity: layerData.opacity,
+                                    blendMode: layerData.blendMode,
+                                    name: layerData.name
+                                });
+                            };
+                            
+                            img.onerror = () => {
+                                clearTimeout(timeout);
+                                resolve(null);
+                            };
+                            
+                            img.src = layerData.data;
+                        });
+                    })
+                );
+                
+                const validLayers = loadedLayers.filter(l => l !== null);
+                if (validLayers.length > 0) {
+                    restoredStack.push(validLayers);
+                }
+            }
+            
+            this.editor[stackName] = restoredStack;
         }
     }
     
-    cleanupStorage() {
-        try {
-            const keys = Object.keys(localStorage);
-            keys.forEach(key => {
-                if (key.startsWith('jerryEditor_temp_')) {
-                    localStorage.removeItem(key);
-                }
-            });
-        } catch (error) {
-            console.warn('Storage cleanup failed:', error);
+    async updateUI() {
+        await new Promise(resolve => setTimeout(resolve, 50));
+        
+        if (this.editor.canvasWidthInput) this.editor.canvasWidthInput.value = this.editor.canvasWidth;
+        if (this.editor.canvasHeightInput) this.editor.canvasHeightInput.value = this.editor.canvasHeight;
+        if (this.editor.primaryColorEl) this.editor.primaryColorEl.style.background = this.editor.primaryColor;
+        if (this.editor.secondaryColorEl) this.editor.secondaryColorEl.style.background = this.editor.secondaryColor;
+        
+        const gridToggle = document.getElementById('gridToggle');
+        if (gridToggle) gridToggle.checked = this.editor.showGrid;
+
+        // Add to updateUI():
+        const toolGroup = document.querySelector(`.${this.editor.mode}-tools`);
+        if (toolGroup) {
+            toolGroup.querySelector('.tool-btn.active')?.classList.remove('active');
+            const toolBtn = toolGroup.querySelector(`.tool-btn[data-tool="${this.editor.currentTool}"]`);
+            if (toolBtn) toolBtn.classList.add('active');
         }
+        
+        document.querySelectorAll('.symmetry-btn').forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.symmetry === this.editor.symmetryMode);
+        });
+        
+        if (this.editor.brushSizeSlider) {
+            this.editor.brushSizeSlider.value = this.editor.brushSize;
+            const label = document.getElementById('brushSizeLabel');
+            if (label) label.textContent = this.editor.brushSize;
+        }
+        
+        if (this.editor.brushOpacitySlider) {
+            this.editor.brushOpacitySlider.value = this.editor.brushOpacity;
+            const label = document.getElementById('opacityLabel');
+            if (label) label.textContent = this.editor.brushOpacity;
+        }
+        
+        if (this.editor.brushHardnessSlider) {
+            this.editor.brushHardnessSlider.value = this.editor.brushHardness;
+            const label = document.getElementById('hardnessLabel');
+            if (label) label.textContent = this.editor.brushHardness;
+        }
+        
+        if (this.editor.brushFlowSlider) {
+            this.editor.brushFlowSlider.value = this.editor.brushFlow;
+            const label = document.getElementById('flowLabel');
+            if (label) label.textContent = this.editor.brushFlow;
+        }
+        
+        if (this.editor.updateLayerList) this.editor.updateLayerList();
+        if (this.editor.updateLayerControls) this.editor.updateLayerControls();
+        if (this.editor.redrawLayers) this.editor.redrawLayers();
+        if (this.editor.updateSpriteSelector) this.editor.updateSpriteSelector();
+        
+        this.editor.setZoom(this.editor.zoom);
     }
     
     saveProject() {
-        this.saveImmediately();
-        
-        const btn = document.getElementById('saveProject');
-        if (btn) {
-            const originalText = btn.textContent;
-            btn.textContent = '✓ Saved!';
-            btn.style.background = '#4CAF50';
-            setTimeout(() => {
-                btn.textContent = originalText;
-                btn.style.background = '';
-            }, 1500);
-        }
+        const state = this.captureFullState();
+        this.downloadFile('jerry-project.json', JSON.stringify(state, null, 2));
+    }
+    
+    downloadFile(filename, content) {
+        const blob = new Blob([content], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
     }
     
     clearSavedState() {
-        try {
-            localStorage.removeItem(this.STORAGE_KEYS.PROJECT);
-            localStorage.removeItem(this.STORAGE_KEYS.AUTOSAVE);
-            console.log('✓ Saved state cleared');
-        } catch (error) {
-            console.warn('Failed to clear saved state:', error);
-        }
+        localStorage.removeItem(this.STORAGE_KEYS.PROJECT);
+        localStorage.removeItem(this.STORAGE_KEYS.AUTOSAVE);
+        sessionStorage.removeItem('jerryEditor_emergency');
+        this.clearChunkedStorage();
     }
 }
+
+class JerryDB {
+    constructor(dbName = 'jerryEditorDB') {
+        this.dbName = dbName;
+        this.db = null;
+    }
+
+    async init() {
+        if (this.db) return;
+        this.db = await new Promise((resolve, reject) => {
+            const req = indexedDB.open(this.dbName, 1);
+            req.onupgradeneeded = e => {
+                const db = e.target.result;
+                if (!db.objectStoreNames.contains('projects')) {
+                    const store = db.createObjectStore('projects', { keyPath: 'id' });
+                    store.createIndex('ts', 'ts'); // index for cleanup
+                }
+                if (!db.objectStoreNames.contains('meta')) {
+                    db.createObjectStore('meta', { keyPath: 'key' });
+                }
+            };
+            req.onsuccess = e => resolve(e.target.result);
+            req.onerror = e => reject(e);
+        });
+    }
+
+    async saveState(state) {
+        await this.init();
+        const id = `project_${Date.now()}`;
+
+        return new Promise((resolve, reject) => {
+            const tx = this.db.transaction(['projects', 'meta'], 'readwrite');
+            const store = tx.objectStore('projects');
+
+            // put full state
+            store.put({ id, ts: Date.now(), data: state });
+
+            // update latest pointer
+            tx.objectStore('meta').put({ key: 'latest', ref: id });
+
+            tx.oncomplete = async () => {
+                await this.cleanupOld(5); // keep last 5
+                resolve(id);
+            };
+            tx.onerror = e => reject(e);
+        });
+    }
+
+    async loadLatest() {
+        await this.init();
+        return new Promise((resolve, reject) => {
+            const tx = this.db.transaction(['projects', 'meta'], 'readonly');
+            const metaReq = tx.objectStore('meta').get('latest');
+
+            metaReq.onsuccess = () => {
+                const ref = metaReq.result?.ref;
+                if (!ref) return resolve(null);
+
+                const projReq = tx.objectStore('projects').get(ref);
+                projReq.onsuccess = () => resolve(projReq.result?.data || null);
+                projReq.onerror = e => reject(e);
+            };
+            metaReq.onerror = e => reject(e);
+        });
+    }
+
+    async cleanupOld(keep = 5) {
+        return new Promise((resolve, reject) => {
+            const tx = this.db.transaction('projects', 'readwrite');
+            const store = tx.objectStore('projects');
+            const index = store.index('ts');
+            const items = [];
+
+            index.openCursor(null, 'prev').onsuccess = e => {
+                const cursor = e.target.result;
+                if (cursor) {
+                    items.push(cursor.primaryKey);
+                    cursor.continue();
+                } else {
+                    // keep newest N, delete rest
+                    const toDelete = items.slice(keep);
+                    toDelete.forEach(id => store.delete(id));
+                    resolve();
+                }
+            };
+            tx.onerror = e => reject(e);
+        });
+    }
+}
+
 
 document.addEventListener('DOMContentLoaded', () => {
     window.jerryEditor = new JerryEditor();
