@@ -336,6 +336,7 @@ canvas-container {
   z-index: 1;
   max-width: 100%;
   max-height: 100%;
+  object-fit: contain;
 }
 
 .pixel {
@@ -964,6 +965,7 @@ body[data-mode="sketch"] .pixel-controls {
   #sketchCanvas {
     max-width: 100%;
     max-height: 100%;
+    transform-origin: center center;
   }
 
   .btn {
@@ -1093,6 +1095,7 @@ body[data-mode="sketch"] .pixel-controls {
   #sketchCanvas {
     max-width: 100%;
     max-height: 100%;
+    transform-origin: center center;
   }
 
   .panels {
