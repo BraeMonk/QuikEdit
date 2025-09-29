@@ -2179,7 +2179,7 @@ class JerryEditor {
     setZoom(zoom) {
         this.zoom = Math.max(0.25, Math.min(8, zoom));
         
-        const canvasWrapper = document.querySelector('.canvas-wrapper');
+        const canvasWrapper = document.querySelector('.canvas-container');
         canvasWrapper.style.transform = `scale(${this.zoom})`;
         
         this.zoomIndicator.textContent = `${Math.round(this.zoom * 100)}%`;
