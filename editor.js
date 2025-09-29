@@ -573,13 +573,15 @@ class JerryEditor {
         const canvasHeightPx = this.canvasHeight * this.pixelSize;
     
         // Set pixel canvas dimensions
+        const isMobile = window.innerWidth <= 767 || (window.innerWidth <= 479 && window.matchMedia('(orientation: portrait)').matches);
+        
         this.pixelCanvas.style.display = 'grid';
         this.pixelCanvas.style.width = `${canvasWidthPx}px`;
         this.pixelCanvas.style.height = `${canvasHeightPx}px`;
         this.pixelCanvas.style.gridTemplateColumns = `repeat(${this.canvasWidth}, ${this.pixelSize}px)`;
         this.pixelCanvas.style.gridTemplateRows = `repeat(${this.canvasHeight}, ${this.pixelSize}px)`;
         this.pixelCanvas.style.position = 'relative';
-        this.pixelCanvas.style.margin = '0';
+        this.pixelCanvas.style.margin = isMobile ? '0' : '0';
     
         // Update wrapper CSS variables
         this.canvasWrapper.style.setProperty('--cellSize', `${this.pixelSize}px`);
@@ -623,6 +625,8 @@ class JerryEditor {
         grid.style.height = `${canvasHeightPx}px`;
     
         // Position grid to overlay canvas perfectly
+        const isMobile = window.innerWidth <= 767 || (window.innerWidth <= 479 && window.matchMedia('(orientation: portrait)').matches);
+        
         grid.style.position = 'absolute';
         grid.style.top = '50%';
         grid.style.left = '50%';
