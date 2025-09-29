@@ -3003,80 +3003,135 @@ class JerryEditorPersistence {
         this.STORAGE_KEYS = {
             PROJECT: 'jerryEditor_currentProject',
             AUTOSAVE: 'jerryEditor_autosave',
-            SETTINGS: 'jerryEditor_settings',
-            STROKE_BUFFER: 'jerryEditor_strokeBuffer'
+            SETTINGS: 'jerryEditor_settings'
         };
         
-        // Auto-save more frequently for better persistence
-        this.autoSaveInterval = 5000; // 5 seconds
-        this.strokeBuffer = [];
+        // Debounce timer for performance
+        this.saveTimeout = null;
+        this.saveDelay = 100; // Save 100ms after last change
+        
         this.setupPersistence();
     }
     
     setupPersistence() {
-        // Auto-save on every significant action
-        this.setupAutoSave();
+        // Restore state immediately on load
+        this.restoreState();
         
-        // Save on page unload
+        // Save on EVERY significant event
+        this.setupRealtimeSaving();
+        
+        // Save on page unload (guaranteed save)
         window.addEventListener('beforeunload', () => {
-            this.saveCurrentState();
+            this.saveImmediately();
         });
         
         // Save on visibility change (tab switching, minimizing)
         document.addEventListener('visibilitychange', () => {
             if (document.hidden) {
-                this.saveCurrentState();
+                this.saveImmediately();
             }
         });
         
-        // Restore state on load
-        this.restoreState();
-    }
-    
-    setupAutoSave() {
-        // Save on page unload
-        window.addEventListener('beforeunload', () => {
-            this.saveCurrentState();
-        });
-    
-        // Save on visibility change (tab switching, minimizing)  
-        document.addEventListener('visibilitychange', () => {
-            if (document.hidden) {
-                this.saveCurrentState();
-            } 
-        });
-    
-        // Backup auto-save every 10 seconds as fallback
-        setInterval(() => {
-            this.saveCurrentState();
-        }, 10000);
-    
         // Save on focus loss
         window.addEventListener('blur', () => {
-            this.saveCurrentState();
+            this.saveImmediately();
         });
+        
+        // Backup auto-save every 5 seconds as fallback
+        setInterval(() => {
+            this.saveImmediately();
+        }, 5000);
+    }
+    
+    setupRealtimeSaving() {
+        const editor = this.editor;
+        
+        // Intercept ALL methods that modify state
+        this.wrapMethod(editor, 'drawPixel');
+        this.wrapMethod(editor, 'switchMode');
+        this.wrapMethod(editor, 'resizePixelCanvas');
+        this.wrapMethod(editor, 'resizeSketchCanvas');
+        this.wrapMethod(editor, 'addLayer');
+        this.wrapMethod(editor, 'redrawLayers');
+        this.wrapMethod(editor, 'rotate');
+        this.wrapMethod(editor, 'flip');
+        this.wrapMethod(editor, 'clearCanvas');
+        this.wrapMethod(editor, 'switchSprite');
+        this.wrapMethod(editor, 'setZoom');
+        this.wrapMethod(editor, 'undo');
+        this.wrapMethod(editor, 'redo');
+        
+        // Save after drawing stops
+        this.wrapMethod(editor, 'stopDrawing', true);
+        
+        // Save on color changes
+        this.wrapMethod(editor, 'openColorPicker');
+        
+        // Save on tool/mode changes
+        const originalSwitchMode = editor.switchMode.bind(editor);
+        editor.switchMode = (...args) => {
+            originalSwitchMode(...args);
+            this.saveCurrentState();
+        };
+    }
+    
+    wrapMethod(obj, methodName, immediate = false) {
+        const original = obj[methodName];
+        if (!original) return;
+        
+        obj[methodName] = (...args) => {
+            const result = original.apply(obj, args);
+            
+            if (immediate) {
+                this.saveImmediately();
+            } else {
+                this.scheduleSave();
+            }
+            
+            return result;
+        };
+    }
+    
+    scheduleSave() {
+        // Debounce saves for performance
+        clearTimeout(this.saveTimeout);
+        this.saveTimeout = setTimeout(() => {
+            this.saveCurrentState();
+        }, this.saveDelay);
+    }
+    
+    saveImmediately() {
+        clearTimeout(this.saveTimeout);
+        this.saveCurrentState();
     }
     
     saveCurrentState() {
         try {
             const state = this.getCompleteState();
-            localStorage.setItem(this.STORAGE_KEYS.PROJECT, JSON.stringify(state));
+            const stateStr = JSON.stringify(state);
             
-            // Also save to autosave slot
+            // Save to both slots for redundancy
+            localStorage.setItem(this.STORAGE_KEYS.PROJECT, stateStr);
             localStorage.setItem(this.STORAGE_KEYS.AUTOSAVE, JSON.stringify({
                 ...state,
                 timestamp: Date.now()
             }));
             
+            console.log('✓ State saved', new Date().toLocaleTimeString());
+            
         } catch (error) {
             console.warn('Failed to save state:', error);
-            // If localStorage is full, clear old autosaves and try again
-            this.cleanupStorage();
-            try {
-                const state = this.getCompleteState();
-                localStorage.setItem(this.STORAGE_KEYS.PROJECT, JSON.stringify(state));
-            } catch (retryError) {
-                console.error('Failed to save even after cleanup:', retryError);
+            
+            // If localStorage is full, cleanup and retry
+            if (error.name === 'QuotaExceededError') {
+                this.cleanupStorage();
+                try {
+                    const state = this.getCompleteState();
+                    localStorage.setItem(this.STORAGE_KEYS.PROJECT, JSON.stringify(state));
+                } catch (retryError) {
+                    console.error('Failed to save even after cleanup:', retryError);
+                    alert('Storage full! Please export your work as JSON.');
+                }
             }
         }
     }
@@ -3085,7 +3140,7 @@ class JerryEditorPersistence {
         const editor = this.editor;
         
         const baseState = {
-            version: '2.0',
+            version: '2.1',
             timestamp: Date.now(),
             mode: editor.mode,
             currentTool: editor.currentTool,
@@ -3094,54 +3149,36 @@ class JerryEditorPersistence {
             secondaryColor: editor.secondaryColor,
             showGrid: editor.showGrid,
             zoom: editor.zoom,
-            
-            // Canvas dimensions
             canvasWidth: editor.canvasWidth,
             canvasHeight: editor.canvasHeight,
-            pixelSize: editor.pixelSize,
-            
-            // Current selection and drawing state
-            isDrawing: editor.isDrawing,
-            lastPos: editor.lastPos,
-            strokePath: editor.strokePath || []
+            pixelSize: editor.pixelSize
         };
         
         if (editor.mode === 'pixel') {
+            // Save current sprite data before capturing state
+            if (editor.sprites[editor.currentSprite]) {
+                editor.sprites[editor.currentSprite].data = JSON.parse(JSON.stringify(editor.grid));
+            }
+            
             baseState.pixel = {
                 grid: editor.grid,
                 sprites: editor.sprites,
                 currentSprite: editor.currentSprite,
-                
-                // Selection state
                 pixelSelection: editor.pixelSelection,
-                pixelSelectionData: editor.pixelSelectionData,
-                movingPixelSelection: editor.movingPixelSelection,
-                
-                // Shape drawing state
-                isDrawingShape: editor.isDrawingShape,
-                shapeStartPos: editor.shapeStartPos,
-                originalGrid: editor.originalGrid
+                pixelSelectionData: editor.pixelSelectionData
             };
         } else {
-            // Sketch mode
             baseState.sketch = {
                 canvasWidth: editor.sketchCanvas.width,
                 canvasHeight: editor.sketchCanvas.height,
                 currentLayer: editor.currentLayer,
-                
-                // Brush settings
                 brushSize: editor.brushSize,
                 brushOpacity: editor.brushOpacity,
                 brushHardness: editor.brushHardness,
                 brushFlow: editor.brushFlow,
                 blendMode: editor.blendMode,
-                
-                // Shape drawing state
-                shapeStartPos: editor.shapeStartPos,
-                
-                // Save layer data
                 layers: editor.layers.map(layer => ({
-                    data: layer.canvas.toDataURL('image/png'),
+                    data: layer.canvas.toDataURL('image/png', 0.95), // Slight compression
                     visible: layer.visible,
                     opacity: layer.opacity,
                     blendMode: layer.blendMode,
@@ -3155,33 +3192,36 @@ class JerryEditorPersistence {
     
     restoreState() {
         try {
-            // Try to restore from main project first
             let saved = localStorage.getItem(this.STORAGE_KEYS.PROJECT);
             let state = null;
             
             if (saved) {
                 state = JSON.parse(saved);
+                console.log('✓ Restoring from main project');
             } else {
-                // Fallback to autosave
                 saved = localStorage.getItem(this.STORAGE_KEYS.AUTOSAVE);
                 if (saved) {
                     const autosave = JSON.parse(saved);
-                    // Only restore autosave if it's recent (within last hour)
-                    if (Date.now() - autosave.timestamp < 3600000) {
+                    // Restore autosave if within last 24 hours
+                    if (Date.now() - autosave.timestamp < 86400000) {
                         state = autosave;
+                        console.log('✓ Restoring from autosave');
                     }
                 }
             }
             
             if (state && state.version) {
                 this.loadState(state);
-                console.log('State restored successfully');
+                console.log('✓ State restored successfully');
+                return true;
             } else {
-                console.log('No valid saved state found, starting fresh');
+                console.log('No saved state found');
+                return false;
             }
             
         } catch (error) {
-            console.warn('Failed to restore state:', error);
+            console.error('Failed to restore state:', error);
+            return false;
         }
     }
     
@@ -3197,16 +3237,14 @@ class JerryEditorPersistence {
         editor.showGrid = state.showGrid !== undefined ? state.showGrid : true;
         editor.zoom = state.zoom || 1;
         
-        // Update UI elements
+        // Update UI
         if (editor.primaryColorEl) editor.primaryColorEl.style.background = editor.primaryColor;
         if (editor.secondaryColorEl) editor.secondaryColorEl.style.background = editor.secondaryColor;
         if (editor.sketchColorPicker) editor.sketchColorPicker.value = editor.primaryColor;
         
-        // Restore grid toggle
         const gridToggle = document.getElementById('gridToggle');
         if (gridToggle) gridToggle.checked = editor.showGrid;
         
-        // Set symmetry mode UI
         document.querySelectorAll('.symmetry-btn').forEach(btn => {
             btn.classList.toggle('active', btn.dataset.symmetry === editor.symmetryMode);
         });
@@ -3217,20 +3255,43 @@ class JerryEditorPersistence {
             this.restoreSketchState(state.sketch);
         }
         
-        // Restore drawing state
-        if (state.isDrawing) {
-            editor.isDrawing = state.isDrawing;
-            editor.lastPos = state.lastPos;
-            editor.strokePath = state.strokePath || [];
-        }
+        // Switch to correct mode WITHOUT triggering save
+        const originalSwitchMode = editor.switchMode;
+        editor.switchMode = function(mode) {
+            editor.mode = mode;
+            document.body.setAttribute('data-mode', mode);
+            const pixelTools = document.querySelector('.pixel-tools');
+            const sketchTools = document.querySelector('.sketch-tools');
+            if (pixelTools) pixelTools.classList.toggle('active', mode === 'pixel');
+            if (sketchTools) sketchTools.classList.toggle('active', mode === 'sketch');
+            
+            document.querySelectorAll('.panel.pixel-controls').forEach(el => {
+                el.style.display = mode === 'pixel' ? 'flex' : 'none';
+            });
+            document.querySelectorAll('.panel.sketch-controls').forEach(el => {
+                el.style.display = mode === 'sketch' ? 'flex' : 'none';
+            });
+            
+            editor.pixelCanvas.style.display = mode === 'pixel' ? 'grid' : 'none';
+            editor.sketchCanvas.style.display = mode === 'sketch' ? 'block' : 'none';
+            editor.selectionOverlay.style.display = mode === 'sketch' ? 'block' : 'none';
+            editor.canvasGrid.style.display = mode === 'pixel' && editor.showGrid ? 'grid' : 'none';
+            
+            if (mode === 'pixel') {
+                editor.updatePixelCanvas();
+                editor.updateGrid();
+            } else {
+                editor.redrawLayers();
+            }
+            
+            editor.updateUI();
+        };
         
-        // Switch to the correct mode
         editor.switchMode(editor.mode);
+        editor.switchMode = originalSwitchMode;
         
-        // Set zoom
         editor.setZoom(editor.zoom);
         
-        // Update tool selection in UI
         document.querySelectorAll('.tool-btn').forEach(btn => {
             btn.classList.toggle('active', btn.dataset.tool === editor.currentTool);
         });
@@ -3241,28 +3302,18 @@ class JerryEditorPersistence {
     restorePixelState(pixelState) {
         const editor = this.editor;
         
-        editor.canvasWidth = pixelState.canvasWidth || editor.canvasWidth;
-        editor.canvasHeight = pixelState.canvasHeight || editor.canvasHeight;
-        editor.pixelSize = pixelState.pixelSize || editor.pixelSize;
+        editor.canvasWidth = pixelState.canvasWidth || 16;
+        editor.canvasHeight = pixelState.canvasHeight || 16;
+        editor.pixelSize = pixelState.pixelSize || 20;
         editor.grid = pixelState.grid || [];
         editor.sprites = pixelState.sprites || [{ name: 'Sprite 1', data: null }];
         editor.currentSprite = pixelState.currentSprite || 0;
         
-        // Restore selection state
         if (pixelState.pixelSelection) {
             editor.pixelSelection = pixelState.pixelSelection;
             editor.pixelSelectionData = pixelState.pixelSelectionData;
-            editor.movingPixelSelection = pixelState.movingPixelSelection;
         }
         
-        // Restore shape drawing state
-        editor.isDrawingShape = pixelState.isDrawingShape || false;
-        editor.shapeStartPos = pixelState.shapeStartPos;
-        if (pixelState.originalGrid) {
-            editor.originalGrid = pixelState.originalGrid;
-        }
-        
-        // Update canvas size inputs
         if (editor.canvasWidthInput) editor.canvasWidthInput.value = editor.canvasWidth;
         if (editor.canvasHeightInput) editor.canvasHeightInput.value = editor.canvasHeight;
         
@@ -3278,13 +3329,11 @@ class JerryEditorPersistence {
     restoreSketchState(sketchState) {
         const editor = this.editor;
         
-        // Set canvas dimensions
         editor.sketchCanvas.width = sketchState.canvasWidth;
         editor.sketchCanvas.height = sketchState.canvasHeight;
         editor.selectionOverlay.width = sketchState.canvasWidth;
         editor.selectionOverlay.height = sketchState.canvasHeight;
         
-        // Restore brush settings
         editor.brushSize = sketchState.brushSize || 10;
         editor.brushOpacity = sketchState.brushOpacity || 100;
         editor.brushHardness = sketchState.brushHardness || 100;
@@ -3292,7 +3341,6 @@ class JerryEditorPersistence {
         editor.blendMode = sketchState.blendMode || 'source-over';
         editor.currentLayer = sketchState.currentLayer || 0;
         
-        // Update brush UI
         if (editor.brushSizeSlider) {
             editor.brushSizeSlider.value = editor.brushSize;
             document.getElementById('brushSizeLabel').textContent = editor.brushSize;
@@ -3310,10 +3358,6 @@ class JerryEditorPersistence {
             document.getElementById('flowLabel').textContent = editor.brushFlow;
         }
         
-        // Restore shape drawing state
-        editor.shapeStartPos = sketchState.shapeStartPos;
-        
-        // Restore layers
         editor.layers = [];
         if (sketchState.layers && sketchState.layers.length > 0) {
             const loadPromises = sketchState.layers.map((layerData, index) => {
@@ -3340,8 +3384,6 @@ class JerryEditorPersistence {
                         resolve();
                     };
                     img.onerror = () => {
-                        console.warn(`Failed to load layer ${index}`);
-                        // Create empty layer as fallback
                         const canvas = document.createElement('canvas');
                         canvas.width = editor.sketchCanvas.width;
                         canvas.height = editor.sketchCanvas.height;
@@ -3353,10 +3395,10 @@ class JerryEditorPersistence {
                         editor.layers[index] = {
                             canvas: canvas,
                             ctx: ctx,
-                            visible: layerData.visible || true,
-                            opacity: layerData.opacity || 1,
-                            blendMode: layerData.blendMode || 'source-over',
-                            name: layerData.name || `Layer ${index + 1}`
+                            visible: true,
+                            opacity: 1,
+                            blendMode: 'source-over',
+                            name: `Layer ${index + 1}`
                         };
                         resolve();
                     };
@@ -3371,7 +3413,6 @@ class JerryEditorPersistence {
                 editor.updateBrushPreview();
             });
         } else {
-            // Create default layer if none exist
             editor.addLayer();
             editor.layers[0].ctx.fillStyle = '#ffffff';
             editor.layers[0].ctx.fillRect(0, 0, editor.sketchCanvas.width, editor.sketchCanvas.height);
@@ -3380,37 +3421,29 @@ class JerryEditorPersistence {
     
     cleanupStorage() {
         try {
-            // Remove old autosaves and temporary data
             const keys = Object.keys(localStorage);
             keys.forEach(key => {
-                if (key.startsWith('jerryEditor_temp_') || 
-                    (key.startsWith('jerryEditor_autosave_') && key !== this.STORAGE_KEYS.AUTOSAVE)) {
+                if (key.startsWith('jerryEditor_temp_')) {
                     localStorage.removeItem(key);
                 }
             });
-            
-            // If still over quota, remove the oldest autosave
-            localStorage.removeItem(this.STORAGE_KEYS.AUTOSAVE);
-            
         } catch (error) {
             console.warn('Storage cleanup failed:', error);
         }
     }
     
-    // Manual save/load methods
     saveProject() {
-        this.saveCurrentState();
+        this.saveImmediately();
         
-        // Visual feedback
         const btn = document.getElementById('saveProject');
         if (btn) {
             const originalText = btn.textContent;
-            btn.textContent = 'Saved!';
-            btn.classList.add('success');
+            btn.textContent = '✓ Saved!';
+            btn.style.background = '#4CAF50';
             setTimeout(() => {
                 btn.textContent = originalText;
-                btn.classList.remove('success');
-            }, 1000);
+                btn.style.background = '';
+            }, 1500);
         }
     }
     
@@ -3418,16 +3451,10 @@ class JerryEditorPersistence {
         try {
             localStorage.removeItem(this.STORAGE_KEYS.PROJECT);
             localStorage.removeItem(this.STORAGE_KEYS.AUTOSAVE);
-            localStorage.removeItem(this.STORAGE_KEYS.STROKE_BUFFER);
-            console.log('Saved state cleared');
+            console.log('✓ Saved state cleared');
         } catch (error) {
             console.warn('Failed to clear saved state:', error);
         }
-    }
-    
-    hasSavedState() {
-        return localStorage.getItem(this.STORAGE_KEYS.PROJECT) !== null ||
-               localStorage.getItem(this.STORAGE_KEYS.AUTOSAVE) !== null;
     }
 }
 
