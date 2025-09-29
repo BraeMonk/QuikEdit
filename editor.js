@@ -3422,38 +3422,20 @@ class JerryEditorPersistence {
         if (state.undoStack) await this.restoreUndoStack(state.undoStack, 'undoStack', state.undoCanvasDimensions);
         if (state.redoStack) await this.restoreUndoStack(state.redoStack, 'redoStack', state.undoCanvasDimensions);
     
-        // --- Redraw immediately ---
+        // --- Force immediate UI update and redraw ---
+        await this.updateUI();
+        
+        // --- CRITICAL: Force pixel canvas rebuild ---
         if (this.editor.mode === 'pixel') {
-            const ctx = this.editor.pixelCanvas.getContext('2d');
-            const pixelSize = this.editor.pixelSize;
-
-            ctx.clearRect(0, 0, this.editor.canvasWidth * pixelSize, this.editor.canvasHeight * pixelSize);
-
-            for (let y = 0; y < this.editor.canvasHeight; y++) {
-                for (let x = 0; x < this.editor.canvasWidth; x++) {
-                    const color = (this.editor.grid[y] && this.editor.grid[y][x]) || '#ffffff';
-                    ctx.fillStyle = color;
-                    ctx.fillRect(x * pixelSize, y * pixelSize, pixelSize, pixelSize);
-                }
-            }
+            this.editor.updatePixelCanvas();
+            this.editor.updateGrid();
         } 
         else if (this.editor.mode === 'sketch') {
-            const mainCtx = this.editor.sketchCanvas.getContext('2d');
-            mainCtx.clearRect(0, 0, this.editor.sketchCanvas.width, this.editor.sketchCanvas.height);
-
-            this.editor.layers.forEach(layer => {
-                if (layer.visible) {
-                    mainCtx.globalAlpha = layer.opacity;
-                    mainCtx.globalCompositeOperation = layer.blendMode || 'source-over';
-                    mainCtx.drawImage(layer.canvas, 0, 0);
-                }
-            });
-
-            mainCtx.globalAlpha = 1;
-            mainCtx.globalCompositeOperation = 'source-over';
+            this.editor.redrawLayers();
         }
         
-        this.updateUI();
+        // Final canvas info update
+        this.editor.updateCanvasInfo();
     }
 
     
