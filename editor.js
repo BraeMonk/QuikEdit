@@ -3456,7 +3456,17 @@ class JerryEditorPersistence {
             this.editor.redrawGrid?.(); // redraw the pixel grid if you have that method
         }
         
+        // Force full redraw after all layers are guaranteed loaded
         if (this.editor.mode === 'sketch') {
+            await Promise.all(this.editor.layers.map(layer => {
+                return new Promise(resolve => {
+                    const img = new Image();
+                    img.onload = () => resolve();
+                    img.onerror = () => resolve();
+                    img.src = layer.canvas.toDataURL(); // ensures the canvas content is ready
+                });
+            }));
+        
             const mainCtx = this.editor.sketchCanvas.getContext('2d');
             mainCtx.clearRect(0, 0, this.editor.sketchCanvas.width, this.editor.sketchCanvas.height);
             this.editor.layers.forEach(layer => {
