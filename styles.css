@@ -345,10 +345,16 @@ canvas-container {
   background: white;
   cursor: crosshair;
   border-radius: var(--radius-sm);
-  /* Fixed dimensions - set by JavaScript */
+  position: relative;
+  z-index: 1;
+  display: block;
 }
 
 #selectionOverlay {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
   pointer-events: none;
   z-index: 15;
 }
