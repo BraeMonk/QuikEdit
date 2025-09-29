@@ -1098,10 +1098,14 @@ body[data-mode="sketch"] .pixel-controls {
     max-height: 90%;
   }
 
-  #canvas,
-  #sketchCanvas {
+  #canvas {
     margin: auto;
+  }
+
+  #sketchCanvas {
+    margin: 0 auto;
     display: block;
+    position: relative;
   }
 
   .panels {
