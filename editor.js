@@ -2728,17 +2728,72 @@ class JerryEditor {
     // Export/Import
     exportJSON() {
         const project = this.getProjectData();
-        const dataStr = JSON.stringify(project, null, 2);
+    
+        // Convert colors to palette indices for Jerry format
+        const jerryProject = this.convertToJerryFormat(project);
+    
+        const dataStr = JSON.stringify(jerryProject, null, 2);
         const output = document.getElementById('output');
-        
+    
         if (output) {
             output.style.display = 'block';
             output.value = dataStr;
             output.select();
         }
-        
+    
         // Also trigger download
         this.downloadFile('jerry-project.json', dataStr);
+    }
+
+    convertToJerryFormat(project) {
+        const jerryProject = JSON.parse(JSON.stringify(project)); // Deep clone
+    
+        // Get current palette colors (excluding 'transparent' at index 0)
+        const currentPaletteName = this.paletteSelector?.value || 'default';
+        const currentPalette = this.palettes[currentPaletteName] || this.palettes.default;
+    
+        // Create color to index mapping
+        // Index 0 = transparent, indices 1-11 = palette colors
+        const colorToIndex = { 'transparent': 0 };
+        currentPalette.forEach((color, idx) => {
+            if (color !== 'transparent') {
+                colorToIndex[color.toLowerCase()] = idx + 1;
+            }
+        });
+    
+        // Convert grid to Jerry format (array of arrays with numbers 0-11)
+        if (jerryProject.grid && Array.isArray(jerryProject.grid)) {
+            jerryProject.grid = jerryProject.grid.map(row => 
+                row.map(cell => {
+                    if (!cell || cell === 'transparent') return 0;
+                
+                    const normalized = cell.toLowerCase();
+                    return colorToIndex[normalized] !== undefined ? colorToIndex[normalized] : 0;
+                })
+            );
+        }
+    
+        // Also convert sprites if they exist
+        if (jerryProject.sprites && Array.isArray(jerryProject.sprites)) {
+            jerryProject.sprites = jerryProject.sprites.map(sprite => {
+                if (sprite.data && Array.isArray(sprite.data)) {
+                    return {
+                        ...sprite,
+                        data: sprite.data.map(row => 
+                            row.map(cell => {
+                                if (!cell || cell === 'transparent') return 0;
+                            
+                                const normalized = cell.toLowerCase();
+                                return colorToIndex[normalized] !== undefined ? colorToIndex[normalized] : 0;
+                            })
+                        )
+                    };
+                }
+                return sprite;
+            });
+        }
+    
+        return jerryProject;
     }
     
     exportPNG() {
