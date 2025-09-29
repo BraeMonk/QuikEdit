@@ -952,8 +952,21 @@ body[data-mode="sketch"] .pixel-controls {
   }
 
   .canvas-wrapper {
-    padding: var(--spacing-sm);
-    overflow: visible;
+    padding: 0;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .canvas-wrapper > * {
+    max-width: 95%;
+    max-height: 95%;
+  }
+
+  #canvas,
+  #sketchCanvas {
+    margin: auto;
   }
 
   .btn {
@@ -1071,10 +1084,23 @@ body[data-mode="sketch"] .pixel-controls {
   }
 
   .canvas-wrapper {
-    padding: var(--spacing-sm);
+    padding: 0;
     background-size: 15px 15px;
     background-position: 0 0, 0 7px, 7px -7px, -7px 0px;
-    overflow: visible;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .canvas-wrapper > * {
+    max-width: 90%;
+    max-height: 90%;
+  }
+
+  #canvas,
+  #sketchCanvas {
+    margin: auto;
   }
 
   .panels {
