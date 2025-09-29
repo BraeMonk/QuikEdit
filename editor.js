@@ -2798,44 +2798,41 @@ class JerryEditor {
     
     exportPNG() {
         let canvas, filename;
-        
+    
         if (this.mode === 'pixel') {
-            // Create a clean export canvas without grid
+            // Create a clean export canvas for pixel art
             canvas = document.createElement('canvas');
             canvas.width = this.canvasWidth;
             canvas.height = this.canvasHeight;
             const ctx = canvas.getContext('2d');
-            
-            // Disable image smoothing for pixel art
+        
+            // CRITICAL: Disable image smoothing for crisp pixel art
             ctx.imageSmoothingEnabled = false;
-            
-            const imageData = ctx.createImageData(this.canvasWidth, this.canvasHeight);
-            
+            ctx.mozImageSmoothingEnabled = false;
+            ctx.webkitImageSmoothingEnabled = false;
+            ctx.msImageSmoothingEnabled = false;
+        
+            // Draw each pixel directly
             for (let y = 0; y < this.canvasHeight; y++) {
                 for (let x = 0; x < this.canvasWidth; x++) {
                     const color = this.grid[y][x];
-                    const index = (y * this.canvasWidth + x) * 4;
-                    
-                    if (color === 'transparent') {
-                        imageData.data[index + 3] = 0; // Alpha = 0
-                    } else {
-                        const rgb = this.hexToRgb(color);
-                        imageData.data[index] = rgb.r;
-                        imageData.data[index + 1] = rgb.g;
-                        imageData.data[index + 2] = rgb.b;
-                        imageData.data[index + 3] = 255;
+                
+                    if (color !== 'transparent') {
+                        ctx.fillStyle = color;
+                        ctx.fillRect(x, y, 1, 1);
                     }
+                    // Transparent pixels are left as-is (alpha = 0)
                 }
             }
-            
-            ctx.putImageData(imageData, 0, 0);
+        
             filename = 'pixel-art.png';
         } else {
+            // Sketch mode uses the existing canvas
             canvas = this.sketchCanvas;
             filename = 'sketch-art.png';
         }
-        
-        // Download the image
+    
+        // Download the image as PNG
         canvas.toBlob((blob) => {
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
@@ -2845,7 +2842,7 @@ class JerryEditor {
             a.click();
             document.body.removeChild(a);
             URL.revokeObjectURL(url);
-        });
+        }, 'image/png'); // Explicit PNG format
     }
     
     importFile(e) {
