@@ -3316,55 +3316,51 @@ class JerryEditorPersistence {
 
     
     async applyState(state) {
-        // Wait for any pending operations
+        // Small delay to let pending operations settle
         await new Promise(resolve => setTimeout(resolve, 50));
-        
-        // Apply basic state
+    
+        // --- Basic editor settings ---
         this.editor.mode = state.mode || 'pixel';
         this.editor.canvasWidth = state.canvasWidth || 16;
         this.editor.canvasHeight = state.canvasHeight || 16;
         this.editor.pixelSize = state.pixelSize || 20;
-        
-        // Validate and restore grid
-        if (state.grid && Array.isArray(state.grid) && 
-            state.grid.length === state.canvasHeight &&
-            state.grid[0] && state.grid[0].length === state.canvasWidth) {
+    
+        // --- Pixel grid ---
+        if (state.grid && Array.isArray(state.grid) &&
+            state.grid.length === this.editor.canvasHeight &&
+            state.grid[0] && state.grid[0].length === this.editor.canvasWidth) {
             this.editor.grid = state.grid;
         } else {
             this.editor.initializeGrid();
         }
-        
+    
         this.editor.sprites = state.sprites || [{ name: 'Sprite 1', data: null }];
         this.editor.currentSprite = state.currentSprite || 0;
-        
-        // Restore selection state
+    
         this.editor.pixelSelection = state.pixelSelection || null;
         this.editor.pixelSelectionData = state.pixelSelectionData || null;
-        
-        // Restore colors and settings
+    
         this.editor.primaryColor = state.primaryColor || '#000000';
         this.editor.secondaryColor = state.secondaryColor || '#ffffff';
         this.editor.currentTool = state.currentTool || (state.mode === 'pixel' ? 'pencil' : 'brush');
         this.editor.symmetryMode = state.symmetryMode || 'none';
         this.editor.showGrid = state.showGrid !== undefined ? state.showGrid : true;
         this.editor.zoom = state.zoom || 1;
-        
-        // Restore brush settings
+    
         this.editor.brushSize = state.brushSize || 10;
         this.editor.brushOpacity = state.brushOpacity || 100;
         this.editor.brushHardness = state.brushHardness || 100;
         this.editor.brushFlow = state.brushFlow || 100;
         this.editor.currentLayer = state.currentLayer || 0;
-        
-        // Restore sketch canvas
+    
+        // --- Sketch canvas ---
         if (state.sketchCanvas) {
             this.editor.sketchCanvas.width = state.sketchCanvas.width;
             this.editor.sketchCanvas.height = state.sketchCanvas.height;
             this.editor.selectionOverlay.width = state.sketchCanvas.width;
             this.editor.selectionOverlay.height = state.sketchCanvas.height;
         }
-
-        // Add to applyState() after sketch canvas restoration:
+    
         if (state.mode === 'sketch') {
             this.editor.tempCanvas = document.createElement('canvas');
             this.editor.tempCanvas.width = this.editor.sketchCanvas.width;
@@ -3373,100 +3369,63 @@ class JerryEditorPersistence {
             this.editor.tempCtx.lineCap = 'round';
             this.editor.tempCtx.lineJoin = 'round';
         }
-
-        // Restore palettes if they exist
+    
+        // --- Restore palettes ---
         const savedPalettes = localStorage.getItem('jerryEditor_palettes');
         if (savedPalettes) {
-            try {
-                const palettes = JSON.parse(savedPalettes);
-                Object.assign(this.editor.palettes, palettes);
-            } catch (e) {
-                console.warn('Failed to restore palettes');
-            }
+            try { Object.assign(this.editor.palettes, JSON.parse(savedPalettes)); }
+            catch(e) { console.warn('Failed to restore palettes'); }
         }
-        
-        // Restore layers with proper error handling
+    
+        // --- Restore layers ---
         if (state.layers && state.layers.length > 0) {
             this.editor.layers = [];
-            
-            const loadPromises = state.layers.map((layerData, index) => {
-                return new Promise((resolve) => {
-                    const img = new Image();
-                    const timeout = setTimeout(() => {
-                        console.warn(`Layer ${index} load timeout`);
-                        resolve(null);
-                    }, 5000);
-                    
-                    img.onload = () => {
-                        clearTimeout(timeout);
-                        const canvas = document.createElement('canvas');
-                        canvas.width = this.editor.sketchCanvas.width;
-                        canvas.height = this.editor.sketchCanvas.height;
-                        const ctx = canvas.getContext('2d');
-                        ctx.lineCap = 'round';
-                        ctx.lineJoin = 'round';
-                        ctx.imageSmoothingEnabled = true;
-                        ctx.drawImage(img, 0, 0);
-                        
-                        this.editor.layers[index] = {
-                            canvas: canvas,
-                            ctx: ctx,
-                            visible: layerData.visible !== undefined ? layerData.visible : true,
-                            opacity: layerData.opacity || 1,
-                            blendMode: layerData.blendMode || 'source-over',
-                            name: layerData.name || `Layer ${index + 1}`
-                        };
-                        resolve(this.editor.layers[index]);
+    
+            const loadPromises = state.layers.map((layerData, index) => new Promise(resolve => {
+                const img = new Image();
+                const timeout = setTimeout(() => { console.warn(`Layer ${index} load timeout`); resolve(null); }, 5000);
+    
+                img.onload = () => {
+                    clearTimeout(timeout);
+                    const canvas = document.createElement('canvas');
+                    canvas.width = this.editor.sketchCanvas.width;
+                    canvas.height = this.editor.sketchCanvas.height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.lineCap = 'round';
+                    ctx.lineJoin = 'round';
+                    ctx.imageSmoothingEnabled = true;
+                    ctx.drawImage(img, 0, 0);
+    
+                    this.editor.layers[index] = {
+                        canvas, ctx,
+                        visible: layerData.visible !== undefined ? layerData.visible : true,
+                        opacity: layerData.opacity || 1,
+                        blendMode: layerData.blendMode || 'source-over',
+                        name: layerData.name || `Layer ${index + 1}`
                     };
-                    
-                    img.onerror = () => {
-                        clearTimeout(timeout);
-                        console.error(`Failed to load layer ${index}`);
-                        resolve(null);
-                    };
-                    
-                    img.src = layerData.data;
-                });
-            });
-            
-            await Promise.all(loadPromises);
-            
-            // Filter out failed layers and ensure at least one layer exists
-            this.editor.layers = this.editor.layers.filter(l => l !== null);
-            if (this.editor.layers.length === 0) {
-                this.editor.addLayer();
-            }
-            
-            // Ensure currentLayer is valid
-            if (this.editor.currentLayer >= this.editor.layers.length) {
-                this.editor.currentLayer = this.editor.layers.length - 1;
-            }
-        }
-        
-        // Restore undo/redo stacks
-        if (state.undoStack) {
-            await this.restoreUndoStack(state.undoStack, 'undoStack', state.undoCanvasDimensions);
-        }
-        if (state.redoStack) {
-            await this.restoreUndoStack(state.redoStack, 'redoStack', state.undoCanvasDimensions);
-        }
-
-        // Force full redraw after restoring
-        if (this.editor.mode === 'pixel') {
-            this.editor.redrawGrid?.(); // redraw the pixel grid if you have that method
-        }
-        
-        // Force full redraw after all layers are guaranteed loaded
-        if (this.editor.mode === 'sketch') {
-            await Promise.all(this.editor.layers.map(layer => {
-                return new Promise(resolve => {
-                    const img = new Image();
-                    img.onload = () => resolve();
-                    img.onerror = () => resolve();
-                    img.src = layer.canvas.toDataURL(); // ensures the canvas content is ready
-                });
+                    resolve();
+                };
+    
+                img.onerror = () => { clearTimeout(timeout); console.error(`Failed to load layer ${index}`); resolve(null); };
+                img.src = layerData.data;
             }));
-        
+    
+            await Promise.all(loadPromises);
+    
+            // Ensure at least one layer exists
+            this.editor.layers = this.editor.layers.filter(l => l !== null);
+            if (this.editor.layers.length === 0) this.editor.addLayer();
+            if (this.editor.currentLayer >= this.editor.layers.length) this.editor.currentLayer = this.editor.layers.length - 1;
+        }
+    
+        // --- Restore undo/redo stacks ---
+        if (state.undoStack) await this.restoreUndoStack(state.undoStack, 'undoStack', state.undoCanvasDimensions);
+        if (state.redoStack) await this.restoreUndoStack(state.redoStack, 'redoStack', state.undoCanvasDimensions);
+    
+        // --- Redraw immediately ---
+        if (this.editor.mode === 'pixel') {
+            this.editor.redrawGrid?.();
+        } else if (this.editor.mode === 'sketch') {
             const mainCtx = this.editor.sketchCanvas.getContext('2d');
             mainCtx.clearRect(0, 0, this.editor.sketchCanvas.width, this.editor.sketchCanvas.height);
             this.editor.layers.forEach(layer => {
@@ -3479,10 +3438,11 @@ class JerryEditorPersistence {
             mainCtx.globalAlpha = 1;
             mainCtx.globalCompositeOperation = 'source-over';
         }
-        
-        // Update all UI elements
+    
+        // --- Update UI ---
         await this.updateUI();
     }
+
     
     async restoreUndoStack(stackData, stackName, canvasDimensions) {
         if (!stackData || stackData.length === 0) {
