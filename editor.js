@@ -334,11 +334,11 @@ class JerryEditor {
             this.stopDrawing(e);
         });
     
-        // zoom with wheel - check for active selection first
+        // zoom with wheel
         canvasWrapper.addEventListener('wheel', (e) => {
             e.preventDefault();
             
-            // Check if we have an active selection and Ctrl is held
+            // If Ctrl is held AND there's a finalized selection, resize the selection
             if (e.ctrlKey) {
                 if (this.mode === 'pixel' && this.pixelSelection && this.pixelSelection.finalized) {
                     this.resizePixelSelectionWithWheel(e);
@@ -350,10 +350,10 @@ class JerryEditor {
                 }
             }
             
-            // Default zoom behavior
-            const zoomFactor = e.deltaY > 0 ? 0.9 : 1.1;
+            // Default: zoom the canvas (scroll up = zoom in, scroll down = zoom out)
+            const zoomFactor = e.deltaY < 0 ? 1.1 : 0.9;
             this.zoomAtPoint(e.clientX, e.clientY, zoomFactor);
-        }, { passive: false });        
+        }, { passive: false });      
         
         canvasWrapper.addEventListener('touchstart', (e) => {
             if (e.touches.length === 2) {
@@ -473,27 +473,27 @@ class JerryEditor {
         this.drawPixelSelectionOverlay();
     }
     
-    resizePixelSelectionWithWheel(e) {
+    resizeSketchSelectionWithWheel(e) {
         e.preventDefault();
         const scaleFactor = e.deltaY > 0 ? 0.95 : 1.05;
         
-        const minX = Math.min(this.pixelSelection.startX, this.pixelSelection.endX);
-        const maxX = Math.max(this.pixelSelection.startX, this.pixelSelection.endX);
-        const minY = Math.min(this.pixelSelection.startY, this.pixelSelection.endY);
-        const maxY = Math.max(this.pixelSelection.startY, this.pixelSelection.endY);
+        const minX = Math.min(this.sketchSelection.startX, this.sketchSelection.endX);
+        const maxX = Math.max(this.sketchSelection.startX, this.sketchSelection.endX);
+        const minY = Math.min(this.sketchSelection.startY, this.sketchSelection.endY);
+        const maxY = Math.max(this.sketchSelection.startY, this.sketchSelection.endY);
         
         const centerX = (minX + maxX) / 2;
         const centerY = (minY + maxY) / 2;
-        const width = maxX - minX + 1;
-        const height = maxY - minY + 1;
+        const width = maxX - minX;
+        const height = maxY - minY;
         
-        const newWidth = Math.max(1, Math.round(width * scaleFactor));
-        const newHeight = Math.max(1, Math.round(height * scaleFactor));
+        const newWidth = Math.max(1, width * scaleFactor);
+        const newHeight = Math.max(1, height * scaleFactor);
         
-        this.pixelSelection.startX = Math.round(centerX - newWidth / 2);
-        this.pixelSelection.endX = Math.round(centerX + newWidth / 2) - 1;
-        this.pixelSelection.startY = Math.round(centerY - newHeight / 2);
-        this.pixelSelection.endY = Math.round(centerY + newHeight / 2) - 1;
+        this.sketchSelection.startX = centerX - newWidth / 2;
+        this.sketchSelection.endX = centerX + newWidth / 2;
+        this.sketchSelection.startY = centerY - newHeight / 2;
+        this.sketchSelection.endY = centerY + newHeight / 2;
         
         this.resizeSketchSelectionData(newWidth, newHeight);
         this.drawSketchSelectionOverlay();
@@ -1246,6 +1246,14 @@ class JerryEditor {
         const maxX = Math.max(this.sketchSelection.startX, this.sketchSelection.endX);
         const minY = Math.min(this.sketchSelection.startY, this.sketchSelection.endY);
         const maxY = Math.max(this.sketchSelection.startY, this.sketchSelection.endY);
+        
+        // Clear and resize overlay to match sketch canvas
+        this.selectionOverlay.width = this.sketchCanvas.width;
+        this.selectionOverlay.height = this.sketchCanvas.height;
+        
+        // Apply same transform as sketch canvas
+        this.selectionOverlay.style.transform = this.sketchCanvas.style.transform;
+        this.selectionOverlay.style.transformOrigin = this.sketchCanvas.style.transformOrigin;
         
         this.selectionCtx.save();
         this.selectionCtx.strokeStyle = '#ffffff';
