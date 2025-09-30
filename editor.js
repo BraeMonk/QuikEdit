@@ -636,14 +636,15 @@ class JerryEditor {
         if (this.mode !== 'pixel') return;
     
         const grid = this.canvasGrid;
-        const canvasWidthPx = this.canvasWidth * this.pixelSize;
-        const canvasHeightPx = this.canvasHeight * this.pixelSize;
+        const actualPixelSize = this._actualPixelSize || this.pixelSize;
+        const canvasWidthPx = this.canvasWidth * actualPixelSize;
+        const canvasHeightPx = this.canvasHeight * actualPixelSize;
     
         // Match canvas dimensions exactly
         grid.style.width = `${canvasWidthPx}px`;
         grid.style.height = `${canvasHeightPx}px`;
     
-        // Center and scale grid to match canvas
+        // Center and position exactly like the canvas
         grid.style.position = 'absolute';
         grid.style.top = '50%';
         grid.style.left = '50%';
@@ -652,27 +653,27 @@ class JerryEditor {
         grid.style.pointerEvents = 'none';
         grid.style.zIndex = '10';
     
+        // Grid lines using CSS background
         const lineColor = 'rgba(255, 255, 255, 0.2)';
-        const offset = 0.5;
-    
+        
         grid.style.backgroundImage = `
             repeating-linear-gradient(
                 to right,
                 transparent,
-                transparent ${this.pixelSize - offset}px,
-                ${lineColor} ${this.pixelSize - offset}px,
-                ${lineColor} ${this.pixelSize}px
+                transparent ${actualPixelSize - 1}px,
+                ${lineColor} ${actualPixelSize - 1}px,
+                ${lineColor} ${actualPixelSize}px
             ),
             repeating-linear-gradient(
                 to bottom,
                 transparent,
-                transparent ${this.pixelSize - offset}px,
-                ${lineColor} ${this.pixelSize - offset}px,
-                ${lineColor} ${this.pixelSize}px
+                transparent ${actualPixelSize - 1}px,
+                ${lineColor} ${actualPixelSize - 1}px,
+                ${lineColor} ${actualPixelSize}px
             )
         `;
-        grid.style.backgroundSize = `${this.pixelSize}px ${this.pixelSize}px`;
-        grid.style.backgroundPosition = `${offset}px ${offset}px`;
+        grid.style.backgroundSize = `${actualPixelSize}px ${actualPixelSize}px`;
+        grid.style.backgroundPosition = '0 0';
         
         // Show/hide based on toggle
         grid.style.display = this.showGrid ? 'block' : 'none';
@@ -2212,7 +2213,7 @@ class JerryEditor {
         
         // Update grid to match canvas zoom exactly
         if (this.mode === 'pixel' && this.canvasGrid) {
-            this.canvasGrid.style.transform = `translate(-50%, -50%) scale(${this.zoom})`;
+            this.updateGrid(); // Let updateGrid handle the transform
         }
         
         this.zoomIndicator.textContent = `${Math.round(this.zoom * 100)}%`;
