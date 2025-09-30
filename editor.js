@@ -644,12 +644,12 @@ class JerryEditor {
         grid.style.height = `${canvasHeightPx}px`;
     
         // Position grid to overlay canvas perfectly
-        const isMobile = window.innerWidth <= 767 || (window.innerWidth <= 479 && window.matchMedia('(orientation: portrait)').matches);
-        
         grid.style.position = 'absolute';
         grid.style.top = '50%';
         grid.style.left = '50%';
-        grid.style.transform = 'translate(-50%, -50%)';
+        grid.style.transformOrigin = 'center center';
+        // Apply current zoom to the transform
+        grid.style.transform = `translate(-50%, -50%) scale(${this.zoom})`;
         grid.style.pointerEvents = 'none';
         grid.style.zIndex = '10';
     
@@ -677,55 +677,6 @@ class JerryEditor {
         
         // Show/hide based on toggle
         grid.style.display = this.showGrid ? 'block' : 'none';
-    }
-    
-    getCanvasPos(e) {
-        const canvas = this.mode === 'pixel' ? this.pixelCanvas : this.sketchCanvas;
-        const rect = canvas.getBoundingClientRect();
-    
-        // Get raw pointer coordinates (touch or mouse)
-        let clientX, clientY;
-        if (e.touches && e.touches[0]) {
-            clientX = e.touches[0].clientX;
-            clientY = e.touches[0].clientY;
-        } else {
-            clientX = e.clientX;
-            clientY = e.clientY;
-        }
-    
-        // Calculate position relative to canvas
-        let x = clientX - rect.left;
-        let y = clientY - rect.top;
-    
-        // CRITICAL FIX: Account for canvas-container scale transform
-        const container = document.querySelector('.canvas-container');
-        if (container) {
-            const containerStyle = window.getComputedStyle(container);
-            const transform = containerStyle.transform;
-            
-            if (transform && transform !== 'none') {
-                const matrix = transform.match(/matrix.*\((.+)\)/);
-                if (matrix) {
-                    const values = matrix[1].split(', ').map(Number);
-                    const scaleX = values[0];
-                    const scaleY = values[3];
-                    
-                    // Adjust for scale transform
-                    x /= scaleX;
-                    y /= scaleY;
-                }
-            }
-        }
-    
-        // For sketch mode, account for canvas internal resolution vs display size
-        if (this.mode === 'sketch') {
-            const scaleX = canvas.width / rect.width;
-            const scaleY = canvas.height / rect.height;
-            x *= scaleX;
-            y *= scaleY;
-        }
-    
-        return { x, y };
     }
     
     getPixelPos(e) {
