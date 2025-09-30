@@ -364,6 +364,7 @@ canvas-container {
   pointer-events: none;
   z-index: 15;
   display: none;
+  transform-origin: center center;
 }
 
 /* Canvas Grid Overlay */
