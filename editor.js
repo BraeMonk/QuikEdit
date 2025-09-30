@@ -2945,18 +2945,50 @@ class JerryEditor {
     importFile(e) {
         const file = e.target.files[0];
         if (!file) return;
-        
+
         const reader = new FileReader();
         reader.onload = (event) => {
             try {
-                const project = JSON.parse(event.target.result);
-                if (confirm('Import this project? Current work will be lost.')) {
-                    this.loadProjectData(project);
+                const data = JSON.parse(event.target.result);
+
+                if (!Array.isArray(data) && !data.sprite) {
+                    throw new Error('No sprite data found.');
                 }
-            } catch (error) {
-                alert('Invalid project file.');
+
+                // Determine grid data
+                let gridData;
+                let name = 'Unnamed Sprite';
+
+                if (data.sprite && Array.isArray(data.sprite.data)) {
+                    gridData = data.sprite.data;
+                    if (data.sprite.name) name = data.sprite.name;
+                } else if (Array.isArray(data) && Array.isArray(data[0])) {
+                    // Raw 2D array
+                    gridData = data;
+                } else {
+                    throw new Error('Invalid sprite format.');
+                }
+
+                if (confirm('Import this sprite? Current work will be lost.')) {
+                    this.mode = 'pixel';
+                    this.grid = gridData;
+                    this.sprites = [{ name, data: gridData }];
+                    this.currentSprite = name;
+
+                    // Optional: resize canvas to match grid
+                    this.canvasWidth = gridData[0].length;
+                    this.canvasHeight = gridData.length;
+
+                    // Re-render
+                    this.refreshSpriteRender();
+                    this.populateSpriteDropdown();
+                }
+
+            } catch (err) {
+                alert('Invalid sprite file: ' + err.message);
             }
         };
+
         reader.readAsText(file);
     }
     
