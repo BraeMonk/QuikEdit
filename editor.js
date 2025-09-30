@@ -337,8 +337,57 @@ class JerryEditor {
         canvasWrapper.addEventListener('wheel', (e) => {
             e.preventDefault();
             const zoomFactor = e.deltaY > 0 ? 0.9 : 1.1;
-            this.adjustZoom(zoomFactor);
+            this.zoomAtPoint(e.clientX, e.clientY, zoomFactor);
         }, { passive: false });
+        
+        // Add these touch helper methods:
+        getTouchDistance(t1, t2) {
+            const dx = t2.clientX - t1.clientX;
+            const dy = t2.clientY - t1.clientY;
+            return Math.sqrt(dx * dx + dy * dy);
+        }
+        
+        getTouchCenter(t1, t2) {
+            return {
+                x: (t1.clientX + t2.clientX) / 2,
+                y: (t1.clientY + t2.clientY) / 2
+            };
+        }
+        
+        // Add these touch event listeners at the end of setupCanvasEvents:
+        let pinchDistance = 0;
+        let pinchCenter = null;
+        
+        canvasWrapper.addEventListener('touchstart', (e) => {
+            if (e.touches.length === 2) {
+                e.preventDefault();
+                pinchDistance = this.getTouchDistance(e.touches[0], e.touches[1]);
+                pinchCenter = this.getTouchCenter(e.touches[0], e.touches[1]);
+            }
+        }, { passive: false });
+        
+        canvasWrapper.addEventListener('touchmove', (e) => {
+            if (e.touches.length === 2) {
+                e.preventDefault();
+                const newDistance = this.getTouchDistance(e.touches[0], e.touches[1]);
+                const newCenter = this.getTouchCenter(e.touches[0], e.touches[1]);
+                
+                if (pinchDistance > 0) {
+                    const zoomFactor = newDistance / pinchDistance;
+                    this.zoomAtPoint(newCenter.x, newCenter.y, zoomFactor);
+                }
+                
+                pinchDistance = newDistance;
+                pinchCenter = newCenter;
+            }
+        }, { passive: false });
+        
+        canvasWrapper.addEventListener('touchend', (e) => {
+            if (e.touches.length < 2) {
+                pinchDistance = 0;
+                pinchCenter = null;
+            }
+        });
     
         // block touch scrolling inside canvas
         document.addEventListener('touchmove', (e) => {
@@ -370,6 +419,18 @@ class JerryEditor {
         // ----- PIXEL MOVE -----
         if (this.currentTool === 'move' && this.mode === 'pixel') {
             this.startPixelMove(pos);
+            return;
+        }
+
+        // ----- SKETCH SELECTION -----
+        if (this.currentTool === 'select' && this.mode === 'sketch') {
+            this.startSketchSelection(pos);
+            return;
+        }
+        
+        // ----- SKETCH MOVE -----
+        if (this.currentTool === 'move' && this.mode === 'sketch') {
+            this.startSketchMove(pos);
             return;
         }
     
@@ -421,6 +482,18 @@ class JerryEditor {
         // ----- PIXEL MOVE -----
         if (this.currentTool === 'move' && this.mode === 'pixel') {
             this.updatePixelMove(pos);
+            return;
+        }
+
+        // ----- SKETCH SELECTION -----
+        if (this.currentTool === 'select' && this.mode === 'sketch') {
+            this.updateSketchSelection(pos);
+            return;
+        }
+        
+        // ----- SKETCH MOVE -----
+        if (this.currentTool === 'move' && this.mode === 'sketch') {
+            this.updateSketchMove(pos);
             return;
         }
 
@@ -709,7 +782,17 @@ class JerryEditor {
         if (this.currentTool === 'move' && this.mode === 'pixel') {
             this.finalizePixelMove();
         }
-    
+
+        // ----- SKETCH SELECTION -----
+        if (this.currentTool === 'select' && this.mode === 'sketch') {
+            this.finalizeSketchSelection();
+        }
+        
+        // ----- SKETCH MOVE -----
+        if (this.currentTool === 'move' && this.mode === 'sketch') {
+            this.finalizeSketchMove();
+        }
+        
         // ----- Sketch shapes -----
         if (this.mode === 'sketch' && ['lineSketch','rectSketch','circleSketch'].includes(this.currentTool) && this.shapeStartPos) {
             this.finalizeShape();
@@ -901,7 +984,153 @@ class JerryEditor {
         this.updatePixelCanvas();
     }
 
+    // ----- SKETCH SELECTION METHODS -----
+    startSketchSelection(pos) {
+        this.clearSketchSelection();
+        this.sketchSelection = {
+            startX: pos.x,
+            startY: pos.y,
+            endX: pos.x,
+            endY: pos.y,
+            active: true,
+            layer: this.currentLayer
+        };
+        this.selecting = true;
+    }
     
+    updateSketchSelection(pos) {
+        if (!this.sketchSelection) return;
+        this.sketchSelection.endX = pos.x;
+        this.sketchSelection.endY = pos.y;
+        this.drawSketchSelectionOverlay();
+    }
+    
+    finalizeSketchSelection() {
+        if (!this.sketchSelection) return;
+        
+        const minX = Math.min(this.sketchSelection.startX, this.sketchSelection.endX);
+        const maxX = Math.max(this.sketchSelection.startX, this.sketchSelection.endX);
+        const minY = Math.min(this.sketchSelection.startY, this.sketchSelection.endY);
+        const maxY = Math.max(this.sketchSelection.startY, this.sketchSelection.endY);
+        
+        const width = maxX - minX;
+        const height = maxY - minY;
+        
+        if (width > 1 && height > 1) {
+            const layer = this.layers[this.currentLayer];
+            this.sketchSelectionData = layer.ctx.getImageData(minX, minY, width, height);
+            
+            layer.ctx.clearRect(minX, minY, width, height);
+            this.redrawLayers();
+            
+            this.sketchSelection.finalized = true;
+            this.sketchSelection.width = width;
+            this.sketchSelection.height = height;
+        }
+        this.selecting = false;
+    }
+    
+    drawSketchSelectionOverlay() {
+        this.clearSketchSelection();
+        if (!this.sketchSelection) return;
+        
+        const minX = Math.min(this.sketchSelection.startX, this.sketchSelection.endX);
+        const maxX = Math.max(this.sketchSelection.startX, this.sketchSelection.endX);
+        const minY = Math.min(this.sketchSelection.startY, this.sketchSelection.endY);
+        const maxY = Math.max(this.sketchSelection.startY, this.sketchSelection.endY);
+        
+        this.selectionCtx.save();
+        this.selectionCtx.strokeStyle = '#ffffff';
+        this.selectionCtx.setLineDash([5, 5]);
+        this.selectionCtx.lineWidth = 2;
+        this.selectionCtx.strokeRect(minX, minY, maxX - minX, maxY - minY);
+        
+        const handleSize = 8;
+        this.selectionCtx.fillStyle = '#ffffff';
+        this.selectionCtx.fillRect(minX - handleSize/2, minY - handleSize/2, handleSize, handleSize);
+        this.selectionCtx.fillRect(maxX - handleSize/2, minY - handleSize/2, handleSize, handleSize);
+        this.selectionCtx.fillRect(minX - handleSize/2, maxY - handleSize/2, handleSize, handleSize);
+        this.selectionCtx.fillRect(maxX - handleSize/2, maxY - handleSize/2, handleSize, handleSize);
+        
+        this.selectionCtx.restore();
+    }
+    
+    clearSketchSelection() {
+        this.selectionCtx.clearRect(0, 0, this.selectionOverlay.width, this.selectionOverlay.height);
+    }
+    
+    // ----- SKETCH MOVE METHODS -----
+    startSketchMove(pos) {
+        if (!this.sketchSelection || !this.sketchSelection.finalized) return;
+        
+        const minX = Math.min(this.sketchSelection.startX, this.sketchSelection.endX);
+        const maxX = Math.max(this.sketchSelection.startX, this.sketchSelection.endX);
+        const minY = Math.min(this.sketchSelection.startY, this.sketchSelection.endY);
+        const maxY = Math.max(this.sketchSelection.startY, this.sketchSelection.endY);
+        
+        if (pos.x >= minX && pos.x <= maxX && pos.y >= minY && pos.y <= maxY) {
+            this.movingSketchSelection = true;
+            this.sketchMoveStart = pos;
+            this.originalSketchSelection = { ...this.sketchSelection };
+        }
+    }
+    
+    updateSketchMove(pos) {
+        if (!this.movingSketchSelection || !this.sketchMoveStart) return;
+        
+        const dx = pos.x - this.sketchMoveStart.x;
+        const dy = pos.y - this.sketchMoveStart.y;
+        
+        this.sketchSelection.startX = this.originalSketchSelection.startX + dx;
+        this.sketchSelection.endX = this.originalSketchSelection.endX + dx;
+        this.sketchSelection.startY = this.originalSketchSelection.startY + dy;
+        this.sketchSelection.endY = this.originalSketchSelection.endY + dy;
+        
+        this.drawMovedSketchSelection();
+        this.drawSketchSelectionOverlay();
+    }
+    
+    drawMovedSketchSelection() {
+        if (!this.sketchSelection || !this.sketchSelectionData) return;
+        
+        this.redrawLayers();
+        
+        const minX = Math.min(this.sketchSelection.startX, this.sketchSelection.endX);
+        const minY = Math.min(this.sketchSelection.startY, this.sketchSelection.endY);
+        
+        const tempCanvas = document.createElement('canvas');
+        tempCanvas.width = this.sketchSelectionData.width;
+        tempCanvas.height = this.sketchSelectionData.height;
+        const tempCtx = tempCanvas.getContext('2d');
+        tempCtx.putImageData(this.sketchSelectionData, 0, 0);
+        
+        const layer = this.layers[this.currentLayer];
+        layer.ctx.drawImage(tempCanvas, minX, minY);
+        this.redrawLayers();
+    }
+    
+    finalizeSketchMove() {
+        if (!this.sketchSelection || !this.sketchSelectionData) return;
+        
+        const minX = Math.min(this.sketchSelection.startX, this.sketchSelection.endX);
+        const minY = Math.min(this.sketchSelection.startY, this.sketchSelection.endY);
+        
+        const layer = this.layers[this.currentLayer];
+        const tempCanvas = document.createElement('canvas');
+        tempCanvas.width = this.sketchSelectionData.width;
+        tempCanvas.height = this.sketchSelectionData.height;
+        const tempCtx = tempCanvas.getContext('2d');
+        tempCtx.putImageData(this.sketchSelectionData, 0, 0);
+        
+        layer.ctx.drawImage(tempCanvas, minX, minY);
+        this.redrawLayers();
+        
+        this.movingSketchSelection = false;
+        this.sketchMoveStart = null;
+        this.originalSketchSelection = null;
+        
+        this.saveState();
+    }
     handlePixelTool(pos, rightClick = false, filled = false, isDragEnd = false) {
         if (pos.x < 0 || pos.x >= this.canvasWidth || pos.y < 0 || pos.y >= this.canvasHeight) return;
     
@@ -2184,44 +2413,35 @@ class JerryEditor {
     
     // Zoom operations
     adjustZoom(factor) {
-        this.setZoom(this.zoom * factor);
-    }
-    
-    calculateAutoScale() {
-        const wrapper = this.canvasWrapper;
-        if (!wrapper) return 1;
-        
-        const wrapperRect = wrapper.getBoundingClientRect();
-        const padding = 40; // Leave some breathing room
-        const availableWidth = wrapperRect.width - padding;
-        const availableHeight = wrapperRect.height - padding;
-        
-        const canvasWidthPx = this.canvasWidth * this.pixelSize;
-        const canvasHeightPx = this.canvasHeight * this.pixelSize;
-        
-        const scaleX = availableWidth / canvasWidthPx;
-        const scaleY = availableHeight / canvasHeightPx;
-        
-        // Use the smaller scale to ensure entire canvas fits
-        return Math.min(scaleX, scaleY, 1); // Don't scale up beyond 100% automatically
-    }
-    
-    setZoom(zoom) {
-        this.zoom = Math.max(0.25, Math.min(8, zoom));
-        
-        // Apply zoom directly to the canvas being used
         const canvas = this.mode === 'pixel' ? this.pixelCanvas : this.sketchCanvas;
-        if (canvas) {
-            canvas.style.transformOrigin = 'center center';
-            canvas.style.transform = `scale(${this.zoom})`;
-        }
+        const rect = canvas.getBoundingClientRect();
+        const centerX = rect.left + rect.width / 2;
+        const centerY = rect.top + rect.height / 2;
+        this.zoomAtPoint(centerX, centerY, factor);
+    }
+    
+    zoomAtPoint(clientX, clientY, zoomFactor) {
+        const canvas = this.mode === 'pixel' ? this.pixelCanvas : this.sketchCanvas;
         
-        // Update grid to match canvas zoom exactly
+        const newZoom = Math.max(0.25, Math.min(8, this.zoom * zoomFactor));
+        
+        this.zoom = newZoom;
+        canvas.style.transformOrigin = 'center center';
+        canvas.style.transform = `scale(${this.zoom})`;
+        
         if (this.mode === 'pixel' && this.canvasGrid) {
-            this.updateGrid(); // Let updateGrid handle the transform
+            this.updateGrid();
         }
         
         this.zoomIndicator.textContent = `${Math.round(this.zoom * 100)}%`;
+    }
+    
+    setZoom(zoom) {
+        const canvas = this.mode === 'pixel' ? this.pixelCanvas : this.sketchCanvas;
+        const rect = canvas.getBoundingClientRect();
+        const centerX = rect.left + rect.width / 2;
+        const centerY = rect.top + rect.height / 2;
+        this.zoomAtPoint(centerX, centerY, zoom / this.zoom);
     }
 
     saveStateImmediate() {
