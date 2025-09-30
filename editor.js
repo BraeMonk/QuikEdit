@@ -29,6 +29,9 @@ class JerryEditor {
         this.brushHardness = 100;
         this.brushFlow = 100;
         this.blendMode = 'source-over';
+
+        let pinchDistance = 0;
+        let pinchCenter = null;
         
         // Selection properties
         this.selection = null;
@@ -288,8 +291,6 @@ class JerryEditor {
             content.style.maxHeight = 'none';
         });
     }
-    
-    // Replace the setupCanvasEvents method in your JerryEditor class
 
     setupCanvasEvents() {
         const canvasWrapper = document.querySelector('.canvas-wrapper');
@@ -333,70 +334,269 @@ class JerryEditor {
             this.stopDrawing(e);
         });
     
-        // zoom with wheel
+        // zoom with wheel - check for active selection first
         canvasWrapper.addEventListener('wheel', (e) => {
             e.preventDefault();
+            
+            // Check if we have an active selection and Ctrl is held
+            if (e.ctrlKey) {
+                if (this.mode === 'pixel' && this.pixelSelection && this.pixelSelection.finalized) {
+                    this.resizePixelSelectionWithWheel(e);
+                    return;
+                }
+                if (this.mode === 'sketch' && this.sketchSelection && this.sketchSelection.finalized) {
+                    this.resizeSketchSelectionWithWheel(e);
+                    return;
+                }
+            }
+            
+            // Default zoom behavior
             const zoomFactor = e.deltaY > 0 ? 0.9 : 1.1;
             this.zoomAtPoint(e.clientX, e.clientY, zoomFactor);
-        }, { passive: false });
-        
-        // Add these touch helper methods:
-        getTouchDistance(t1, t2) {
-            const dx = t2.clientX - t1.clientX;
-            const dy = t2.clientY - t1.clientY;
-            return Math.sqrt(dx * dx + dy * dy);
-        }
-        
-        getTouchCenter(t1, t2) {
-            return {
-                x: (t1.clientX + t2.clientX) / 2,
-                y: (t1.clientY + t2.clientY) / 2
-            };
-        }
-        
-        // Add these touch event listeners at the end of setupCanvasEvents:
-        let pinchDistance = 0;
-        let pinchCenter = null;
+        }, { passive: false });        
         
         canvasWrapper.addEventListener('touchstart', (e) => {
             if (e.touches.length === 2) {
                 e.preventDefault();
-                pinchDistance = this.getTouchDistance(e.touches[0], e.touches[1]);
-                pinchCenter = this.getTouchCenter(e.touches[0], e.touches[1]);
+                this.pinchDistance = this.getTouchDistance(e.touches[0], e.touches[1]);
+                this.pinchCenter = this.getTouchCenter(e.touches[0], e.touches[1]);
+                
+                // Check if pinch is over a selection
+                this.pinchOverSelection = this.isPinchOverSelection(this.pinchCenter);
             }
         }, { passive: false });
         
         canvasWrapper.addEventListener('touchmove', (e) => {
+            if (e.touches.length === 1) {
+                e.preventDefault(); // Prevent single-finger scroll while drawing
+            }
+            
             if (e.touches.length === 2) {
                 e.preventDefault();
                 const newDistance = this.getTouchDistance(e.touches[0], e.touches[1]);
                 const newCenter = this.getTouchCenter(e.touches[0], e.touches[1]);
                 
-                if (pinchDistance > 0) {
-                    const zoomFactor = newDistance / pinchDistance;
-                    this.zoomAtPoint(newCenter.x, newCenter.y, zoomFactor);
+                if (this.pinchDistance > 0) {
+                    const zoomFactor = newDistance / this.pinchDistance;
+                    
+                    // If pinch started over selection, resize it
+                    if (this.pinchOverSelection) {
+                        if (this.mode === 'pixel' && this.pixelSelection && this.pixelSelection.finalized) {
+                            this.resizePixelSelectionWithPinch(zoomFactor, newCenter);
+                        } else if (this.mode === 'sketch' && this.sketchSelection && this.sketchSelection.finalized) {
+                            this.resizeSketchSelectionWithPinch(zoomFactor, newCenter);
+                        }
+                    } else {
+                        // Default zoom behavior
+                        this.zoomAtPoint(newCenter.x, newCenter.y, zoomFactor);
+                    }
                 }
                 
-                pinchDistance = newDistance;
-                pinchCenter = newCenter;
+                this.pinchDistance = newDistance;
+                this.pinchCenter = newCenter;
             }
         }, { passive: false });
         
         canvasWrapper.addEventListener('touchend', (e) => {
             if (e.touches.length < 2) {
-                pinchDistance = 0;
-                pinchCenter = null;
+                this.pinchDistance = 0;
+                this.pinchCenter = null;
+                this.pinchOverSelection = false;
             }
         });
-    
-        // block touch scrolling inside canvas
-        document.addEventListener('touchmove', (e) => {
-            if (e.target.closest('.canvas-wrapper')) {
-                e.preventDefault();
-            }
-        }, { passive: false });
     }
 
+    // Add these touch helper methods:
+    getTouchDistance(t1, t2) {
+        const dx = t2.clientX - t1.clientX;
+        const dy = t2.clientY - t1.clientY;
+        return Math.sqrt(dx * dx + dy * dy);
+    }
+        
+    getTouchCenter(t1, t2) {
+        return {
+            x: (t1.clientX + t2.clientX) / 2,
+            y: (t1.clientY + t2.clientY) / 2
+        };
+    }
+
+    isPinchOverSelection(center) {
+        if (this.mode === 'pixel' && this.pixelSelection && this.pixelSelection.finalized) {
+            const pos = this.getPixelPos({ clientX: center.x, clientY: center.y });
+            const minX = Math.min(this.pixelSelection.startX, this.pixelSelection.endX);
+            const maxX = Math.max(this.pixelSelection.startX, this.pixelSelection.endX);
+            const minY = Math.min(this.pixelSelection.startY, this.pixelSelection.endY);
+            const maxY = Math.max(this.pixelSelection.startY, this.pixelSelection.endY);
+            return pos.x >= minX && pos.x <= maxX && pos.y >= minY && pos.y <= maxY;
+        }
+        
+        if (this.mode === 'sketch' && this.sketchSelection && this.sketchSelection.finalized) {
+            const pos = this.getCanvasPos({ clientX: center.x, clientY: center.y });
+            const minX = Math.min(this.sketchSelection.startX, this.sketchSelection.endX);
+            const maxX = Math.max(this.sketchSelection.startX, this.sketchSelection.endX);
+            const minY = Math.min(this.sketchSelection.startY, this.sketchSelection.endY);
+            const maxY = Math.max(this.sketchSelection.startY, this.sketchSelection.endY);
+            return pos.x >= minX && pos.x <= maxX && pos.y >= minY && pos.y <= maxY;
+        }
+        
+        return false;
+    }
+    
+    resizePixelSelectionWithWheel(e) {
+        const scaleFactor = e.deltaY > 0 ? 0.95 : 1.05;
+        
+        const minX = Math.min(this.pixelSelection.startX, this.pixelSelection.endX);
+        const maxX = Math.max(this.pixelSelection.startX, this.pixelSelection.endX);
+        const minY = Math.min(this.pixelSelection.startY, this.pixelSelection.endY);
+        const maxY = Math.max(this.pixelSelection.startY, this.pixelSelection.endY);
+        
+        const centerX = (minX + maxX) / 2;
+        const centerY = (minY + maxY) / 2;
+        const width = maxX - minX;
+        const height = maxY - minY;
+        
+        const newWidth = Math.max(1, Math.round(width * scaleFactor));
+        const newHeight = Math.max(1, Math.round(height * scaleFactor));
+        
+        this.pixelSelection.startX = Math.round(centerX - newWidth / 2);
+        this.pixelSelection.endX = Math.round(centerX + newWidth / 2);
+        this.pixelSelection.startY = Math.round(centerY - newHeight / 2);
+        this.pixelSelection.endY = Math.round(centerY + newHeight / 2);
+        
+        // Clamp to canvas bounds
+        this.pixelSelection.startX = Math.max(0, Math.min(this.canvasWidth - 1, this.pixelSelection.startX));
+        this.pixelSelection.endX = Math.max(0, Math.min(this.canvasWidth - 1, this.pixelSelection.endX));
+        this.pixelSelection.startY = Math.max(0, Math.min(this.canvasHeight - 1, this.pixelSelection.startY));
+        this.pixelSelection.endY = Math.max(0, Math.min(this.canvasHeight - 1, this.pixelSelection.endY));
+        
+        this.resizePixelSelectionData(newWidth, newHeight);
+        this.drawPixelSelectionOverlay();
+    }
+    
+    resizeSketchSelectionWithWheel(e) {
+        const scaleFactor = e.deltaY > 0 ? 0.95 : 1.05;
+        
+        const minX = Math.min(this.sketchSelection.startX, this.sketchSelection.endX);
+        const maxX = Math.max(this.sketchSelection.startX, this.sketchSelection.endX);
+        const minY = Math.min(this.sketchSelection.startY, this.sketchSelection.endY);
+        const maxY = Math.max(this.sketchSelection.startY, this.sketchSelection.endY);
+        
+        const centerX = (minX + maxX) / 2;
+        const centerY = (minY + maxY) / 2;
+        const width = maxX - minX;
+        const height = maxY - minY;
+        
+        const newWidth = Math.max(1, width * scaleFactor);
+        const newHeight = Math.max(1, height * scaleFactor);
+        
+        this.sketchSelection.startX = centerX - newWidth / 2;
+        this.sketchSelection.endX = centerX + newWidth / 2;
+        this.sketchSelection.startY = centerY - newHeight / 2;
+        this.sketchSelection.endY = centerY + newHeight / 2;
+        
+        this.resizeSketchSelectionData(newWidth, newHeight);
+        this.drawSketchSelectionOverlay();
+    }
+    
+    resizePixelSelectionWithPinch(scaleFactor, center) {
+        const minX = Math.min(this.pixelSelection.startX, this.pixelSelection.endX);
+        const maxX = Math.max(this.pixelSelection.startX, this.pixelSelection.endX);
+        const minY = Math.min(this.pixelSelection.startY, this.pixelSelection.endY);
+        const maxY = Math.max(this.pixelSelection.startY, this.pixelSelection.endY);
+        
+        const centerX = (minX + maxX) / 2;
+        const centerY = (minY + maxY) / 2;
+        const width = maxX - minX;
+        const height = maxY - minY;
+        
+        const newWidth = Math.max(1, Math.round(width * scaleFactor));
+        const newHeight = Math.max(1, Math.round(height * scaleFactor));
+        
+        this.pixelSelection.startX = Math.round(centerX - newWidth / 2);
+        this.pixelSelection.endX = Math.round(centerX + newWidth / 2);
+        this.pixelSelection.startY = Math.round(centerY - newHeight / 2);
+        this.pixelSelection.endY = Math.round(centerY + newHeight / 2);
+        
+        // Clamp to canvas bounds
+        this.pixelSelection.startX = Math.max(0, Math.min(this.canvasWidth - 1, this.pixelSelection.startX));
+        this.pixelSelection.endX = Math.max(0, Math.min(this.canvasWidth - 1, this.pixelSelection.endX));
+        this.pixelSelection.startY = Math.max(0, Math.min(this.canvasHeight - 1, this.pixelSelection.startY));
+        this.pixelSelection.endY = Math.max(0, Math.min(this.canvasHeight - 1, this.pixelSelection.endY));
+        
+        this.resizePixelSelectionData(newWidth, newHeight);
+        this.drawPixelSelectionOverlay();
+    }
+    
+    resizeSketchSelectionWithPinch(scaleFactor, center) {
+        const minX = Math.min(this.sketchSelection.startX, this.sketchSelection.endX);
+        const maxX = Math.max(this.sketchSelection.startX, this.sketchSelection.endX);
+        const minY = Math.min(this.sketchSelection.startY, this.sketchSelection.endY);
+        const maxY = Math.max(this.sketchSelection.startY, this.sketchSelection.endY);
+        
+        const centerX = (minX + maxX) / 2;
+        const centerY = (minY + maxY) / 2;
+        const width = maxX - minX;
+        const height = maxY - minY;
+        
+        const newWidth = Math.max(1, width * scaleFactor);
+        const newHeight = Math.max(1, height * scaleFactor);
+        
+        this.sketchSelection.startX = centerX - newWidth / 2;
+        this.sketchSelection.endX = centerX + newWidth / 2;
+        this.sketchSelection.startY = centerY - newHeight / 2;
+        this.sketchSelection.endY = centerY + newHeight / 2;
+        
+        this.resizeSketchSelectionData(newWidth, newHeight);
+        this.drawSketchSelectionOverlay();
+    }
+    
+    resizePixelSelectionData(newWidth, newHeight) {
+        if (!this.pixelSelectionData) return;
+        
+        const oldHeight = this.pixelSelectionData.length;
+        const oldWidth = oldHeight > 0 ? this.pixelSelectionData[0].length : 0;
+        
+        if (oldWidth === 0 || oldHeight === 0) return;
+        
+        // Create new resized data using nearest-neighbor scaling
+        const resizedData = [];
+        for (let y = 0; y < newHeight; y++) {
+            resizedData[y] = [];
+            for (let x = 0; x < newWidth; x++) {
+                const srcX = Math.floor((x / newWidth) * oldWidth);
+                const srcY = Math.floor((y / newHeight) * oldHeight);
+                resizedData[y][x] = this.pixelSelectionData[srcY][srcX];
+            }
+        }
+        
+        this.pixelSelectionData = resizedData;
+    }
+    
+    resizeSketchSelectionData(newWidth, newHeight) {
+        if (!this.sketchSelectionData) return;
+        
+        // Create temporary canvas with original data
+        const tempCanvas = document.createElement('canvas');
+        tempCanvas.width = this.sketchSelectionData.width;
+        tempCanvas.height = this.sketchSelectionData.height;
+        const tempCtx = tempCanvas.getContext('2d');
+        tempCtx.putImageData(this.sketchSelectionData, 0, 0);
+        
+        // Create new canvas with new size
+        const resizedCanvas = document.createElement('canvas');
+        resizedCanvas.width = Math.round(newWidth);
+        resizedCanvas.height = Math.round(newHeight);
+        const resizedCtx = resizedCanvas.getContext('2d');
+        
+        // Draw scaled image
+        resizedCtx.drawImage(tempCanvas, 0, 0, tempCanvas.width, tempCanvas.height,
+                                        0, 0, resizedCanvas.width, resizedCanvas.height);
+        
+        // Get new image data
+        this.sketchSelectionData = resizedCtx.getImageData(0, 0, resizedCanvas.width, resizedCanvas.height);
+        this.sketchSelection.width = resizedCanvas.width;
+        this.sketchSelection.height = resizedCanvas.height;
+    }
     
     // Also add this improved startDrawing method
     startDrawing(e) {
@@ -3335,6 +3535,33 @@ class JerryEditor {
         if (key === ']') {
             e.preventDefault();
             this.rotate(90);
+        }
+        
+        // Selection resize shortcuts
+        if (key === '+' || key === '=') {
+            if (this.mode === 'pixel' && this.pixelSelection && this.pixelSelection.finalized) {
+                e.preventDefault();
+                this.resizePixelSelectionWithWheel({ deltaY: -100 });
+                return;
+            }
+            if (this.mode === 'sketch' && this.sketchSelection && this.sketchSelection.finalized) {
+                e.preventDefault();
+                this.resizeSketchSelectionWithWheel({ deltaY: -100 });
+                return;
+            }
+        }
+        
+        if (key === '-' && !ctrl) {
+            if (this.mode === 'pixel' && this.pixelSelection && this.pixelSelection.finalized) {
+                e.preventDefault();
+                this.resizePixelSelectionWithWheel({ deltaY: 100 });
+                return;
+            }
+            if (this.mode === 'sketch' && this.sketchSelection && this.sketchSelection.finalized) {
+                e.preventDefault();
+                this.resizeSketchSelectionWithWheel({ deltaY: 100 });
+                return;
+            }
         }
         
         // Zoom shortcuts
