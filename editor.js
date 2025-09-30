@@ -2260,6 +2260,12 @@ class JerryEditor {
             canvas.style.transform = `scale(${this.zoom})`;
         }
         
+        // Also apply zoom to the grid overlay in pixel mode
+        if (this.mode === 'pixel' && this.canvasGrid) {
+            this.canvasGrid.style.transformOrigin = 'center center';
+            this.canvasGrid.style.transform = `translate(-50%, -50%) scale(${this.zoom})`;
+        }
+        
         this.zoomIndicator.textContent = `${Math.round(this.zoom * 100)}%`;
     }
 
