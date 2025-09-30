@@ -457,17 +457,10 @@ class JerryEditor {
             clientY = e.clientY;
         }
     
-        // Calculate position relative to canvas top-left
-        let x = clientX - rect.left;
-        let y = clientY - rect.top;
-    
-        // For sketch mode, scale from display size to internal canvas resolution
-        if (this.mode === 'sketch') {
-            const scaleX = canvas.width / rect.width;
-            const scaleY = canvas.height / rect.height;
-            x *= scaleX;
-            y *= scaleY;
-        }
+        // Calculate position relative to canvas
+        // rect.left and rect.top already account for ALL transforms including centering
+        const x = (clientX - rect.left) * (canvas.width / rect.width);
+        const y = (clientY - rect.top) * (canvas.height / rect.height);
     
         return { x, y };
     }
