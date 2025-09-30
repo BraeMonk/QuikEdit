@@ -1247,13 +1247,20 @@ class JerryEditor {
         const minY = Math.min(this.sketchSelection.startY, this.sketchSelection.endY);
         const maxY = Math.max(this.sketchSelection.startY, this.sketchSelection.endY);
         
-        // Clear and resize overlay to match sketch canvas
+        // Make sure overlay matches sketch canvas size
         this.selectionOverlay.width = this.sketchCanvas.width;
         this.selectionOverlay.height = this.sketchCanvas.height;
         
-        // Apply same transform as sketch canvas
-        this.selectionOverlay.style.transform = this.sketchCanvas.style.transform;
-        this.selectionOverlay.style.transformOrigin = this.sketchCanvas.style.transformOrigin;
+        // Position overlay exactly over sketch canvas
+        const sketchRect = this.sketchCanvas.getBoundingClientRect();
+        const wrapperRect = this.canvasWrapper.getBoundingClientRect();
+        
+        this.selectionOverlay.style.position = 'absolute';
+        this.selectionOverlay.style.left = (sketchRect.left - wrapperRect.left) + 'px';
+        this.selectionOverlay.style.top = (sketchRect.top - wrapperRect.top) + 'px';
+        this.selectionOverlay.style.width = sketchRect.width + 'px';
+        this.selectionOverlay.style.height = sketchRect.height + 'px';
+        this.selectionOverlay.style.pointerEvents = 'none';
         
         this.selectionCtx.save();
         this.selectionCtx.strokeStyle = '#ffffff';
