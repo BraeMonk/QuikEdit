@@ -730,23 +730,17 @@ class JerryEditor {
             clientY = e.clientY;
         }
     
-        // Get the canvas bounding rect (accounts for all transforms including zoom and position)
+        // Get the canvas bounding rect (includes zoom transform)
         const rect = canvas.getBoundingClientRect();
         
-        // Calculate position relative to the canvas's actual displayed position
+        // Calculate position relative to the displayed canvas
         let x = clientX - rect.left;
         let y = clientY - rect.top;
         
-        // For sketch mode, we need to scale from displayed size to internal canvas size
-        if (this.mode === 'sketch') {
-            // The canvas may be zoomed, so we need to account for that
-            x = (x / rect.width) * canvas.width;
-            y = (y / rect.height) * canvas.height;
-        } else {
-            // For pixel mode, convert from displayed pixels to grid coordinates
-            x = (x / rect.width) * canvas.width;
-            y = (y / rect.height) * canvas.height;
-        }
+        // Scale from displayed size back to internal canvas coordinates
+        // The rect already accounts for zoom, so we just need to scale to internal size
+        x = (x / rect.width) * canvas.width;
+        y = (y / rect.height) * canvas.height;
     
         return { x, y };
     }
@@ -1247,28 +1241,25 @@ class JerryEditor {
         const minY = Math.min(this.sketchSelection.startY, this.sketchSelection.endY);
         const maxY = Math.max(this.sketchSelection.startY, this.sketchSelection.endY);
         
-        // Make sure overlay matches sketch canvas size
-        this.selectionOverlay.width = this.sketchCanvas.width;
-        this.selectionOverlay.height = this.sketchCanvas.height;
+        // Ensure overlay is same size as sketch canvas
+        if (this.selectionOverlay.width !== this.sketchCanvas.width) {
+            this.selectionOverlay.width = this.sketchCanvas.width;
+        }
+        if (this.selectionOverlay.height !== this.sketchCanvas.height) {
+            this.selectionOverlay.height = this.sketchCanvas.height;
+        }
         
-        // Position overlay exactly over sketch canvas
-        const sketchRect = this.sketchCanvas.getBoundingClientRect();
-        const wrapperRect = this.canvasWrapper.getBoundingClientRect();
-        
-        this.selectionOverlay.style.position = 'absolute';
-        this.selectionOverlay.style.left = (sketchRect.left - wrapperRect.left) + 'px';
-        this.selectionOverlay.style.top = (sketchRect.top - wrapperRect.top) + 'px';
-        this.selectionOverlay.style.width = sketchRect.width + 'px';
-        this.selectionOverlay.style.height = sketchRect.height + 'px';
-        this.selectionOverlay.style.pointerEvents = 'none';
+        // Copy the transform from sketch canvas
+        this.selectionOverlay.style.transform = this.sketchCanvas.style.transform || '';
+        this.selectionOverlay.style.transformOrigin = this.sketchCanvas.style.transformOrigin || 'center center';
         
         this.selectionCtx.save();
         this.selectionCtx.strokeStyle = '#ffffff';
         this.selectionCtx.setLineDash([5, 5]);
-        this.selectionCtx.lineWidth = 2;
+        this.selectionCtx.lineWidth = 2 / this.zoom; // Account for zoom
         this.selectionCtx.strokeRect(minX, minY, maxX - minX, maxY - minY);
         
-        const handleSize = 8;
+        const handleSize = 8 / this.zoom; // Account for zoom
         this.selectionCtx.fillStyle = '#ffffff';
         this.selectionCtx.fillRect(minX - handleSize/2, minY - handleSize/2, handleSize, handleSize);
         this.selectionCtx.fillRect(maxX - handleSize/2, minY - handleSize/2, handleSize, handleSize);
