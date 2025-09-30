@@ -2253,11 +2253,11 @@ class JerryEditor {
     setZoom(zoom) {
         this.zoom = Math.max(0.25, Math.min(8, zoom));
         
-        const canvasContainer = document.querySelector('.canvas-container');
-        if (canvasContainer) {
-            const autoScale = this.calculateAutoScale();
-            const finalScale = autoScale * this.zoom;
-            canvasContainer.style.transform = `scale(${finalScale})`;
+        // Apply zoom directly to the canvas being used
+        const canvas = this.mode === 'pixel' ? this.pixelCanvas : this.sketchCanvas;
+        if (canvas) {
+            canvas.style.transformOrigin = 'center center';
+            canvas.style.transform = `scale(${this.zoom})`;
         }
         
         this.zoomIndicator.textContent = `${Math.round(this.zoom * 100)}%`;
