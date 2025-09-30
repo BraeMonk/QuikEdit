@@ -445,8 +445,7 @@ class JerryEditor {
 
     getCanvasPos(e) {
         const canvas = this.mode === 'pixel' ? this.pixelCanvas : this.sketchCanvas;
-        const rect = canvas.getBoundingClientRect();
-    
+        
         // Get raw pointer coordinates (touch or mouse)
         let clientX, clientY;
         if (e.touches && e.touches[0]) {
@@ -457,10 +456,16 @@ class JerryEditor {
             clientY = e.clientY;
         }
     
-        // Calculate position relative to canvas
-        // rect.left and rect.top already account for ALL transforms including centering
-        const x = (clientX - rect.left) * (canvas.width / rect.width);
-        const y = (clientY - rect.top) * (canvas.height / rect.height);
+        // Get the canvas rect (this accounts for ALL transforms including zoom)
+        const rect = canvas.getBoundingClientRect();
+        
+        // Calculate position relative to the DISPLAYED canvas
+        let x = clientX - rect.left;
+        let y = clientY - rect.top;
+        
+        // Convert from displayed size to internal canvas size
+        x = (x / rect.width) * canvas.width;
+        y = (y / rect.height) * canvas.height;
     
         return { x, y };
     }
