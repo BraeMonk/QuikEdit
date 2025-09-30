@@ -445,7 +445,7 @@ class JerryEditor {
 
     // Add this method to improve getCanvasPos for better coordinate calculation
     getCanvasPos(e) {
-        const canvas = this.mode === 'pixel' ? this.pixelCanvas : this.sketchCanvas;
+        const canvas = this.sketchCanvas;
         const rect = canvas.getBoundingClientRect();
 
         let clientX, clientY;
@@ -457,14 +457,13 @@ class JerryEditor {
             clientY = e.clientY;
         }
 
+        // scale mouse/touch position from screen space → canvas space
         const scaleX = canvas.width / rect.width;
         const scaleY = canvas.height / rect.height;
 
-        const dpr = window.devicePixelRatio || 1;
-
         return {
-            x: (clientX - rect.left) * scaleX / dpr,
-            y: (clientY - rect.top) * scaleY / dpr
+            x: (clientX - rect.left) * scaleX,
+            y: (clientY - rect.top) * scaleY
         };
     }
     
