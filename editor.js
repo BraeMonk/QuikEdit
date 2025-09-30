@@ -456,14 +456,15 @@ class JerryEditor {
             clientX = e.clientX;
             clientY = e.clientY;
         }
-        
-        // Convert screen coords → canvas coords
+
         const scaleX = canvas.width / rect.width;
         const scaleY = canvas.height / rect.height;
 
+        const dpr = window.devicePixelRatio || 1;
+
         return {
-            x: (clientX - rect.left) * scaleX,
-            y: (clientY - rect.top) * scaleY
+            x: (clientX - rect.left) * scaleX / dpr,
+            y: (clientY - rect.top) * scaleY / dpr
         };
     }
     
