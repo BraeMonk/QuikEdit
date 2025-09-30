@@ -686,9 +686,10 @@ class JerryEditor {
     }
     
     getCanvasPos(e) {
-        const canvas = (this.mode === 'pixel' ? this.pixelCanvas : this.sketchCanvas);
+        const canvas = this.mode === 'pixel' ? this.pixelCanvas : this.sketchCanvas;
         const rect = canvas.getBoundingClientRect();
-
+    
+        // Get raw pointer coordinates (touch or mouse)
         let clientX, clientY;
         if (e.touches && e.touches[0]) {
             clientX = e.touches[0].clientX;
@@ -697,15 +698,40 @@ class JerryEditor {
             clientX = e.clientX;
             clientY = e.clientY;
         }
-
-        // Scale factors: canvas resolution vs CSS size
-        const scaleX = canvas.width / rect.width;
-        const scaleY = canvas.height / rect.height;
-
-        return {
-            x: (clientX - rect.left) * scaleX / this.zoom,
-            y: (clientY - rect.top) * scaleY / this.zoom
-        };
+    
+        // Calculate position relative to canvas
+        let x = clientX - rect.left;
+        let y = clientY - rect.top;
+    
+        // CRITICAL FIX: Account for canvas-container scale transform
+        const container = document.querySelector('.canvas-container');
+        if (container) {
+            const containerStyle = window.getComputedStyle(container);
+            const transform = containerStyle.transform;
+            
+            if (transform && transform !== 'none') {
+                const matrix = transform.match(/matrix.*\((.+)\)/);
+                if (matrix) {
+                    const values = matrix[1].split(', ').map(Number);
+                    const scaleX = values[0];
+                    const scaleY = values[3];
+                    
+                    // Adjust for scale transform
+                    x /= scaleX;
+                    y /= scaleY;
+                }
+            }
+        }
+    
+        // For sketch mode, account for canvas internal resolution vs display size
+        if (this.mode === 'sketch') {
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            x *= scaleX;
+            y *= scaleY;
+        }
+    
+        return { x, y };
     }
     
     getPixelPos(e) {
@@ -2456,7 +2482,7 @@ class JerryEditor {
     }
     
     switchSprite(index) {
-        // Save current sprite data
+        // CRITICAL FIX: Save current sprite data before switching
         this.sprites[this.currentSprite].data = JSON.parse(JSON.stringify(this.grid));
         
         // Switch to new sprite
@@ -2787,28 +2813,31 @@ class JerryEditor {
     
     exportJSON() {
         if (this.mode !== 'pixel') return; // only export pixel mode
-
+    
+        // CRITICAL FIX: Save current grid to current sprite before export
+        this.sprites[this.currentSprite].data = JSON.parse(JSON.stringify(this.grid));
+    
         const project = this.getProjectData();
-
+    
         // Convert project to Jerry-compatible indices
         const jerryProject = this.convertToJerryFormat(project);
-
+    
         // Prepare export: always use first sprite if exists, fallback to main grid
         let exportData = {};
-
+    
         if (jerryProject.sprites && jerryProject.sprites.length > 0) {
             let first = jerryProject.sprites[0];
-
+    
             // If sprite is just an array (raw grid), wrap it
             if (!first.data && Array.isArray(first)) {
                 first = { name: "Unnamed Sprite", data: first };
             }
-
+    
             // Ensure data exists
             if (!first.data || !Array.isArray(first.data)) {
                 first.data = [];
             }
-
+    
             exportData = { sprite: first };
        } else if (jerryProject.grid && Array.isArray(jerryProject.grid)) {
             // Fallback: export the main grid as an unnamed sprite
@@ -2819,9 +2848,9 @@ class JerryEditor {
                 }
             };
         }
-
+    
         const dataStr = JSON.stringify(exportData, null, 2);
-
+    
         // Optional: display in output textarea
         const output = document.getElementById('output');
         if (output) {
@@ -2829,7 +2858,7 @@ class JerryEditor {
             output.value = dataStr;
             output.select();
         }
-
+    
         // Trigger file download
         this.downloadFile('jerry-sprite.json', dataStr);
     }
