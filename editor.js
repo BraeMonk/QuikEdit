@@ -649,7 +649,8 @@ class JerryEditor {
         grid.style.left = '50%';
         grid.style.transformOrigin = 'center center';
         // Apply current zoom to the transform
-        grid.style.transform = `translate(-50%, -50%) scale(${this.zoom})`;
+        this.canvasGrid.style.transform = `scale(${this.zoom})`;
+
         grid.style.pointerEvents = 'none';
         grid.style.zIndex = '10';
     
