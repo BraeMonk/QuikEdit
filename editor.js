@@ -449,9 +449,7 @@ class JerryEditor {
     
         // Get raw pointer coordinates (touch or mouse)
         let clientX, clientY;
-        const isTouch = e.touches && e.touches[0];
-        
-        if (isTouch) {
+        if (e.touches && e.touches[0]) {
             clientX = e.touches[0].clientX;
             clientY = e.touches[0].clientY;
         } else {
@@ -459,33 +457,11 @@ class JerryEditor {
             clientY = e.clientY;
         }
     
-        // Calculate position relative to canvas
+        // Calculate position relative to canvas top-left
         let x = clientX - rect.left;
         let y = clientY - rect.top;
     
-        // Account for canvas-container scale transform (ONLY for touch on sketch mode)
-        if (isTouch && this.mode === 'sketch') {
-            const container = document.querySelector('.canvas-container');
-            if (container) {
-                const containerStyle = window.getComputedStyle(container);
-                const transform = containerStyle.transform;
-                
-                if (transform && transform !== 'none') {
-                    const matrix = transform.match(/matrix.*\((.+)\)/);
-                    if (matrix) {
-                        const values = matrix[1].split(', ').map(Number);
-                        const scaleX = values[0];
-                        const scaleY = values[3];
-                        
-                        // Adjust for scale transform
-                        x /= scaleX;
-                        y /= scaleY;
-                    }
-                }
-            }
-        }
-    
-        // For sketch mode, account for canvas internal resolution vs display size
+        // For sketch mode, scale from display size to internal canvas resolution
         if (this.mode === 'sketch') {
             const scaleX = canvas.width / rect.width;
             const scaleY = canvas.height / rect.height;
