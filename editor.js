@@ -2752,24 +2752,37 @@ class JerryEditor {
         this.updateCanvasInfo();
     }
     
-    // Export/Import
     exportJSON() {
         const project = this.getProjectData();
-    
-        // Convert colors to palette indices for Jerry format
+
+        // Convert project to Jerry-compatible indices
         const jerryProject = this.convertToJerryFormat(project);
-    
-        const dataStr = JSON.stringify(jerryProject, null, 2);
+
+        // Always export only the first sprite
+        let exportData = {};
+
+        if (jerryProject.sprites && jerryProject.sprites.length > 0) {
+            exportData = { sprite: jerryProject.sprites[0] };
+        } else if (jerryProject.grid) {
+            // Fallback: export the grid as an unnamed sprite
+            exportData = {
+                sprite: {
+                    name: "Unnamed Sprite",
+                    data: jerryProject.grid
+                }
+            };
+        }
+
+        const dataStr = JSON.stringify(exportData, null, 2);
+
         const output = document.getElementById('output');
-    
         if (output) {
             output.style.display = 'block';
             output.value = dataStr;
             output.select();
         }
-    
-        // Also trigger download
-        this.downloadFile('jerry-project.json', dataStr);
+
+        this.downloadFile('jerry-sprite.json', dataStr);
     }
 
     convertToJerryFormat(project) {
@@ -2825,41 +2838,57 @@ class JerryEditor {
     
     exportPNG() {
         let canvas, filename;
-    
+
         if (this.mode === 'pixel') {
-            // Create a clean export canvas for pixel art
-            canvas = document.createElement('canvas');
-            canvas.width = this.canvasWidth;
-            canvas.height = this.canvasHeight;
-            const ctx = canvas.getContext('2d');
-        
-            // CRITICAL: Disable image smoothing for crisp pixel art
-            ctx.imageSmoothingEnabled = false;
-            ctx.mozImageSmoothingEnabled = false;
-            ctx.webkitImageSmoothingEnabled = false;
-            ctx.msImageSmoothingEnabled = false;
-        
-            // Draw each pixel directly
+            // Ask user for scale factor
+            let scale = parseInt(prompt("Enter export scale (e.g. 1, 4, 8, 16):", "16"), 10);
+
+            if (isNaN(scale) || scale < 1) {
+                scale = 1; // fallback to 1x if invalid input
+            }
+
+            // First, draw raw pixel canvas
+            const rawCanvas = document.createElement('canvas');
+            rawCanvas.width = this.canvasWidth;
+            rawCanvas.height = this.canvasHeight;
+            const rawCtx = rawCanvas.getContext('2d');
+            rawCtx.imageSmoothingEnabled = false;
+
             for (let y = 0; y < this.canvasHeight; y++) {
                 for (let x = 0; x < this.canvasWidth; x++) {
                     const color = this.grid[y][x];
-                
-                    if (color !== 'transparent') {
-                        ctx.fillStyle = color;
-                        ctx.fillRect(x, y, 1, 1);
+                    if (color && color !== 'transparent') {
+                        rawCtx.fillStyle = color;
+                        rawCtx.fillRect(x, y, 1, 1);
                     }
-                    // Transparent pixels are left as-is (alpha = 0)
                 }
             }
-        
-            filename = 'pixel-art.png';
+
+            // Upscaled export canvas
+            canvas = document.createElement('canvas');
+            canvas.width = this.canvasWidth * scale;
+            canvas.height = this.canvasHeight * scale;
+            const ctx = canvas.getContext('2d');
+            ctx.imageSmoothingEnabled = false;
+
+            // Calculate offsets to center the sprite 
+            const offsetX = (canvas.width - rawCanvas.width * scale) / 2;
+            const offsetY = (canvas.height - rawCanvas.height * scale) / 2;
+
+            ctx.drawImage(
+                rawCanvas,
+                0, 0, rawCanvas.width, rawCanvas.height,
+                offsetX, offsetY, rawCanvas.width * scale, rawCanvas.height * scale
+            );
+
+            filename = `pixel-art-${scale}x.png`;
         } else {
-            // Sketch mode uses the existing canvas
+            // Sketch mode just uses its canvas directly
             canvas = this.sketchCanvas;
             filename = 'sketch-art.png';
         }
-    
-        // Download the image as PNG
+
+        // Export as PNG with transparency
         canvas.toBlob((blob) => {
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
@@ -2869,7 +2898,7 @@ class JerryEditor {
             a.click();
             document.body.removeChild(a);
             URL.revokeObjectURL(url);
-        }, 'image/png'); // Explicit PNG format
+        }, 'image/png');
     }
     
     importFile(e) {
