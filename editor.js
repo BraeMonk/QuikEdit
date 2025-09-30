@@ -443,11 +443,11 @@ class JerryEditor {
         this.lastPos = pos;
     }
 
-    // Add this method to improve getCanvasPos for better coordinate calculation
     getCanvasPos(e) {
         const canvas = this.sketchCanvas;
         const rect = canvas.getBoundingClientRect();
 
+        // Get raw pointer coordinates (touch or mouse)
         let clientX, clientY;
         if (e.touches && e.touches[0]) {
             clientX = e.touches[0].clientX;
@@ -457,14 +457,23 @@ class JerryEditor {
             clientY = e.clientY;
         }
 
-        // scale mouse/touch position from screen space → canvas space
-        const scaleX = canvas.width / rect.width;
-        const scaleY = canvas.height / rect.height;
+        // Calculate position relative to the canvas top-left
+        let x = clientX - rect.left;
+        let y = clientY - rect.top;
 
-        return {
-            x: (clientX - rect.left) * scaleX,
-            y: (clientY - rect.top) * scaleY
-        };
+        // Account for CSS scaling (transform: scale)
+        const style = window.getComputedStyle(canvas);
+        const transform = style.transform;
+
+        if (transform && transform !== 'none') {
+            const matrix = transform.match(/matrix.*\((.+)\)/)[1].split(', ').map(Number);
+            const scaleX = matrix[0];
+            const scaleY = matrix[3];
+            x /= scaleX;
+            y /= scaleY;
+        }
+
+        return { x, y };
     }
     
     switchMode(mode) {
