@@ -1064,7 +1064,7 @@ class JerryEditor {
                     this.pixelSelectionData[y - minY][x - minX] = this.grid[y] ? this.grid[y][x] : 'transparent';
                 }
             }
-            this.pixelSelection.finalized = true;
+            this.pixelSelection.finalized = true;  // Make sure this line exists
         }
         this.selecting = false;
     }
@@ -1231,7 +1231,7 @@ class JerryEditor {
             layer.ctx.clearRect(minX, minY, width, height);
             this.redrawLayers();
             
-            this.sketchSelection.finalized = true;
+            this.sketchSelection.finalized = true;  // Make sure this line exists
             this.sketchSelection.width = width;
             this.sketchSelection.height = height;
         }
