@@ -447,18 +447,24 @@ class JerryEditor {
     getCanvasPos(e) {
         const canvas = this.mode === 'pixel' ? this.pixelCanvas : this.sketchCanvas;
         const rect = canvas.getBoundingClientRect();
+
+        let clientX, clientY;
+        if (e.touches && e.touches[0]) {
+            clientX = e.touches[0].clientX;
+            clientY = e.touches[0].clientY;
+        } else {
+            clientX = e.clientX;
+            clientY = e.clientY;
+        }
         
-        // Account for canvas wrapper padding and zoom
-        const canvasWrapper = document.querySelector('.canvas-wrapper');
-        const wrapperRect = canvasWrapper.getBoundingClientRect();
-        const wrapperStyle = window.getComputedStyle(canvasWrapper);
-        const padding = parseInt(wrapperStyle.padding) || 20;
-        
-        // Calculate position relative to actual canvas
-        const x = (e.clientX - rect.left) / this.zoom;
-        const y = (e.clientY - rect.top) / this.zoom;
-        
-        return { x, y };
+        // Convert screen coords → canvas coords
+        const scaleX = canvas.width / rect.width;
+        const scaleY = canvas.height / rect.height;
+
+        return {
+            x: (clientX - rect.left) * scaleX / this.zoom,
+            y: (clientY - rect.top) * scaleY / this.zoom
+        };
     }
     
     switchMode(mode) {
@@ -671,10 +677,25 @@ class JerryEditor {
     }
     
     getCanvasPos(e) {
-        const rect = (this.mode === 'pixel' ? this.pixelCanvas : this.sketchCanvas).getBoundingClientRect();
+        const canvas = (this.mode === 'pixel' ? this.pixelCanvas : this.sketchCanvas);
+        const rect = canvas.getBoundingClientRect();
+
+        let clientX, clientY;
+        if (e.touches && e.touches[0]) {
+            clientX = e.touches[0].clientX;
+            clientY = e.touches[0].clientY;
+        } else {
+            clientX = e.clientX;
+            clientY = e.clientY;
+        }
+
+        // Scale factors: canvas resolution vs CSS size
+        const scaleX = canvas.width / rect.width;
+        const scaleY = canvas.height / rect.height;
+
         return {
-            x: (e.clientX - rect.left) / this.zoom,
-            y: (e.clientY - rect.top) / this.zoom
+            x: (clientX - rect.left) * scaleX / this.zoom,
+            y: (clientY - rect.top) * scaleY / this.zoom
         };
     }
     
