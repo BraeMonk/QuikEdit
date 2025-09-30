@@ -444,35 +444,55 @@ class JerryEditor {
     }
 
     getCanvasPos(e) {
-        const canvas = this.sketchCanvas;
+        const canvas = this.mode === 'pixel' ? this.pixelCanvas : this.sketchCanvas;
         const rect = canvas.getBoundingClientRect();
-
+    
         // Get raw pointer coordinates (touch or mouse)
         let clientX, clientY;
-        if (e.touches && e.touches[0]) {
+        const isTouch = e.touches && e.touches[0];
+        
+        if (isTouch) {
             clientX = e.touches[0].clientX;
             clientY = e.touches[0].clientY;
         } else {
             clientX = e.clientX;
             clientY = e.clientY;
         }
-
-        // Calculate position relative to the canvas top-left
+    
+        // Calculate position relative to canvas
         let x = clientX - rect.left;
         let y = clientY - rect.top;
-
-        // Account for CSS scaling (transform: scale)
-        const style = window.getComputedStyle(canvas);
-        const transform = style.transform;
-
-        if (transform && transform !== 'none') {
-            const matrix = transform.match(/matrix.*\((.+)\)/)[1].split(', ').map(Number);
-            const scaleX = matrix[0];
-            const scaleY = matrix[3];
-            x /= scaleX;
-            y /= scaleY;
+    
+        // Account for canvas-container scale transform (ONLY for touch on sketch mode)
+        if (isTouch && this.mode === 'sketch') {
+            const container = document.querySelector('.canvas-container');
+            if (container) {
+                const containerStyle = window.getComputedStyle(container);
+                const transform = containerStyle.transform;
+                
+                if (transform && transform !== 'none') {
+                    const matrix = transform.match(/matrix.*\((.+)\)/);
+                    if (matrix) {
+                        const values = matrix[1].split(', ').map(Number);
+                        const scaleX = values[0];
+                        const scaleY = values[3];
+                        
+                        // Adjust for scale transform
+                        x /= scaleX;
+                        y /= scaleY;
+                    }
+                }
+            }
         }
-
+    
+        // For sketch mode, account for canvas internal resolution vs display size
+        if (this.mode === 'sketch') {
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            x *= scaleX;
+            y *= scaleY;
+        }
+    
         return { x, y };
     }
     
