@@ -462,8 +462,8 @@ class JerryEditor {
         const scaleY = canvas.height / rect.height;
 
         return {
-            x: (clientX - rect.left) * scaleX / this.zoom,
-            y: (clientY - rect.top) * scaleY / this.zoom
+            x: (clientX - rect.left) * scaleX,
+            y: (clientY - rect.top) * scaleY
         };
     }
     
