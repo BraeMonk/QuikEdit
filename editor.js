@@ -2666,17 +2666,20 @@ class JerryEditor {
             mode: this.mode,
             canvasWidth: this.canvasWidth,
             canvasHeight: this.canvasHeight,
-            sprites: this.sprites,
-            currentSprite: this.currentSprite,
-            grid: this.grid,
             primaryColor: this.primaryColor,
             secondaryColor: this.secondaryColor,
             symmetryMode: this.symmetryMode,
             showGrid: this.showGrid,
             version: '1.0'
         };
-        
-        if (this.mode === 'sketch') {
+
+        if (this.mode === 'pixel') {
+            // Pixel mode: export the current canvas grid and sprites
+            project.grid = this.grid;             // 2D array of current pixel colors
+            project.sprites = this.sprites;       // array of sprites (each with name & data)
+            project.currentSprite = this.currentSprite;
+        } else if (this.mode === 'sketch') {
+            // Sketch mode: leave logic as-is
             project.sketchCanvas = {
                 width: this.sketchCanvas.width,
                 height: this.sketchCanvas.height
@@ -2690,7 +2693,7 @@ class JerryEditor {
             }));
             project.currentLayer = this.currentLayer;
         }
-        
+
         return project;
     }
     
@@ -2775,32 +2778,34 @@ class JerryEditor {
     }
     
     exportJSON() {
+        if (this.mode !== 'pixel') return; // only export pixel mode
+
         const project = this.getProjectData();
 
         // Convert project to Jerry-compatible indices
         const jerryProject = this.convertToJerryFormat(project);
 
-        // Always export only the first sprite, normalize it
+        // Prepare export: always use first sprite if exists, fallback to main grid
         let exportData = {};
 
         if (jerryProject.sprites && jerryProject.sprites.length > 0) {
             let first = jerryProject.sprites[0];
 
-            // If the sprite is just an array (raw grid), wrap it
+            // If sprite is just an array (raw grid), wrap it
             if (!first.data && Array.isArray(first)) {
                 first = { name: "Unnamed Sprite", data: first };
             }
 
-            // Make sure data exists
+            // Ensure data exists
             if (!first.data || !Array.isArray(first.data)) {
                 first.data = [];
             }
 
             exportData = { sprite: first };
-        } else if (jerryProject.grid && Array.isArray(jerryProject.grid)) {
+       } else if (jerryProject.grid && Array.isArray(jerryProject.grid)) {
             // Fallback: export the main grid as an unnamed sprite
             exportData = {
-               sprite: {
+                sprite: {
                     name: "Unnamed Sprite",
                     data: jerryProject.grid
                 }
@@ -2809,6 +2814,7 @@ class JerryEditor {
 
         const dataStr = JSON.stringify(exportData, null, 2);
 
+        // Optional: display in output textarea
         const output = document.getElementById('output');
         if (output) {
             output.style.display = 'block';
@@ -2816,6 +2822,7 @@ class JerryEditor {
             output.select();
         }
 
+        // Trigger file download
         this.downloadFile('jerry-sprite.json', dataStr);
     }
 
