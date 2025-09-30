@@ -473,26 +473,27 @@ class JerryEditor {
         this.drawPixelSelectionOverlay();
     }
     
-    resizeSketchSelectionWithWheel(e) {
+    resizePixelSelectionWithWheel(e) {
+        e.preventDefault();
         const scaleFactor = e.deltaY > 0 ? 0.95 : 1.05;
         
-        const minX = Math.min(this.sketchSelection.startX, this.sketchSelection.endX);
-        const maxX = Math.max(this.sketchSelection.startX, this.sketchSelection.endX);
-        const minY = Math.min(this.sketchSelection.startY, this.sketchSelection.endY);
-        const maxY = Math.max(this.sketchSelection.startY, this.sketchSelection.endY);
+        const minX = Math.min(this.pixelSelection.startX, this.pixelSelection.endX);
+        const maxX = Math.max(this.pixelSelection.startX, this.pixelSelection.endX);
+        const minY = Math.min(this.pixelSelection.startY, this.pixelSelection.endY);
+        const maxY = Math.max(this.pixelSelection.startY, this.pixelSelection.endY);
         
         const centerX = (minX + maxX) / 2;
         const centerY = (minY + maxY) / 2;
-        const width = maxX - minX;
-        const height = maxY - minY;
+        const width = maxX - minX + 1;
+        const height = maxY - minY + 1;
         
-        const newWidth = Math.max(1, width * scaleFactor);
-        const newHeight = Math.max(1, height * scaleFactor);
+        const newWidth = Math.max(1, Math.round(width * scaleFactor));
+        const newHeight = Math.max(1, Math.round(height * scaleFactor));
         
-        this.sketchSelection.startX = centerX - newWidth / 2;
-        this.sketchSelection.endX = centerX + newWidth / 2;
-        this.sketchSelection.startY = centerY - newHeight / 2;
-        this.sketchSelection.endY = centerY + newHeight / 2;
+        this.pixelSelection.startX = Math.round(centerX - newWidth / 2);
+        this.pixelSelection.endX = Math.round(centerX + newWidth / 2) - 1;
+        this.pixelSelection.startY = Math.round(centerY - newHeight / 2);
+        this.pixelSelection.endY = Math.round(centerY + newHeight / 2) - 1;
         
         this.resizeSketchSelectionData(newWidth, newHeight);
         this.drawSketchSelectionOverlay();
@@ -623,13 +624,13 @@ class JerryEditor {
         }
 
         // ----- SKETCH SELECTION -----
-        if (this.currentTool === 'select' && this.mode === 'sketch') {
+        if (this.currentTool === 'selectSketch' && this.mode === 'sketch') {
             this.startSketchSelection(pos);
             return;
         }
         
         // ----- SKETCH MOVE -----
-        if (this.currentTool === 'move' && this.mode === 'sketch') {
+        if (this.currentTool === 'moveSketch' && this.mode === 'sketch') {
             this.startSketchMove(pos);
             return;
         }
@@ -686,17 +687,17 @@ class JerryEditor {
         }
 
         // ----- SKETCH SELECTION -----
-        if (this.currentTool === 'select' && this.mode === 'sketch') {
+        if (this.currentTool === 'selectSketch' && this.mode === 'sketch') {
             this.updateSketchSelection(pos);
             return;
         }
         
         // ----- SKETCH MOVE -----
-        if (this.currentTool === 'move' && this.mode === 'sketch') {
+        if (this.currentTool === 'moveSketch' && this.mode === 'sketch') {
             this.updateSketchMove(pos);
             return;
         }
-
+        
         // ----- SKETCH SHAPES -----
         if (this.mode === 'sketch' && ['lineSketch','rectSketch','circleSketch'].includes(this.currentTool) && this.shapeStartPos) {
             this.clearShapePreview();
@@ -984,12 +985,12 @@ class JerryEditor {
         }
 
         // ----- SKETCH SELECTION -----
-        if (this.currentTool === 'select' && this.mode === 'sketch') {
+        if (this.currentTool === 'selectSketch' && this.mode === 'sketch') {
             this.finalizeSketchSelection();
         }
         
         // ----- SKETCH MOVE -----
-        if (this.currentTool === 'move' && this.mode === 'sketch') {
+        if (this.currentTool === 'moveSketch' && this.mode === 'sketch') {
             this.finalizeSketchMove();
         }
         
@@ -2622,17 +2623,37 @@ class JerryEditor {
     
     zoomAtPoint(clientX, clientY, zoomFactor) {
         const canvas = this.mode === 'pixel' ? this.pixelCanvas : this.sketchCanvas;
+        const wrapper = this.canvasWrapper;
         
-        const newZoom = Math.max(0.25, Math.min(8, this.zoom * zoomFactor));
+        // Get current transform values
+        const currentZoom = this.zoom;
+        const newZoom = Math.max(0.25, Math.min(8, currentZoom * zoomFactor));
         
+        if (newZoom === currentZoom) return; // No change needed
+        
+        // Get canvas position before zoom
+        const rect = canvas.getBoundingClientRect();
+        const wrapperRect = wrapper.getBoundingClientRect();
+        
+        // Calculate mouse position relative to wrapper
+        const mouseX = clientX - wrapperRect.left;
+        const mouseY = clientY - wrapperRect.top;
+        
+        // Calculate mouse position relative to canvas (accounting for current zoom)
+        const canvasX = (mouseX - (wrapperRect.width / 2) + (rect.left - wrapperRect.left)) / currentZoom;
+        const canvasY = (mouseY - (wrapperRect.height / 2) + (rect.top - wrapperRect.top)) / currentZoom;
+        
+        // Apply new zoom
         this.zoom = newZoom;
         canvas.style.transformOrigin = 'center center';
         canvas.style.transform = `scale(${this.zoom})`;
         
+        // Update grid for pixel mode
         if (this.mode === 'pixel' && this.canvasGrid) {
             this.updateGrid();
         }
         
+        // Update zoom indicator
         this.zoomIndicator.textContent = `${Math.round(this.zoom * 100)}%`;
     }
     
@@ -3483,8 +3504,8 @@ class JerryEditor {
             'e': 'eraser',
             'i': 'eyedropper',
             'g': this.mode === 'pixel' ? 'fill' : null,
-            'm': this.mode === 'pixel' ? 'select' : 'marker',
-            'v': 'move',
+            'm': this.mode === 'pixel' ? 'select' : 'selectSketch',
+            'v': this.mode === 'pixel' ? 'move' : 'moveSketch',
             'l': this.mode === 'pixel' ? 'line' : 'lineSketch',
             'r': this.mode === 'pixel' ? 'rect' : 'rectSketch',
             'o': this.mode === 'pixel' ? 'circle' : 'circleSketch',
