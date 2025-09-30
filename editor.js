@@ -2779,15 +2779,27 @@ class JerryEditor {
         // Convert project to Jerry-compatible indices
         const jerryProject = this.convertToJerryFormat(project);
 
-        // Always export only the first sprite
+        // Always export only the first sprite, normalize it
         let exportData = {};
 
         if (jerryProject.sprites && jerryProject.sprites.length > 0) {
-            exportData = { sprite: jerryProject.sprites[0] };
-        } else if (jerryProject.grid) {
-            // Fallback: export the grid as an unnamed sprite
+            let first = jerryProject.sprites[0];
+
+            // If the sprite is just an array (raw grid), wrap it
+            if (!first.data && Array.isArray(first)) {
+                first = { name: "Unnamed Sprite", data: first };
+            }
+
+            // Make sure data exists
+            if (!first.data || !Array.isArray(first.data)) {
+                first.data = [];
+            }
+
+            exportData = { sprite: first };
+        } else if (jerryProject.grid && Array.isArray(jerryProject.grid)) {
+            // Fallback: export the main grid as an unnamed sprite
             exportData = {
-                sprite: {
+               sprite: {
                     name: "Unnamed Sprite",
                     data: jerryProject.grid
                 }
@@ -2808,52 +2820,52 @@ class JerryEditor {
 
     convertToJerryFormat(project) {
         const jerryProject = JSON.parse(JSON.stringify(project)); // Deep clone
-    
-        // Get current palette colors (excluding 'transparent' at index 0)
+
         const currentPaletteName = this.paletteSelector?.value || 'default';
         const currentPalette = this.palettes[currentPaletteName] || this.palettes.default;
-    
-        // Create color to index mapping
-        // Index 0 = transparent, indices 1-11 = palette colors
+
+        // Color → index mapping
         const colorToIndex = { 'transparent': 0 };
         currentPalette.forEach((color, idx) => {
-            if (color !== 'transparent') {
-                colorToIndex[color.toLowerCase()] = idx + 1;
-            }
+            if (color !== 'transparent') colorToIndex[color.toLowerCase()] = idx + 1;
         });
-    
-        // Convert grid to Jerry format (array of arrays with numbers 0-11)
+
+        // Convert grid
         if (jerryProject.grid && Array.isArray(jerryProject.grid)) {
-            jerryProject.grid = jerryProject.grid.map(row => 
+            jerryProject.grid = jerryProject.grid.map(row =>
                 row.map(cell => {
                     if (!cell || cell === 'transparent') return 0;
-                
                     const normalized = cell.toLowerCase();
-                    return colorToIndex[normalized] !== undefined ? colorToIndex[normalized] : 0;
+                    return colorToIndex[normalized] ?? 0;
                 })
             );
         }
-    
-        // Also convert sprites if they exist
+
+        // Convert sprites
         if (jerryProject.sprites && Array.isArray(jerryProject.sprites)) {
             jerryProject.sprites = jerryProject.sprites.map(sprite => {
-                if (sprite.data && Array.isArray(sprite.data)) {
-                    return {
-                        ...sprite,
-                        data: sprite.data.map(row => 
-                            row.map(cell => {
-                                if (!cell || cell === 'transparent') return 0;
-                            
-                                const normalized = cell.toLowerCase();
-                                return colorToIndex[normalized] !== undefined ? colorToIndex[normalized] : 0;
-                            })
-                        )
-                    };
+                // If sprite is just an array, wrap it
+                if (!sprite.data && Array.isArray(sprite)) {
+                    sprite = { name: "Unnamed Sprite", data: sprite };
                 }
+
+                // Make sure data exists
+                if (!sprite.data || !Array.isArray(sprite.data)) {
+                    sprite.data = [];
+                } else {
+                    sprite.data = sprite.data.map(row =>
+                        row.map(cell => {
+                            if (!cell || cell === 'transparent') return 0;
+                            const normalized = cell.toLowerCase();
+                            return colorToIndex[normalized] ?? 0; 
+                        })
+                    );
+                }
+
                 return sprite;
             });
         }
-    
+
         return jerryProject;
     }
     
