@@ -639,14 +639,15 @@ class JerryEditor {
         const canvasWidthPx = this.canvasWidth * this.pixelSize;
         const canvasHeightPx = this.canvasHeight * this.pixelSize;
     
-        // Set size to match canvas exactly
+        // Match canvas dimensions exactly
         grid.style.width = `${canvasWidthPx}px`;
         grid.style.height = `${canvasHeightPx}px`;
     
-        // Position grid to overlay canvas perfectly
+        // Center and scale grid to match canvas
         grid.style.position = 'absolute';
         grid.style.top = '50%';
         grid.style.left = '50%';
+        grid.style.transform = `translate(-50%, -50%) scale(${this.zoom})`;
         grid.style.transformOrigin = 'center center';
         grid.style.pointerEvents = 'none';
         grid.style.zIndex = '10';
@@ -2209,10 +2210,9 @@ class JerryEditor {
             canvas.style.transform = `scale(${this.zoom})`;
         }
         
-        // Also apply zoom to the grid overlay in pixel mode
+        // Update grid to match canvas zoom exactly
         if (this.mode === 'pixel' && this.canvasGrid) {
-            this.canvasGrid.style.transformOrigin = 'center center';
-            this.canvasGrid.style.transform = `scale(${this.zoom})`;
+            this.canvasGrid.style.transform = `translate(-50%, -50%) scale(${this.zoom})`;
         }
         
         this.zoomIndicator.textContent = `${Math.round(this.zoom * 100)}%`;
