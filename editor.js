@@ -730,16 +730,23 @@ class JerryEditor {
             clientY = e.clientY;
         }
     
-        // Get the canvas rect (this accounts for ALL transforms including zoom)
+        // Get the canvas bounding rect (accounts for all transforms including zoom and position)
         const rect = canvas.getBoundingClientRect();
         
-        // Calculate position relative to the DISPLAYED canvas
+        // Calculate position relative to the canvas's actual displayed position
         let x = clientX - rect.left;
         let y = clientY - rect.top;
         
-        // Convert from displayed size to internal canvas size
-        x = (x / rect.width) * canvas.width;
-        y = (y / rect.height) * canvas.height;
+        // For sketch mode, we need to scale from displayed size to internal canvas size
+        if (this.mode === 'sketch') {
+            // The canvas may be zoomed, so we need to account for that
+            x = (x / rect.width) * canvas.width;
+            y = (y / rect.height) * canvas.height;
+        } else {
+            // For pixel mode, convert from displayed pixels to grid coordinates
+            x = (x / rect.width) * canvas.width;
+            y = (y / rect.height) * canvas.height;
+        }
     
         return { x, y };
     }
