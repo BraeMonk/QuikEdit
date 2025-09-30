@@ -634,17 +634,22 @@ class JerryEditor {
         
     updateGrid() {
         if (this.mode !== 'pixel') return;
-    
+
         const grid = this.canvasGrid;
-        const actualPixelSize = this._actualPixelSize || this.pixelSize;
-        const canvasWidthPx = this.canvasWidth * actualPixelSize;
-        const canvasHeightPx = this.canvasHeight * actualPixelSize;
+        const pixelCanvas = this.pixelCanvas;
     
-        // Match canvas dimensions exactly
-        grid.style.width = `${canvasWidthPx}px`;
-        grid.style.height = `${canvasHeightPx}px`;
+        // Get the actual rendered size of the pixel canvas
+        const pixelCanvasWidth = parseFloat(pixelCanvas.style.width) || (this.canvasWidth * this.pixelSize);
+        const pixelCanvasHeight = parseFloat(pixelCanvas.style.height) || (this.canvasHeight * this.pixelSize);
     
-        // Center and position exactly like the canvas
+        // Calculate actual pixel size from the canvas
+        const actualPixelSize = pixelCanvasWidth / this.canvasWidth;
+    
+        // Match pixel canvas dimensions exactly (before zoom)
+        grid.style.width = `${pixelCanvasWidth}px`;
+        grid.style.height = `${pixelCanvasHeight}px`;
+    
+        // Position grid to overlay pixel canvas exactly
         grid.style.position = 'absolute';
         grid.style.top = '50%';
         grid.style.left = '50%';
@@ -652,10 +657,10 @@ class JerryEditor {
         grid.style.transformOrigin = 'center center';
         grid.style.pointerEvents = 'none';
         grid.style.zIndex = '10';
-    
+
         // Grid lines using CSS background
         const lineColor = 'rgba(255, 255, 255, 0.2)';
-        
+    
         grid.style.backgroundImage = `
             repeating-linear-gradient(
                 to right,
@@ -674,7 +679,7 @@ class JerryEditor {
         `;
         grid.style.backgroundSize = `${actualPixelSize}px ${actualPixelSize}px`;
         grid.style.backgroundPosition = '0 0';
-        
+    
         // Show/hide based on toggle
         grid.style.display = this.showGrid ? 'block' : 'none';
     }
