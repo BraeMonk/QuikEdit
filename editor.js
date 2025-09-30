@@ -1307,10 +1307,12 @@ class JerryEditor {
     drawMovedSketchSelection() {
         if (!this.sketchSelection || !this.sketchSelectionData) return;
         
-        this.redrawLayers();
-        
+        // Don't redraw layers - just draw the selection on the overlay
         const minX = Math.min(this.sketchSelection.startX, this.sketchSelection.endX);
         const minY = Math.min(this.sketchSelection.startY, this.sketchSelection.endY);
+        
+        // Clear the overlay and draw the moving selection there
+        this.clearSketchSelection();
         
         const tempCanvas = document.createElement('canvas');
         tempCanvas.width = this.sketchSelectionData.width;
@@ -1318,9 +1320,14 @@ class JerryEditor {
         const tempCtx = tempCanvas.getContext('2d');
         tempCtx.putImageData(this.sketchSelectionData, 0, 0);
         
-        const layer = this.layers[this.currentLayer];
-        layer.ctx.drawImage(tempCanvas, minX, minY);
-        this.redrawLayers();
+        // Draw on the overlay instead of the layer
+        this.selectionCtx.save();
+        this.selectionCtx.globalAlpha = 0.7; // Semi-transparent preview
+        this.selectionCtx.drawImage(tempCanvas, minX, minY);
+        this.selectionCtx.restore();
+        
+        // Draw selection box
+        this.drawSketchSelectionOverlay();
     }
     
     finalizeSketchMove() {
@@ -1336,8 +1343,12 @@ class JerryEditor {
         const tempCtx = tempCanvas.getContext('2d');
         tempCtx.putImageData(this.sketchSelectionData, 0, 0);
         
+        // Now commit to the layer
         layer.ctx.drawImage(tempCanvas, minX, minY);
         this.redrawLayers();
+        
+        // Clear the overlay
+        this.clearSketchSelection();
         
         this.movingSketchSelection = false;
         this.sketchMoveStart = null;
@@ -1345,6 +1356,7 @@ class JerryEditor {
         
         this.saveState();
     }
+    
     handlePixelTool(pos, rightClick = false, filled = false, isDragEnd = false) {
         if (pos.x < 0 || pos.x >= this.canvasWidth || pos.y < 0 || pos.y >= this.canvasHeight) return;
     
