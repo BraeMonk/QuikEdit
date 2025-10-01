@@ -1284,24 +1284,21 @@ class JerryEditor {
         const minY = Math.min(this.sketchSelection.startY, this.sketchSelection.endY);
         const maxY = Math.max(this.sketchSelection.startY, this.sketchSelection.endY);
         
-        // Match overlay dimensions to sketch canvas
+        // Set overlay canvas to match sketch canvas dimensions
         this.selectionOverlay.width = this.sketchCanvas.width;
         this.selectionOverlay.height = this.sketchCanvas.height;
         
-        // Position overlay to match sketch canvas exactly
-        const sketchRect = this.sketchCanvas.getBoundingClientRect();
-        const wrapperRect = this.canvasWrapper.getBoundingClientRect();
-        
+        // Position overlay EXACTLY like sketch canvas (centered with same zoom)
         this.selectionOverlay.style.position = 'absolute';
-        this.selectionOverlay.style.left = (sketchRect.left - wrapperRect.left) + 'px';
-        this.selectionOverlay.style.top = (sketchRect.top - wrapperRect.top) + 'px';
-        this.selectionOverlay.style.width = sketchRect.width + 'px';
-        this.selectionOverlay.style.height = sketchRect.height + 'px';
+        this.selectionOverlay.style.left = '50%';
+        this.selectionOverlay.style.top = '50%';
+        this.selectionOverlay.style.transform = `translate(-50%, -50%) scale(${this.zoom})`;
+        this.selectionOverlay.style.transformOrigin = 'center center';
+        this.selectionOverlay.style.width = this.sketchCanvas.width + 'px';
+        this.selectionOverlay.style.height = this.sketchCanvas.height + 'px';
         this.selectionOverlay.style.pointerEvents = 'none';
-        this.selectionOverlay.style.transformOrigin = 'top left';
         
-        // Draw in canvas coordinates (not screen coordinates)
-        this.selectionCtx.setTransform(1, 0, 0, 1, 0, 0); // Reset transform
+        // Draw selection box at the ACTUAL canvas coordinates where you clicked
         this.selectionCtx.strokeStyle = '#ffffff';
         this.selectionCtx.setLineDash([5, 5]);
         this.selectionCtx.lineWidth = 2;
