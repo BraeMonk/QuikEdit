@@ -1249,12 +1249,13 @@ class JerryEditor {
             const layer = this.layers[this.currentLayer];
             this.sketchSelectionData = layer.ctx.getImageData(minX, minY, width, height);
             
-            layer.ctx.clearRect(minX, minY, width, height);
-            this.redrawLayers();
+            // DON'T clear the original area yet - only clear when move starts
             
-            this.sketchSelection.finalized = true;  // Make sure this line exists
+            this.sketchSelection.finalized = true;
             this.sketchSelection.width = width;
             this.sketchSelection.height = height;
+            this.sketchSelection.originalMinX = minX;
+            this.sketchSelection.originalMinY = minY;
         }
         this.selecting = false;
     }
@@ -1315,6 +1316,13 @@ class JerryEditor {
             this.movingSketchSelection = true;
             this.sketchMoveStart = pos;
             this.originalSketchSelection = { ...this.sketchSelection };
+            
+            // NOW clear the original area since we're starting to move
+            const layer = this.layers[this.currentLayer];
+            const origMinX = this.sketchSelection.originalMinX || minX;
+            const origMinY = this.sketchSelection.originalMinY || minY;
+            layer.ctx.clearRect(origMinX, origMinY, this.sketchSelectionData.width, this.sketchSelectionData.height);
+            this.redrawLayers();
         }
     }
     
@@ -1336,27 +1344,32 @@ class JerryEditor {
     drawMovedSketchSelection() {
         if (!this.sketchSelection || !this.sketchSelectionData) return;
         
-        // Don't redraw layers - just draw the selection on the overlay
         const minX = Math.min(this.sketchSelection.startX, this.sketchSelection.endX);
         const minY = Math.min(this.sketchSelection.startY, this.sketchSelection.endY);
         
-        // Clear the overlay and draw the moving selection there
+        // Clear the overlay first
         this.clearSketchSelection();
         
+        // Create temporary canvas with selection data
         const tempCanvas = document.createElement('canvas');
         tempCanvas.width = this.sketchSelectionData.width;
         tempCanvas.height = this.sketchSelectionData.height;
         const tempCtx = tempCanvas.getContext('2d');
         tempCtx.putImageData(this.sketchSelectionData, 0, 0);
         
-        // Draw on the overlay instead of the layer
+        // Draw the moving selection on the overlay (fully opaque preview)
         this.selectionCtx.save();
-        this.selectionCtx.globalAlpha = 0.7; // Semi-transparent preview
+        this.selectionCtx.globalAlpha = 1.0;
         this.selectionCtx.drawImage(tempCanvas, minX, minY);
         this.selectionCtx.restore();
         
-        // Draw selection box
-        this.drawSketchSelectionOverlay();
+        // NOW draw selection box OVER the image (not calling drawSketchSelectionOverlay which clears)
+        this.selectionCtx.strokeStyle = '#ffffff';
+        this.selectionCtx.setLineDash([5, 5]);
+        this.selectionCtx.lineWidth = 2;
+        this.selectionCtx.strokeRect(minX, minY, 
+            Math.abs(this.sketchSelection.endX - this.sketchSelection.startX), 
+            Math.abs(this.sketchSelection.endY - this.sketchSelection.startY));
     }
     
     finalizeSketchMove() {
@@ -1372,7 +1385,7 @@ class JerryEditor {
         const tempCtx = tempCanvas.getContext('2d');
         tempCtx.putImageData(this.sketchSelectionData, 0, 0);
         
-        // Paste at the new location (the original was already cleared in finalizeSketchSelection)
+        // Paste at the new location
         layer.ctx.drawImage(tempCanvas, minX, minY);
         this.redrawLayers();
         
