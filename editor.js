@@ -720,7 +720,7 @@ class JerryEditor {
     getCanvasPos(e) {
         const canvas = this.mode === 'pixel' ? this.pixelCanvas : this.sketchCanvas;
         
-        // Get raw pointer coordinates (touch or mouse)
+        // Get raw pointer coordinates
         let clientX, clientY;
         if (e.touches && e.touches[0]) {
             clientX = e.touches[0].clientX;
@@ -730,26 +730,37 @@ class JerryEditor {
             clientY = e.clientY;
         }
     
-        // Get the canvas bounding rect (includes zoom transform)
+        // For sketch mode, account for centered canvas with zoom
+        if (this.mode === 'sketch') {
+            const wrapperRect = this.canvasWrapper.getBoundingClientRect();
+            
+            // Get click position relative to wrapper center
+            const offsetX = clientX - (wrapperRect.left + wrapperRect.width / 2);
+            const offsetY = clientY - (wrapperRect.top + wrapperRect.height / 2);
+            
+            // Reverse the zoom transform
+            const unzoomedX = offsetX / this.zoom;
+            const unzoomedY = offsetY / this.zoom;
+            
+            // Convert from centered coordinates to canvas coordinates
+            const x = unzoomedX + (canvas.width / 2);
+            const y = unzoomedY + (canvas.height / 2);
+            
+            return {
+                x: Math.max(0, Math.min(canvas.width, x)),
+                y: Math.max(0, Math.min(canvas.height, y))
+            };
+        }
+        
+        // Pixel mode (existing logic)
         const rect = canvas.getBoundingClientRect();
+        const x = (clientX - rect.left) * (canvas.width / rect.width);
+        const y = (clientY - rect.top) * (canvas.height / rect.height);
         
-        // Calculate position relative to the canvas top-left corner
-        let x = clientX - rect.left;
-        let y = clientY - rect.top;
-        
-        // Account for zoom: divide by zoom to get actual canvas coordinates
-        // The rect already includes zoom scaling, so we need to reverse it
-        const zoom = this.zoom || 1;
-        
-        // Scale from displayed size back to internal canvas coordinates
-        x = (x / rect.width) * canvas.width;
-        y = (y / rect.height) * canvas.height;
-        
-        // Clamp to canvas bounds
-        x = Math.max(0, Math.min(canvas.width, x));
-        y = Math.max(0, Math.min(canvas.height, y));
-    
-        return { x, y };
+        return {
+            x: Math.max(0, Math.min(canvas.width, x)),
+            y: Math.max(0, Math.min(canvas.height, y))
+        };
     }
     
     switchMode(mode) {
@@ -789,18 +800,22 @@ class JerryEditor {
             this.selectionOverlay.style.position = 'absolute';
             this.selectionOverlay.style.pointerEvents = 'none';
             
-            // Sync overlay position with sketch canvas
-            const syncOverlayPosition = () => {
+            // Force immediate sync
+            const syncOverlay = () => {
                 const sketchRect = this.sketchCanvas.getBoundingClientRect();
                 const wrapperRect = this.canvasWrapper.getBoundingClientRect();
                 
+                this.selectionOverlay.width = this.sketchCanvas.width;
+                this.selectionOverlay.height = this.sketchCanvas.height;
                 this.selectionOverlay.style.left = (sketchRect.left - wrapperRect.left) + 'px';
                 this.selectionOverlay.style.top = (sketchRect.top - wrapperRect.top) + 'px';
                 this.selectionOverlay.style.width = sketchRect.width + 'px';
                 this.selectionOverlay.style.height = sketchRect.height + 'px';
             };
             
-            syncOverlayPosition();
+            // Sync now and after layout settles
+            syncOverlay();
+            requestAnimationFrame(syncOverlay);
         } else {
             this.selectionOverlay.style.display = 'none';
         }
@@ -1269,11 +1284,11 @@ class JerryEditor {
         const minY = Math.min(this.sketchSelection.startY, this.sketchSelection.endY);
         const maxY = Math.max(this.sketchSelection.startY, this.sketchSelection.endY);
         
-        // Match canvas dimensions
+        // Match overlay dimensions to sketch canvas
         this.selectionOverlay.width = this.sketchCanvas.width;
         this.selectionOverlay.height = this.sketchCanvas.height;
         
-        // Position overlay exactly on top of sketch canvas
+        // Position overlay to match sketch canvas exactly
         const sketchRect = this.sketchCanvas.getBoundingClientRect();
         const wrapperRect = this.canvasWrapper.getBoundingClientRect();
         
@@ -1283,14 +1298,16 @@ class JerryEditor {
         this.selectionOverlay.style.width = sketchRect.width + 'px';
         this.selectionOverlay.style.height = sketchRect.height + 'px';
         this.selectionOverlay.style.pointerEvents = 'none';
+        this.selectionOverlay.style.transformOrigin = 'top left';
         
-        // Draw selection box at canvas coordinates
+        // Draw in canvas coordinates (not screen coordinates)
+        this.selectionCtx.setTransform(1, 0, 0, 1, 0, 0); // Reset transform
         this.selectionCtx.strokeStyle = '#ffffff';
         this.selectionCtx.setLineDash([5, 5]);
         this.selectionCtx.lineWidth = 2;
         this.selectionCtx.strokeRect(minX, minY, maxX - minX, maxY - minY);
         
-        // Draw handles
+        // Draw corner handles
         const handleSize = 8;
         this.selectionCtx.fillStyle = '#ffffff';
         this.selectionCtx.fillRect(minX - handleSize/2, minY - handleSize/2, handleSize, handleSize);
@@ -1665,11 +1682,11 @@ class JerryEditor {
     }
     
     showBrushPreview(pos) {
-        // Clear previous preview
         this.selectionCtx.clearRect(0, 0, this.selectionOverlay.width, this.selectionOverlay.height);
         
-        // Draw brush preview
+        // Draw brush preview in canvas coordinates
         this.selectionCtx.save();
+        this.selectionCtx.setTransform(1, 0, 0, 1, 0, 0);
         this.selectionCtx.strokeStyle = '#ffffff';
         this.selectionCtx.setLineDash([2, 2]);
         this.selectionCtx.lineWidth = 1;
