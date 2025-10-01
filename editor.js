@@ -1264,15 +1264,11 @@ class JerryEditor {
         const minY = Math.min(this.sketchSelection.startY, this.sketchSelection.endY);
         const maxY = Math.max(this.sketchSelection.startY, this.sketchSelection.endY);
         
-        // Ensure overlay matches sketch canvas exactly
-        if (this.selectionOverlay.width !== this.sketchCanvas.width) {
-            this.selectionOverlay.width = this.sketchCanvas.width;
-        }
-        if (this.selectionOverlay.height !== this.sketchCanvas.height) {
-            this.selectionOverlay.height = this.sketchCanvas.height;
-        }
+        // Match canvas dimensions
+        this.selectionOverlay.width = this.sketchCanvas.width;
+        this.selectionOverlay.height = this.sketchCanvas.height;
         
-        // Position overlay to match sketch canvas exactly
+        // Position overlay exactly on top of sketch canvas
         const sketchRect = this.sketchCanvas.getBoundingClientRect();
         const wrapperRect = this.canvasWrapper.getBoundingClientRect();
         
@@ -1281,27 +1277,21 @@ class JerryEditor {
         this.selectionOverlay.style.top = (sketchRect.top - wrapperRect.top) + 'px';
         this.selectionOverlay.style.width = sketchRect.width + 'px';
         this.selectionOverlay.style.height = sketchRect.height + 'px';
-        this.selectionOverlay.style.transform = 'none';
-        this.selectionOverlay.style.transformOrigin = 'top left';
         this.selectionOverlay.style.pointerEvents = 'none';
         
-        this.selectionCtx.save();
-        
-        // Draw selection box
+        // Draw selection box at canvas coordinates
         this.selectionCtx.strokeStyle = '#ffffff';
         this.selectionCtx.setLineDash([5, 5]);
         this.selectionCtx.lineWidth = 2;
         this.selectionCtx.strokeRect(minX, minY, maxX - minX, maxY - minY);
         
-        // Draw corner handles
+        // Draw handles
         const handleSize = 8;
         this.selectionCtx.fillStyle = '#ffffff';
         this.selectionCtx.fillRect(minX - handleSize/2, minY - handleSize/2, handleSize, handleSize);
         this.selectionCtx.fillRect(maxX - handleSize/2, minY - handleSize/2, handleSize, handleSize);
         this.selectionCtx.fillRect(minX - handleSize/2, maxY - handleSize/2, handleSize, handleSize);
         this.selectionCtx.fillRect(maxX - handleSize/2, maxY - handleSize/2, handleSize, handleSize);
-        
-        this.selectionCtx.restore();
     }
     
     clearSketchSelection() {
@@ -1378,13 +1368,16 @@ class JerryEditor {
         const tempCtx = tempCanvas.getContext('2d');
         tempCtx.putImageData(this.sketchSelectionData, 0, 0);
         
-        // Now commit to the layer
+        // Paste at the new location (the original was already cleared in finalizeSketchSelection)
         layer.ctx.drawImage(tempCanvas, minX, minY);
         this.redrawLayers();
         
         // Clear the overlay
         this.clearSketchSelection();
         
+        // Clear selection state
+        this.sketchSelection = null;
+        this.sketchSelectionData = null;
         this.movingSketchSelection = false;
         this.sketchMoveStart = null;
         this.originalSketchSelection = null;
