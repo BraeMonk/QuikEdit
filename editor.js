@@ -719,7 +719,7 @@ class JerryEditor {
 
     getCanvasPos(e) {
         const canvas = this.mode === 'pixel' ? this.pixelCanvas : this.sketchCanvas;
-        
+    
         // Get raw pointer coordinates
         let clientX, clientY;
         if (e.touches && e.touches[0]) {
@@ -729,34 +729,19 @@ class JerryEditor {
             clientX = e.clientX;
             clientY = e.clientY;
         }
-    
-        // For sketch mode, account for centered canvas with zoom
-        if (this.mode === 'sketch') {
-            const wrapperRect = this.canvasWrapper.getBoundingClientRect();
-            
-            // Get click position relative to wrapper center
-            const offsetX = clientX - (wrapperRect.left + wrapperRect.width / 2);
-            const offsetY = clientY - (wrapperRect.top + wrapperRect.height / 2);
-            
-            // Reverse the zoom transform
-            const unzoomedX = offsetX / this.zoom;
-            const unzoomedY = offsetY / this.zoom;
-            
-            // Convert from centered coordinates to canvas coordinates
-            const x = unzoomedX + (canvas.width / 2);
-            const y = unzoomedY + (canvas.height / 2);
-            
-            return {
-                x: Math.max(0, Math.min(canvas.width, x)),
-                y: Math.max(0, Math.min(canvas.height, y))
-            };
-        }
-        
-        // Pixel mode (existing logic)
+
+        // Get canvas bounding rect (includes all CSS transforms)
         const rect = canvas.getBoundingClientRect();
-        const x = (clientX - rect.left) * (canvas.width / rect.width);
-        const y = (clientY - rect.top) * (canvas.height / rect.height);
-        
+    
+        // Calculate position as ratio of displayed canvas size
+        const relativeX = (clientX - rect.left) / rect.width;
+        const relativeY = (clientY - rect.top) / rect.height;
+    
+        // Convert to actual canvas coordinates
+        const x = relativeX * canvas.width;
+        const y = relativeY * canvas.height;
+    
+        // Clamp to canvas bounds
         return {
             x: Math.max(0, Math.min(canvas.width, x)),
             y: Math.max(0, Math.min(canvas.height, y))
