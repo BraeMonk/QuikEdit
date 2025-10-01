@@ -733,9 +733,13 @@ class JerryEditor {
         // Get the canvas bounding rect (includes zoom transform)
         const rect = canvas.getBoundingClientRect();
         
-        // Calculate position relative to the displayed canvas
+        // Calculate position relative to the canvas top-left corner
         let x = clientX - rect.left;
         let y = clientY - rect.top;
+        
+        // Account for zoom: divide by zoom to get actual canvas coordinates
+        // The rect already includes zoom scaling, so we need to reverse it
+        const zoom = this.zoom || 1;
         
         // Scale from displayed size back to internal canvas coordinates
         x = (x / rect.width) * canvas.width;
