@@ -738,9 +738,12 @@ class JerryEditor {
         let y = clientY - rect.top;
         
         // Scale from displayed size back to internal canvas coordinates
-        // The rect already accounts for zoom, so we just need to scale to internal size
         x = (x / rect.width) * canvas.width;
         y = (y / rect.height) * canvas.height;
+        
+        // Clamp to canvas bounds
+        x = Math.max(0, Math.min(canvas.width, x));
+        y = Math.max(0, Math.min(canvas.height, y));
     
         return { x, y };
     }
@@ -748,14 +751,13 @@ class JerryEditor {
     switchMode(mode) {
         this.mode = mode;
         document.body.setAttribute('data-mode', mode);
-
+        
         // ----- TOOLS -----
         const pixelTools = document.querySelector('.pixel-tools');
         const sketchTools = document.querySelector('.sketch-tools');
-
         if (pixelTools) pixelTools.classList.toggle('active', mode === 'pixel');
         if (sketchTools) sketchTools.classList.toggle('active', mode === 'sketch');
-
+        
         // ----- PANELS -----
         document.querySelectorAll('.panel.pixel-controls').forEach(el => {
             el.style.display = mode === 'pixel' ? 'flex' : 'none';
@@ -763,7 +765,7 @@ class JerryEditor {
         document.querySelectorAll('.panel.sketch-controls').forEach(el => {
             el.style.display = mode === 'sketch' ? 'flex' : 'none';
         });
-
+        
         // ----- NESTED CONTROLS INSIDE PANELS -----
         document.querySelectorAll('.panel .pixel-controls').forEach(el => {
             el.style.display = mode === 'pixel' ? 'flex' : 'none';
@@ -771,12 +773,33 @@ class JerryEditor {
         document.querySelectorAll('.panel .sketch-controls').forEach(el => {
             el.style.display = mode === 'sketch' ? 'flex' : 'none';
         });
-
+        
         // ----- CANVASES -----
         this.pixelCanvas.style.display = mode === 'pixel' ? 'grid' : 'none';
         this.sketchCanvas.style.display = mode === 'sketch' ? 'block' : 'none';
-        this.selectionOverlay.style.display = mode === 'sketch' ? 'block' : 'none';
         this.canvasGrid.style.display = mode === 'pixel' && this.showGrid ? 'block' : 'none';
+        
+        // Position selection overlay properly for sketch mode
+        if (mode === 'sketch') {
+            this.selectionOverlay.style.display = 'block';
+            this.selectionOverlay.style.position = 'absolute';
+            this.selectionOverlay.style.pointerEvents = 'none';
+            
+            // Sync overlay position with sketch canvas
+            const syncOverlayPosition = () => {
+                const sketchRect = this.sketchCanvas.getBoundingClientRect();
+                const wrapperRect = this.canvasWrapper.getBoundingClientRect();
+                
+                this.selectionOverlay.style.left = (sketchRect.left - wrapperRect.left) + 'px';
+                this.selectionOverlay.style.top = (sketchRect.top - wrapperRect.top) + 'px';
+                this.selectionOverlay.style.width = sketchRect.width + 'px';
+                this.selectionOverlay.style.height = sketchRect.height + 'px';
+            };
+            
+            syncOverlayPosition();
+        } else {
+            this.selectionOverlay.style.display = 'none';
+        }
         
         // ----- INITIALIZE MODE -----
         if (mode === 'pixel') {
@@ -793,7 +816,7 @@ class JerryEditor {
             this.lastPos = null;
             this.strokePath = [];
         }
-
+        
         // ----- UPDATE UI -----
         this.updateUI();
     }
@@ -1241,7 +1264,7 @@ class JerryEditor {
         const minY = Math.min(this.sketchSelection.startY, this.sketchSelection.endY);
         const maxY = Math.max(this.sketchSelection.startY, this.sketchSelection.endY);
         
-        // Ensure overlay is same size as sketch canvas
+        // Ensure overlay matches sketch canvas exactly
         if (this.selectionOverlay.width !== this.sketchCanvas.width) {
             this.selectionOverlay.width = this.sketchCanvas.width;
         }
@@ -1249,17 +1272,29 @@ class JerryEditor {
             this.selectionOverlay.height = this.sketchCanvas.height;
         }
         
-        // Copy the transform from sketch canvas
-        this.selectionOverlay.style.transform = this.sketchCanvas.style.transform || '';
-        this.selectionOverlay.style.transformOrigin = this.sketchCanvas.style.transformOrigin || 'center center';
+        // Position overlay to match sketch canvas exactly
+        const sketchRect = this.sketchCanvas.getBoundingClientRect();
+        const wrapperRect = this.canvasWrapper.getBoundingClientRect();
+        
+        this.selectionOverlay.style.position = 'absolute';
+        this.selectionOverlay.style.left = (sketchRect.left - wrapperRect.left) + 'px';
+        this.selectionOverlay.style.top = (sketchRect.top - wrapperRect.top) + 'px';
+        this.selectionOverlay.style.width = sketchRect.width + 'px';
+        this.selectionOverlay.style.height = sketchRect.height + 'px';
+        this.selectionOverlay.style.transform = 'none';
+        this.selectionOverlay.style.transformOrigin = 'top left';
+        this.selectionOverlay.style.pointerEvents = 'none';
         
         this.selectionCtx.save();
+        
+        // Draw selection box
         this.selectionCtx.strokeStyle = '#ffffff';
         this.selectionCtx.setLineDash([5, 5]);
-        this.selectionCtx.lineWidth = 2 / this.zoom; // Account for zoom
+        this.selectionCtx.lineWidth = 2;
         this.selectionCtx.strokeRect(minX, minY, maxX - minX, maxY - minY);
         
-        const handleSize = 8 / this.zoom; // Account for zoom
+        // Draw corner handles
+        const handleSize = 8;
         this.selectionCtx.fillStyle = '#ffffff';
         this.selectionCtx.fillRect(minX - handleSize/2, minY - handleSize/2, handleSize, handleSize);
         this.selectionCtx.fillRect(maxX - handleSize/2, minY - handleSize/2, handleSize, handleSize);
